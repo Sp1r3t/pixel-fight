@@ -1,0 +1,24 @@
+# Сборки Rojo
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+!assets/**/*.rbxm
+
+# Генерируемые файлы
+sourcemap.json
+roblox.yml
+globalTypes*.d.luau
+/build/
+
+# Wally (сервер/девтулзы). Packages/ намеренно хранится в репозитории — см. README.
+ServerPackages/
+DevPackages/
+
+# Редакторы / ОС
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

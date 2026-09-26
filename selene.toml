@@ -1,0 +1,6 @@
+std = "roblox"
+exclude = ["Packages/**", "tests/**"]
+
+[lints]
+# Fusion-стиль `scope:New "Frame" { ... }` — нормальный идиоматичный Luau.
+mixed_table = "allow"

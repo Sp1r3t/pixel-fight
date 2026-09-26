@@ -1,0 +1,3 @@
+Packages/** linguist-vendored
+*.luau text eol=lf
+*.lua text eol=lf

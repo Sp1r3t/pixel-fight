@@ -1,0 +1,9 @@
+# Инструменты проекта. Установка: `rokit install` в корне репозитория.
+[tools]
+rojo = "rojo-rbx/rojo@7.7.0"
+wally = "upliftgames/wally@0.3.2"
+selene = "kampfkarren/selene@0.31.0"
+stylua = "johnnymorganz/stylua@2.5.2"
+luau-lsp = "johnnymorganz/luau-lsp@1.70.0"
+lune = "lune-org/lune@0.10.5"
+wally-package-types = "johnnymorganz/wally-package-types@1.7.0"

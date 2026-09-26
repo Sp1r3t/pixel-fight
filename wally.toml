@@ -1,0 +1,8 @@
+[package]
+name = "sp1r3t/pixel-fight"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Fusion = "elttob/fusion@0.3.0"
