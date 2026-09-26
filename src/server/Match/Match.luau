@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
+local MatchFlow = require(ReplicatedStorage.Shared.Combat.MatchFlow)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 
 export type MatchMode = "Training" | "Boss" | "Versus" | "Team" | "Private"
@@ -29,6 +30,15 @@ export type NetEvent = {
 	v: number?,
 	a: number?, -- слот атакующего
 	t: string?, -- уточнение ("Counter", сценарий супера, ...)
+	r: number?, -- номер раунда (события раундов)
+	w: { number }?, -- победы в раундах (события раундов)
+	fin: boolean?, -- финальный раунд
+}
+
+export type MatchResult = {
+	winner: number, -- слот победителя (0 — нет)
+	wins: { number },
+	reason: string,
 }
 
 export type Match = {
@@ -43,7 +53,10 @@ export type Match = {
 	framesSinceSnapshot: number,
 	pendingEvents: { NetEvent },
 	ended: boolean,
-	data: { [string]: any }, -- данные режима (боссы, раунды и т.п.)
+	flow: MatchFlow.Flow?, -- раунды (nil — без раундов, например тренировка)
+	-- Вызывается один раз, когда матч закончился (любым способом).
+	onFinished: ((match: Match, result: MatchResult) -> ())?,
+	data: { [string]: any }, -- данные режима (боссы, эстафета и т.п.)
 }
 
 export type MatchConfig = {
@@ -53,6 +66,8 @@ export type MatchConfig = {
 	controllers: { SlotController },
 	participants: { Player },
 	hpMultipliers: { number }?,
+	roundsToWin: number?, -- nil — без раундов
+	onFinished: ((match: Match, result: MatchResult) -> ())?,
 }
 
 local Match = {}
@@ -73,6 +88,8 @@ function Match.new(config: MatchConfig): Match
 		framesSinceSnapshot = 0,
 		pendingEvents = {},
 		ended = false,
+		flow = if config.roundsToWin then MatchFlow.new({ roundsToWin = config.roundsToWin }) else nil,
+		onFinished = config.onFinished,
 		data = {},
 	}
 end

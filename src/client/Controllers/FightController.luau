@@ -28,13 +28,40 @@ local InputController = require(script.Parent.InputController)
 local SparkStyles = require(script.Parent.Parent.Fight.SparkStyles)
 local UIController = require(script.Parent.UIController)
 
-type NetEvent = { k: string, s: number, f: number, x: number?, y: number?, v: number?, a: number?, t: string? }
+type NetEvent = {
+	k: string,
+	s: number,
+	f: number,
+	x: number?,
+	y: number?,
+	v: number?,
+	a: number?,
+	t: string?,
+	r: number?,
+	w: { number }?,
+	fin: boolean?,
+}
+
+local TICK = 60
+local BANNER_WHITE = Color3.new(1, 1, 1)
+local BANNER_GOLD = Color3.fromHex("#FFC845")
+local BANNER_RED = Color3.fromHex("#FF4D6D")
+local BANNER_GREEN = Color3.fromHex("#5BD17A")
+
+local RESULT_TEXT: { [string]: { text: string, color: Color3 } } = {
+	KO = { text = "K.O.", color = BANNER_RED },
+	Perfect = { text = "PERFECT", color = BANNER_GOLD },
+	Time = { text = "TIME", color = BANNER_WHITE },
+	Draw = { text = "DRAW", color = BANNER_WHITE },
+	DoubleKO = { text = "DOUBLE K.O.", color = BANNER_RED },
+}
 
 local FightController = {
 	Name = "FightController",
 }
 
 local matchId: number? = nil
+local battleInfo: AppState.BattleInfo? = nil
 local arena: Arena.Arena? = nil
 local views: { [number]: FighterView.FighterView } = {}
 local buffer = SnapshotBuffer.new()
@@ -57,6 +84,7 @@ local function cleanup()
 	InputController.setActive(false)
 	CameraController.exitFight()
 	matchId = nil
+	battleInfo = nil
 end
 
 local function readSetup(payload: any): AppState.BattleInfo?
@@ -87,6 +115,7 @@ local function readSetup(payload: any): AppState.BattleInfo?
 		arenaId = if type(payload.arenaId) == "string" then payload.arenaId else "dojo",
 		localSlot = if type(payload.localSlot) == "number" then payload.localSlot else nil,
 		fighters = fighters,
+		roundsToWin = if type(payload.roundsToWin) == "number" then payload.roundsToWin else 0,
 	}
 end
 
@@ -98,6 +127,7 @@ local function onMatchStart(payload: any)
 	end
 	cleanup()
 	matchId = info.matchId
+	battleInfo = info
 	local built = Arena.build(info.arenaId, Workspace)
 	arena = built
 	for _, fighter in info.fighters do
@@ -110,7 +140,11 @@ local function onMatchStart(payload: any)
 	InputController.setActive(info.localSlot ~= nil)
 	local state = UIController.getState()
 	if state then
+		AppState.resetHud(state, info)
 		AppState.enterBattle(state, info)
+		if info.roundsToWin == 0 then
+			AppState.showBanner(state, "TRAINING", 1.2, BANNER_GOLD)
+		end
 	end
 end
 
@@ -122,8 +156,14 @@ local function onMatchEnd(payload: any)
 	local state = UIController.getState()
 	if state then
 		AppState.exitBattle(state)
-		if type(payload) == "table" and payload.reason == "PlayerLeft" then
-			AppState.notify(state, "Соперник покинул бой")
+		if type(payload) == "table" then
+			local reason = payload.reason
+			local won = payload.winner ~= nil and payload.winner ~= 0 and payload.winner == payload.localSlot
+			if (reason == "PlayerLeft" or reason == "Left") and won then
+				AppState.notify(state, "Соперник покинул бой — победа за вами")
+			elseif reason == "Finished" and payload.localSlot ~= nil then
+				AppState.notify(state, if won then "Победа!" else "Поражение")
+			end
 		end
 	end
 end
@@ -135,6 +175,51 @@ local function onEvents(events: any)
 	for _, event in events do
 		if type(event) == "table" and type(event.k) == "string" and type(event.f) == "number" then
 			table.insert(pendingEvents, event)
+		end
+	end
+end
+
+-- События раундов: надписи и счёт побед в HUD.
+local function playFlowEvent(event: NetEvent)
+	local state = UIController.getState()
+	if state == nil then
+		return
+	end
+	local hud = state.hud
+	if event.w then
+		hud.wins:set(table.clone(event.w))
+	end
+	local kind = event.k
+	if kind == "RoundStart" then
+		hud.round:set(event.r or 1)
+		local text = if event.fin then "FINAL ROUND" else `ROUND {event.r or 1}`
+		AppState.showBanner(state, text, 1, BANNER_WHITE)
+	elseif kind == "Fight" then
+		AppState.showBanner(state, "FIGHT!", 0.8, BANNER_GOLD)
+	elseif kind == "RoundEnd" then
+		local result = RESULT_TEXT[event.t or "KO"] or RESULT_TEXT.KO
+		AppState.showBanner(state, result.text, 1.8, result.color)
+	elseif kind == "MatchEnd" then
+		local localSlot = if battleInfo then battleInfo.localSlot else nil
+		if localSlot ~= nil then
+			local won = event.s == localSlot
+			AppState.showBanner(
+				state,
+				if won then "YOU WIN!" else "YOU LOSE",
+				3,
+				if won then BANNER_GREEN else BANNER_RED
+			)
+		else
+			local winnerName = "PLAYER"
+			if battleInfo then
+				for _, fighter in battleInfo.fighters do
+					if fighter.slot == event.s then
+						local def = CharacterRegistry.get(fighter.characterId)
+						winnerName = string.upper(if def then def.displayName else fighter.characterId)
+					end
+				end
+			end
+			AppState.showBanner(state, `{winnerName} WINS`, 3, BANNER_GOLD)
 		end
 	end
 end
@@ -192,6 +277,8 @@ local function playEvent(event: NetEvent)
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
 	elseif kind == "CinematicEnd" then
 		CameraController.shake(0.7, 0.35)
+	else
+		playFlowEvent(event)
 	end
 end
 
@@ -202,6 +289,27 @@ local function onSnapshot(data: any)
 	local decoded = Snapshot.decode(data)
 	if decoded then
 		buffer.push(decoded, os.clock())
+	end
+end
+
+-- Живые данные HUD из интерполированного снапшота.
+local function updateHud(sample: SnapshotBuffer.Sample)
+	local state = UIController.getState()
+	if state == nil then
+		return
+	end
+	local hud = state.hud
+	for slot, fighter in sample.latest.fighters do
+		local hudFighter = hud.fighters[slot]
+		if hudFighter then
+			hudFighter.health:set(fighter.health)
+			hudFighter.maxHealth:set(fighter.maxHealth)
+			hudFighter.meter:set(fighter.meter)
+			hudFighter.combo:set(fighter.combo)
+		end
+	end
+	if battleInfo and battleInfo.roundsToWin > 0 then
+		hud.timer:set(math.ceil(sample.latest.timer / TICK))
 	end
 end
 
@@ -228,6 +336,7 @@ local function onRenderStep(dt: number)
 	if minX <= maxX then
 		CameraController.setFocus(minX, maxX, topY)
 	end
+	updateHud(sample)
 
 	-- События показываем тогда, когда до них «дошла» интерполированная картинка.
 	local index = 1

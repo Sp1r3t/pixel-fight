@@ -18,6 +18,7 @@ local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
+local MatchFlow = require(ReplicatedStorage.Shared.Combat.MatchFlow)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
@@ -73,11 +74,15 @@ local function sendSetup(match: Match, player: Player)
 		localSlot = Match.slotOf(match, player),
 		fighters = fighters,
 		tickRate = GameConfig.TickRate,
+		roundsToWin = if match.flow then match.flow.roundsToWin else 0,
 	})
 end
 
 function MatchService.create(config: Match.MatchConfig): Match
 	local match = Match.new(config)
+	if match.flow then
+		MatchFlow.start(match.flow, match.sim)
+	end
 	matches[match.id] = match
 	for _, player in match.participants do
 		local previous = matchOfPlayer[player]
@@ -91,25 +96,50 @@ function MatchService.create(config: Match.MatchConfig): Match
 	return match
 end
 
-function MatchService.finish(match: Match, reason: string, result: any?)
+--[[
+	Завершить матч. winner — слот победителя (0 — нет): при выходе игрока победа присуждается сопернику.
+]]
+function MatchService.finish(match: Match, reason: string, winner: number?)
 	if match.ended then
 		return
 	end
 	match.ended = true
 	matches[match.id] = nil
+	local result: Match.MatchResult = {
+		winner = winner or 0,
+		wins = if match.flow then table.clone(match.flow.wins) else { 0, 0 },
+		reason = reason,
+	}
 	for _, player in match.participants do
 		if matchOfPlayer[player] == match then
 			matchOfPlayer[player] = nil
 		end
 		if player.Parent ~= nil then
-			Transport.fireClient(
-				"MatchEvent",
-				player,
-				"MatchEnd",
-				{ matchId = match.id, reason = reason, result = result }
-			)
+			Transport.fireClient("MatchEvent", player, "MatchEnd", {
+				matchId = match.id,
+				reason = reason,
+				winner = result.winner,
+				localSlot = Match.slotOf(match, player),
+				wins = result.wins,
+			})
 		end
 	end
+	local onFinished = match.onFinished
+	if onFinished then
+		local ok, err = pcall(function(): string?
+			onFinished(match, result)
+			return nil
+		end)
+		if not ok then
+			warn(`[MatchService] Ошибка в обработчике конца матча: {err}`)
+		end
+	end
+end
+
+-- Слот соперника игрока в матче (для присуждения победы при выходе).
+local function opponentSlotOf(match: Match, player: Player): number
+	local slot = Match.slotOf(match, player)
+	return if slot then 3 - slot else 0
 end
 
 -- Отправить событие боя всем участникам вместе с ближайшим снапшотом.
@@ -136,10 +166,11 @@ local function broadcast(match: Match)
 	for _, fighter in match.sim.fighters do
 		table.insert(fighters, Snapshot.fromFighter(fighter))
 	end
+	local flow = match.flow
 	local encoded = Snapshot.encode({
 		frame = match.sim.frame,
-		phase = match.data.phase or 0,
-		timer = match.data.timer or 0,
+		phase = if flow then MatchFlow.phaseIndex(flow.phase) else 0,
+		timer = if flow then flow.timer else 0,
 		fighters = fighters,
 		projectiles = {},
 	})
@@ -172,6 +203,25 @@ function MatchService.stepMatch(match: Match, now: number)
 			break
 		end
 		hook(match)
+	end
+	local flow = match.flow
+	if flow and not match.ended then
+		MatchFlow.step(flow, match.sim)
+		for _, event in flow.events do
+			table.insert(match.pendingEvents, {
+				k = event.kind,
+				s = event.winner,
+				f = match.sim.frame,
+				t = event.result,
+				r = event.round,
+				w = event.wins,
+				fin = event.final,
+			})
+		end
+		if flow.finished then
+			broadcast(match)
+			MatchService.finish(match, "Finished", flow.matchWinner)
+		end
 	end
 	if match.ended then
 		return
@@ -244,14 +294,14 @@ function MatchService.Init()
 		if match == nil then
 			return false, "NotInMatch"
 		end
-		MatchService.finish(match, "Left")
+		MatchService.finish(match, "Left", opponentSlotOf(match, player))
 		return true, nil
 	end)
 
 	Players.PlayerRemoving:Connect(function(player: Player)
 		local match = matchOfPlayer[player]
 		if match then
-			MatchService.finish(match, "PlayerLeft")
+			MatchService.finish(match, "PlayerLeft", opponentSlotOf(match, player))
 		end
 	end)
 end

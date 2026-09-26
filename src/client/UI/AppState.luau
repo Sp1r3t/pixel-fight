@@ -40,6 +40,27 @@ export type BattleInfo = {
 	arenaId: string,
 	localSlot: number?,
 	fighters: { BattleFighter },
+	roundsToWin: number, -- 0 — без раундов (тренировка)
+}
+
+-- Живые данные бойца для HUD (обновляет FightController каждый кадр).
+export type HudFighter = {
+	health: Fusion.Value<number>,
+	maxHealth: Fusion.Value<number>,
+	meter: Fusion.Value<number>,
+	-- Сколько ударов подряд пропустил боец (счётчик комбо показывается у атакующего).
+	combo: Fusion.Value<number>,
+}
+
+export type Hud = {
+	fighters: { HudFighter },
+	timer: Fusion.Value<number>, -- секунды; -1 — без ограничения
+	round: Fusion.Value<number>,
+	wins: Fusion.Value<{ number }>,
+	roundsToWin: Fusion.Value<number>,
+	banner: Fusion.Value<string>,
+	bannerColor: Fusion.Value<Color3>,
+	bannerSerial: Fusion.Value<number>,
 }
 
 -- Действия, которые UI может попросить выполнить (реализует UIController).
@@ -61,6 +82,7 @@ export type AppState = {
 	-- Короткое уведомление внизу экрана ("" — нет уведомления).
 	notice: Fusion.Value<string>,
 	noticeId: number,
+	hud: Hud,
 	actions: Actions,
 }
 
@@ -79,6 +101,16 @@ function AppState.new(scope: Scope): AppState
 	local firstCharacter = CharacterRegistry.list()[1]
 	local noBattle: BattleInfo? = nil
 
+	local hudFighters: { HudFighter } = {}
+	for _ = 1, 2 do
+		table.insert(hudFighters, {
+			health = scope:Value(1000),
+			maxHealth = scope:Value(1000),
+			meter = scope:Value(0),
+			combo = scope:Value(0),
+		})
+	end
+
 	return {
 		screen = scope:Value("MainMenu"),
 		history = {},
@@ -87,6 +119,16 @@ function AppState.new(scope: Scope): AppState
 		battle = scope:Value(noBattle),
 		notice = scope:Value(""),
 		noticeId = 0,
+		hud = {
+			fighters = hudFighters,
+			timer = scope:Value(-1),
+			round = scope:Value(0),
+			wins = scope:Value({ 0, 0 }),
+			roundsToWin = scope:Value(0),
+			banner = scope:Value(""),
+			bannerColor = scope:Value(Color3.new(1, 1, 1)),
+			bannerSerial = scope:Value(0),
+		},
 		actions = {
 			startTraining = noop,
 			leaveMatch = noop,
@@ -122,6 +164,38 @@ function AppState.exitBattle(state: AppState)
 	if peek(state.screen) == "Battle" then
 		AppState.back(state)
 	end
+end
+
+-- Сбросить HUD к началу боя.
+function AppState.resetHud(state: AppState, info: BattleInfo)
+	local hud = state.hud
+	for slot, fighter in hud.fighters do
+		local setup = info.fighters[slot]
+		local maxHealth = if setup then setup.maxHealth else 1000
+		fighter.maxHealth:set(maxHealth)
+		fighter.health:set(maxHealth)
+		fighter.meter:set(0)
+		fighter.combo:set(0)
+	end
+	hud.timer:set(if info.roundsToWin > 0 then 60 else -1)
+	hud.round:set(0)
+	hud.wins:set({ 0, 0 })
+	hud.roundsToWin:set(info.roundsToWin)
+	hud.banner:set("")
+end
+
+-- Крупная надпись по центру экрана боя ("ROUND 1", "FIGHT!", "K.O." ...).
+function AppState.showBanner(state: AppState, text: string, seconds: number, color: Color3?)
+	local hud = state.hud
+	local serial = peek(hud.bannerSerial) + 1
+	hud.bannerSerial:set(serial)
+	hud.banner:set(text)
+	hud.bannerColor:set(color or Color3.new(1, 1, 1))
+	task.delay(seconds, function()
+		if peek(hud.bannerSerial) == serial then
+			hud.banner:set("")
+		end
+	end)
 end
 
 -- Показать уведомление на несколько секунд.
