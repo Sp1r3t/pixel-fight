@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 
 local peek = Fusion.peek
 
@@ -67,6 +68,10 @@ export type Hud = {
 export type Actions = {
 	startTraining: () -> (),
 	leaveMatch: () -> (),
+	saveControls: (layout: ControlsLayout.Layout) -> (),
+	-- Сенсорное управление в бою → InputController.
+	touchPress: (bit: number) -> (),
+	touchHeld: (mask: number) -> (),
 }
 
 export type AppState = {
@@ -83,6 +88,14 @@ export type AppState = {
 	notice: Fusion.Value<string>,
 	noticeId: number,
 	hud: Hud,
+	-- Платформа ввода: "Keyboard" | "Touch" | "Gamepad" (обновляет UIController).
+	platform: Fusion.Value<string>,
+	-- Раскладка сенсорного управления и черновик для экрана настройки.
+	controlsLayout: Fusion.Value<ControlsLayout.Layout>,
+	controlsDraft: Fusion.Value<ControlsLayout.Layout>,
+	controlsSelected: Fusion.Value<string>,
+	-- Текущий масштаб интерфейса (логические пиксели → пиксели экрана).
+	uiScale: Fusion.Value<number>,
 	actions: Actions,
 }
 
@@ -129,9 +142,17 @@ function AppState.new(scope: Scope): AppState
 			bannerColor = scope:Value(Color3.new(1, 1, 1)),
 			bannerSerial = scope:Value(0),
 		},
+		platform = scope:Value("Keyboard"),
+		controlsLayout = scope:Value(ControlsLayout.default()),
+		controlsDraft = scope:Value(ControlsLayout.default()),
+		controlsSelected = scope:Value("Light"),
+		uiScale = scope:Value(1),
 		actions = {
 			startTraining = noop,
 			leaveMatch = noop,
+			saveControls = function(_layout: ControlsLayout.Layout) end,
+			touchPress = function(_bit: number) end,
+			touchHeld = function(_mask: number) end,
 		},
 	}
 end
@@ -196,6 +217,16 @@ function AppState.showBanner(state: AppState, text: string, seconds: number, col
 			hud.banner:set("")
 		end
 	end)
+end
+
+-- Показывать ли сенсорное управление в бою (с учётом режима из настроек).
+function AppState.touchControlsVisible(mode: string, platform: string): boolean
+	if mode == "Always" then
+		return true
+	elseif mode == "Never" then
+		return false
+	end
+	return platform == "Touch"
 end
 
 -- Показать уведомление на несколько секунд.

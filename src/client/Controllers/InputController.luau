@@ -62,9 +62,58 @@ local ACTION_KEYS: { [Enum.KeyCode]: number } = {
 	[Enum.KeyCode.ButtonL2] = InputBits.Dash,
 }
 
+export type Platform = "Keyboard" | "Touch" | "Gamepad"
+
 local InputController = {
 	Name = "InputController",
 }
+
+local platform: Platform = "Keyboard"
+local platformListeners: { (Platform) -> () } = {}
+
+local GAMEPAD_TYPES: { [Enum.UserInputType]: boolean } = {
+	[Enum.UserInputType.Gamepad1] = true,
+	[Enum.UserInputType.Gamepad2] = true,
+	[Enum.UserInputType.Gamepad3] = true,
+	[Enum.UserInputType.Gamepad4] = true,
+}
+
+local KEYBOARD_TYPES: { [Enum.UserInputType]: boolean } = {
+	[Enum.UserInputType.Keyboard] = true,
+	[Enum.UserInputType.MouseButton1] = true,
+	[Enum.UserInputType.MouseButton2] = true,
+	[Enum.UserInputType.MouseWheel] = true,
+}
+
+local function platformFromInput(inputType: Enum.UserInputType): Platform?
+	if inputType == Enum.UserInputType.Touch then
+		return "Touch"
+	elseif GAMEPAD_TYPES[inputType] then
+		return "Gamepad"
+	elseif KEYBOARD_TYPES[inputType] then
+		return "Keyboard"
+	end
+	return nil -- движение мыши и прочее не переключает платформу
+end
+
+local function setPlatform(newPlatform: Platform)
+	if newPlatform == platform then
+		return
+	end
+	platform = newPlatform
+	for _, listener in platformListeners do
+		task.spawn(listener, newPlatform)
+	end
+end
+
+-- Текущая платформа ввода: определяет, показывать ли сенсорное управление и какие подсказки.
+function InputController.getPlatform(): Platform
+	return platform
+end
+
+function InputController.onPlatformChanged(listener: (Platform) -> ())
+	table.insert(platformListeners, listener)
+end
 
 local active = false
 local counters = table.create(#InputBits.ACTIONS, 0)
@@ -214,7 +263,20 @@ function InputController.getHeld(): number
 	return readHeld()
 end
 
-function InputController.Init() end
+function InputController.Init()
+	-- Начальная платформа: телефон/планшет без клавиатуры — сенсор.
+	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+		platform = "Touch"
+	else
+		platform = platformFromInput(UserInputService:GetLastInputType()) or "Keyboard"
+	end
+	UserInputService.LastInputTypeChanged:Connect(function(inputType: Enum.UserInputType)
+		local detected = platformFromInput(inputType)
+		if detected then
+			setPlatform(detected :: Platform)
+		end
+	end)
+end
 
 function InputController.Start()
 	RunService:BindToRenderStep("PixelFightInput", Enum.RenderPriority.Input.Value, onRenderStep)

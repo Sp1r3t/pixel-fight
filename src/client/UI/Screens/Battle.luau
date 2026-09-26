@@ -26,8 +26,12 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local CONTROLS_HINT = "A/D — движение · W — прыжок · S — присед · Shift — рывок · назад — блок · "
-	.. "J — рука · K — нога · L — особый · I — супер"
+local HINTS: { [string]: string } = {
+	Keyboard = "A/D — движение · W — прыжок · S — присед · Shift — рывок · назад — блок · "
+		.. "J — рука · K — нога · L — особый · I — супер",
+	Gamepad = "Стик — движение · A — прыжок · LB — рывок · назад — блок · "
+		.. "X — рука · Y — нога · B — особый · RB — супер",
+}
 
 local SCREEN_WIDTH = Theme.ReferenceSize.X
 local HP_WIDTH = 340
@@ -259,7 +263,9 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				Font = Theme.Fonts.Body,
 				Position = UDim2.new(0.5, 0, 1, -6),
 				Size = UDim2.fromOffset(440, 30),
-				Text = CONTROLS_HINT,
+				Text = scope:Computed(function(use)
+					return HINTS[use(state.platform)] or ""
+				end),
 				TextColor3 = Theme.Colors.Text,
 				TextSize = 13,
 				TextStrokeTransparency = 0.4,

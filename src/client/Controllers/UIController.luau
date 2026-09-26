@@ -13,6 +13,8 @@ local StarterGui = game:GetService("StarterGui")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
+local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
+local InputController = require(script.Parent.InputController)
 local UI = script.Parent.Parent.UI
 local App = require(UI.App)
 local AppState = require(UI.AppState)
@@ -54,6 +56,18 @@ function UIController.Init()
 	appState.actions.leaveMatch = function()
 		request("LeaveMatch", nil)
 	end
+	appState.actions.saveControls = function(layout: ControlsLayout.Layout)
+		local clean = ControlsLayout.sanitize(layout)
+		appState.controlsLayout:set(clean)
+		request("SaveControls", clean)
+		AppState.notify(appState, "Управление сохранено")
+	end
+	appState.actions.touchPress = function(bit: number)
+		InputController.pressVirtual(bit)
+	end
+	appState.actions.touchHeld = function(mask: number)
+		InputController.setVirtualHeld(mask)
+	end
 	state = appState
 end
 
@@ -65,6 +79,10 @@ function UIController.Start()
 
 	local rootScope = assert(scope, "UIController.Init не был вызван")
 	local appState = assert(state, "UIController.Init не был вызван")
+	appState.platform:set(InputController.getPlatform())
+	InputController.onPlatformChanged(function(platform)
+		appState.platform:set(platform)
+	end)
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	App(rootScope, {

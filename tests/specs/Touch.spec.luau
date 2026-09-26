@@ -1,0 +1,202 @@
+-- Сенсорное управление: раскладка, джойстик, кнопки, настройка.
+
+local ControlsLayout = requireShared("Config", "ControlsLayout")
+
+local function touch(x, y)
+	return {
+		UserInputType = Enum.UserInputType.Touch,
+		UserInputState = Enum.UserInputState.Begin,
+		KeyCode = Enum.KeyCode.Unknown,
+		Position = Vector3.new(x, y, 0),
+		Delta = Vector3.zero,
+	}
+end
+
+local function startTraining(onTouch)
+	local game = Harness.new()
+	local client = game.addClient("Alice")
+	game.step(2)
+	if onTouch then
+		client.runtime.services.UserInputService.LastInputTypeChanged:Fire(Enum.UserInputType.Touch)
+		game.step(1)
+	end
+	client.click("Тренировка")
+	game.step(10)
+	local MatchService = game.serverRequire("Services", "MatchService")
+	return game, client, MatchService.getMatchOf(client.player)
+end
+
+local function uis(client)
+	return client.runtime.services.UserInputService
+end
+
+describe("Раскладка управления", function()
+	it(
+		"мусорные данные превращаются в раскладку по умолчанию",
+		function()
+			local layout = ControlsLayout.sanitize("garbage")
+			expect(layout.mode).toBe("Auto")
+			expect(layout.controls.Light.size).toBe(1)
+			local weird = ControlsLayout.sanitize({
+				mode = "Hacked",
+				opacity = 0 / 0,
+				controls = { Light = { x = -1e9, y = 1e9, size = 50 }, Unknown = { x = 1 } },
+			})
+			expect(weird.mode).toBe("Auto")
+			expect(weird.opacity).toBe(ControlsLayout.default().opacity)
+			expect(weird.controls.Light.size).toBe(ControlsLayout.LIMITS.maxSize)
+			expect(weird.controls.Light.y).toBe(ControlsLayout.LIMITS.maxY)
+			expect(weird.controls.Light.x > 0).toBeTruthy()
+			expect(weird.controls.Unknown).toBe(nil)
+		end
+	)
+
+	it("допустимые значения сохраняются", function()
+		local custom = ControlsLayout.default()
+		custom.mode = "Always"
+		custom.opacity = 0.8
+		custom.dashButton = false
+		custom.controls.Heavy = { x = 300, y = 200, size = 1.3 }
+		local clean = ControlsLayout.sanitize(custom)
+		expect(clean.mode).toBe("Always")
+		expect(clean.opacity).toBeCloseTo(0.8)
+		expect(clean.dashButton).toBe(false)
+		expect(clean.controls.Heavy.x).toBe(300)
+		expect(clean.controls.Heavy.size).toBeCloseTo(1.3)
+	end)
+end)
+
+describe("Сенсорное управление в бою", function()
+	it("на ПК скрыто, на телефоне показывается", function()
+		local game, client = startTraining(false)
+		expect(client.find("TouchControls")).toBe(nil)
+		expect(client.find("ControlsHint").Text ~= "").toBeTruthy()
+		uis(client).LastInputTypeChanged:Fire(Enum.UserInputType.Touch)
+		game.step(2)
+		expect(client.find("TouchControls") ~= nil).toBeTruthy()
+		expect(client.find("ControlsHint").Text).toBe("")
+		expect(game.errors()).toBeEmpty()
+	end)
+
+	it("кнопка «Рука» бьёт в момент касания", function()
+		local game, client, match = startTraining(true)
+		match.sim.fighters[1].x = -1
+		match.sim.fighters[2].x = 1
+		local dummy = match.sim.fighters[2]
+		local input = touch(800, 450)
+		client.runtime.fire(client.find("LightButton"), "InputBegan", input)
+		game.step(12)
+		expect(dummy.health < dummy.maxHealth).toBeTruthy()
+		uis(client).InputEnded:Fire(input, false)
+		game.step(2)
+		expect(game.errors()).toBeEmpty()
+	end)
+
+	it(
+		"джойстик: вправо — ходьба, отпустили — стоп, вверх — прыжок",
+		function()
+			local game, client, match = startTraining(true)
+			local fighter = match.sim.fighters[1]
+			local startX = fighter.x
+			local input = touch(150, 400)
+			client.runtime.fire(client.find("Joystick"), "InputBegan", input)
+			input.Position = Vector3.new(230, 405, 0)
+			uis(client).InputChanged:Fire(input, false)
+			game.step(20)
+			expect(fighter.x > startX + 1).toBeTruthy()
+			expect(fighter.state).toBe("Walk")
+			uis(client).InputEnded:Fire(input, false)
+			game.step(6)
+			expect(fighter.state).toBe("Idle")
+
+			local jump = touch(150, 400)
+			client.runtime.fire(client.find("Joystick"), "InputBegan", jump)
+			jump.Position = Vector3.new(150, 320, 0)
+			uis(client).InputChanged:Fire(jump, false)
+			local jumped = false
+			for _ = 1, 20 do
+				game.step(1)
+				if fighter.y > 1 then
+					jumped = true
+				end
+			end
+			expect(jumped).toBeTruthy()
+			uis(client).InputEnded:Fire(jump, false)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+
+	it(
+		"маленькое смещение пальца не двигает бойца (мёртвая зона)",
+		function()
+			local game, client, match = startTraining(true)
+			local fighter = match.sim.fighters[1]
+			local startX = fighter.x
+			local input = touch(150, 400)
+			client.runtime.fire(client.find("Joystick"), "InputBegan", input)
+			input.Position = Vector3.new(158, 392, 0)
+			uis(client).InputChanged:Fire(input, false)
+			game.step(20)
+			expect(fighter.x).toBeCloseTo(startX)
+		end
+	)
+
+	it("кнопка «Супер» подсвечена, когда шкала полная", function()
+		local game, client = startTraining(true)
+		game.step(10)
+		local stroke = client.find("SuperButton"):FindFirstChildOfClass("UIStroke")
+		expect(stroke.Thickness).toBe(5)
+		expect(game.errors()).toBeEmpty()
+	end)
+end)
+
+describe("Экран «Управление»", function()
+	it("перетаскивание, размер, сохранение на сервер", function()
+		local game = Harness.new()
+		local client = game.addClient("Alice")
+		game.step(2)
+		client.click("Управление")
+		game.step(3)
+		expect(client.find("ControlsSettings") ~= nil).toBeTruthy()
+		expect(client.find("TouchControls") ~= nil).toBeTruthy()
+
+		-- Перетаскиваем «Ногу» на 100 пикселей влево и 50 вверх.
+		local drag = touch(700, 400)
+		client.runtime.fire(client.find("HeavyButton"), "InputBegan", drag)
+		drag.Position = Vector3.new(600, 350, 0)
+		uis(client).InputChanged:Fire(drag, false)
+		uis(client).InputEnded:Fire(drag, false)
+		game.step(2)
+
+		client.runtime.fire(client.find("SizePlus"):FindFirstChild("Face"), "Activated")
+		game.step(2)
+		client.click("Сохранить")
+		game.step(3)
+
+		local DataService = game.serverRequire("Services", "DataService")
+		local saved = DataService.getControls(client.player)
+		local default = ControlsLayout.default()
+		expect(saved.controls.Heavy.x > default.controls.Heavy.x + 50).toBeTruthy()
+		expect(saved.controls.Heavy.y > default.controls.Heavy.y + 20).toBeTruthy()
+		expect(saved.controls.Heavy.size > 1).toBeTruthy()
+		expect(game.errors()).toBeEmpty()
+		expect(game.warnings()).toBeEmpty()
+	end)
+
+	it("режим «Никогда» прячет управление даже на телефоне", function()
+		local game = Harness.new()
+		local client = game.addClient("Alice")
+		game.step(2)
+		uis(client).LastInputTypeChanged:Fire(Enum.UserInputType.Touch)
+		client.click("Управление")
+		game.step(2)
+		client.click("Никогда")
+		client.click("Сохранить")
+		client.click("← Назад")
+		game.step(2)
+		client.click("Тренировка")
+		game.step(10)
+		expect(client.find("Battle") ~= nil).toBeTruthy()
+		expect(client.find("TouchControls")).toBe(nil)
+	end)
+end)

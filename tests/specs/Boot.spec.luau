@@ -41,7 +41,7 @@ describe("Клиент", function()
 				{ button = "Мультиплеер", screen = "PlaceholderScreen" },
 				{ button = "Персонажи", screen = "CharacterSelect" },
 				{ button = "Магазин", screen = "PlaceholderScreen" },
-				{ button = "Управление", screen = "PlaceholderScreen" },
+				{ button = "Управление", screen = "ControlsSettings" },
 			}
 			for _, section in sections do
 				client.click(section.button)

@@ -14,6 +14,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 type UsedAs<T> = Fusion.UsedAs<T>
 
 export type Props = {
+	Name: string?,
 	Text: UsedAs<string>,
 	OnClick: () -> (),
 	Size: UsedAs<UDim2>?,
@@ -52,7 +53,7 @@ local function Button(scope: Scope, props: Props): Instance
 	local depth = scope:Spring(targetDepth, 40, 1)
 
 	return scope:New "Frame" {
-		Name = "Button",
+		Name = props.Name or "Button",
 		BackgroundTransparency = 1,
 		Size = props.Size or UDim2.fromOffset(220, 48),
 		Position = props.Position,

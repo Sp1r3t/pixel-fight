@@ -11,8 +11,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local AppState = require(script.Parent.AppState)
 local Theme = require(script.Parent.Theme)
+local TouchControls = require(script.Parent.Components.TouchControls)
 
 local Screens = script.Parent.Screens
 local MainMenu = require(Screens.MainMenu)
@@ -23,7 +25,7 @@ local Shop = require(Screens.Shop)
 local ControlsSettings = require(Screens.ControlsSettings)
 local Battle = require(Screens.Battle)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children, Out, peek = Fusion.Children, Fusion.Out, Fusion.peek
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 type ScreenComponent = (Scope, AppState.AppState) -> Instance
@@ -70,6 +72,54 @@ local function Notice(scope: Scope, state: AppState.AppState): Instance
 	}
 end
 
+--[[
+	Слой у краёв экрана (вне центрированного макета 960×540): сенсорное управление в бою
+	и его редактор на экране «Управление». Кнопки должны быть у краёв на любом соотношении сторон.
+]]
+local function EdgeLayer(scope: Scope, state: AppState.AppState): Instance
+	return scope:New "Frame" {
+		Name = "EdgeLayer",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 5,
+		[Children] = scope:Computed(function(use, innerScope: Scope): Instance?
+			local screen = use(state.screen)
+			if screen == "ControlsSettings" then
+				return TouchControls.new(innerScope, {
+					Layout = state.controlsDraft,
+					UiScale = state.uiScale,
+					Editing = true,
+					Selected = state.controlsSelected,
+				})
+			end
+			if screen ~= "Battle" then
+				return nil
+			end
+			local battle = use(state.battle)
+			local layout = use(state.controlsLayout)
+			local localSlot = if battle then battle.localSlot else nil
+			if localSlot == nil or not AppState.touchControlsVisible(layout.mode, use(state.platform)) then
+				return nil
+			end
+			local hudFighter = state.hud.fighters[localSlot]
+			return TouchControls.new(innerScope, {
+				Layout = state.controlsLayout,
+				UiScale = state.uiScale,
+				Editing = false,
+				SuperReady = innerScope:Computed(function(innerUse)
+					return innerUse(hudFighter.meter) >= GameConfig.SuperMeter.Max
+				end),
+				OnPress = function(bit: number)
+					state.actions.touchPress(bit)
+				end,
+				OnHeld = function(mask: number)
+					state.actions.touchHeld(mask)
+				end,
+			})
+		end),
+	}
+end
+
 export type Props = {
 	State: AppState.AppState,
 	Parent: Instance,
@@ -81,6 +131,9 @@ local function App(scope: Scope, props: Props): Instance
 		local size = use(screenSize)
 		local scale = math.min(size.X / Theme.ReferenceSize.X, size.Y / Theme.ReferenceSize.Y)
 		return math.clamp(scale, 0.5, 2)
+	end)
+	scope:Observer(uiScale):onBind(function()
+		props.State.uiScale:set(peek(uiScale))
 	end)
 
 	return scope:New "ScreenGui" {
@@ -136,6 +189,7 @@ local function App(scope: Scope, props: Props): Instance
 							return screen(innerScope, props.State)
 						end),
 					},
+					EdgeLayer(scope, props.State),
 					Notice(scope, props.State),
 				},
 			},
