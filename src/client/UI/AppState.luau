@@ -39,6 +39,12 @@ export type BattleFighter = {
 	palette: Types.Palette?, -- свои цвета (боссы)
 }
 
+-- Участник команды в эстафете 2 на 2.
+export type BattleMember = {
+	characterId: string,
+	playerName: string?,
+}
+
 export type BattleBoss = {
 	id: string,
 	order: number,
@@ -54,6 +60,20 @@ export type BattleInfo = {
 	fighters: { BattleFighter },
 	roundsToWin: number, -- 0 — без раундов (тренировка)
 	boss: BattleBoss?,
+	-- Эстафета 2 на 2: составы команд (слот = команда) и номер игрока в своей команде.
+	teams: { { BattleMember } }?,
+	localMember: number?,
+}
+
+-- Состояние поиска матча / приватной комнаты (присылает MatchmakingService).
+export type QueueStatus = {
+	status: string, -- "Idle" | "Searching" | "Found" | "Teleporting" | "Room"
+	mode: string?, -- "Versus" | "Team"
+	code: string?, -- код комнаты
+	host: boolean?,
+	members: { { name: string, characterId: string } }?,
+	capacity: number?,
+	since: number, -- os.clock() начала ожидания (для таймера на экране)
 }
 
 -- Живые данные бойца для HUD (обновляет FightController каждый кадр).
@@ -74,12 +94,24 @@ export type Hud = {
 	banner: Fusion.Value<string>,
 	bannerColor: Fusion.Value<Color3>,
 	bannerSerial: Fusion.Value<number>,
+	-- Эстафета: активный участник каждой команды и выбывшие в этом раунде (номера участников).
+	members: Fusion.Value<{ number }>,
+	eliminated: Fusion.Value<{ { [number]: boolean } }>,
+	-- Управляет ли игрок бойцом прямо сейчас (в эстафете ждёт своей очереди).
+	controlling: Fusion.Value<boolean>,
 }
 
 -- Действия, которые UI может попросить выполнить (реализует UIController).
 export type Actions = {
 	startTraining: () -> (),
 	startBoss: (bossId: string) -> (),
+	-- Мультиплеер.
+	joinQueue: (mode: string) -> (),
+	leaveQueue: () -> (),
+	createRoom: (mode: string) -> (),
+	joinRoom: (code: string) -> (),
+	leaveRoom: () -> (),
+	startCpu: (level: number) -> (),
 	leaveMatch: () -> (),
 	saveControls: (layout: ControlsLayout.Layout) -> (),
 	-- Сенсорное управление в бою → InputController.
@@ -100,6 +132,7 @@ export type AppState = {
 	bossProgress: Fusion.Value<number>,
 	bossClears: Fusion.Value<{ [string]: number }>,
 	selectedBossId: Fusion.Value<string>,
+	queue: Fusion.Value<QueueStatus>,
 	-- Текущий бой (nil — не в бою).
 	battle: Fusion.Value<BattleInfo?>,
 	-- Короткое уведомление внизу экрана ("" — нет уведомления).
@@ -151,6 +184,7 @@ function AppState.new(scope: Scope): AppState
 		bossProgress = scope:Value(0),
 		bossClears = scope:Value({}),
 		selectedBossId = scope:Value(BossRegistry.list()[1].id),
+		queue = scope:Value({ status = "Idle", since = 0 } :: QueueStatus),
 		battle = scope:Value(noBattle),
 		notice = scope:Value(""),
 		noticeId = 0,
@@ -163,6 +197,9 @@ function AppState.new(scope: Scope): AppState
 			banner = scope:Value(""),
 			bannerColor = scope:Value(Color3.new(1, 1, 1)),
 			bannerSerial = scope:Value(0),
+			members = scope:Value({ 1, 1 }),
+			eliminated = scope:Value({ {}, {} } :: { { [number]: boolean } }),
+			controlling = scope:Value(true),
 		},
 		platform = scope:Value("Keyboard"),
 		controlsLayout = scope:Value(ControlsLayout.default()),
@@ -172,6 +209,12 @@ function AppState.new(scope: Scope): AppState
 		actions = {
 			startTraining = noop,
 			startBoss = function(_bossId: string) end,
+			joinQueue = function(_mode: string) end,
+			leaveQueue = noop,
+			createRoom = function(_mode: string) end,
+			joinRoom = function(_code: string) end,
+			leaveRoom = noop,
+			startCpu = function(_level: number) end,
 			leaveMatch = noop,
 			saveControls = function(_layout: ControlsLayout.Layout) end,
 			touchPress = function(_bit: number) end,
@@ -271,6 +314,39 @@ function AppState.resetHud(state: AppState, info: BattleInfo)
 	hud.wins:set({ 0, 0 })
 	hud.roundsToWin:set(info.roundsToWin)
 	hud.banner:set("")
+	hud.members:set({ 1, 1 })
+	hud.eliminated:set({ {}, {} })
+	hud.controlling:set(info.localSlot ~= nil and (info.teams == nil or info.localMember == 1))
+end
+
+-- Статус очереди/комнаты с сервера (данные из сети — проверяются).
+function AppState.applyQueue(state: AppState, payload: unknown)
+	if type(payload) ~= "table" then
+		return
+	end
+	local raw = payload :: { [string]: any }
+	local status = if type(raw.status) == "string" then raw.status else "Idle"
+	local members: { { name: string, characterId: string } }? = nil
+	if type(raw.members) == "table" then
+		local list: { { name: string, characterId: string } } = {}
+		for _, member in raw.members do
+			if type(member) == "table" and type(member.name) == "string" and type(member.characterId) == "string" then
+				table.insert(list, { name = member.name, characterId = member.characterId })
+			end
+		end
+		members = list
+	end
+	local previous = peek(state.queue)
+	state.queue:set({
+		status = status,
+		mode = if type(raw.mode) == "string" then raw.mode else previous.mode,
+		code = if type(raw.code) == "string" then raw.code else nil,
+		host = raw.host == true,
+		members = members,
+		capacity = if type(raw.capacity) == "number" then raw.capacity else nil,
+		-- Таймер ожидания не сбрасывается, пока статус тот же.
+		since = if previous.status == status then previous.since else os.clock(),
+	})
 end
 
 -- Крупная надпись по центру экрана боя ("ROUND 1", "FIGHT!", "K.O." ...).

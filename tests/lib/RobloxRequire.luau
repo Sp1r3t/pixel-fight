@@ -125,6 +125,8 @@ export type LoaderOptions = {
 	services: { [string]: any }?,
 	-- Подмена модулей: путь к файлу ("src/shared/Net/Transport.luau") → готовое значение.
 	overrides: { [string]: any }?,
+	-- Свойства game (PlaceId, JobId, PrivateServerId, PrivateServerOwnerId).
+	gameProperties: { [string]: any }?,
 }
 
 export type Loader = {
@@ -141,6 +143,17 @@ function RobloxRequire.new(options: LoaderOptions?): Loader
 	local globals = if options and options.globals then options.globals else {}
 	local extraServices = if options and options.services then options.services else {}
 	local overrides = if options and options.overrides then options.overrides else {}
+	local gameProperties: { [string]: any } = {
+		PlaceId = 0,
+		JobId = "",
+		PrivateServerId = "",
+		PrivateServerOwnerId = 0,
+	}
+	if options and options.gameProperties then
+		for key, value in options.gameProperties do
+			gameProperties[key] = value
+		end
+	end
 
 	-- Обёртки-«инстансы» над узлами дерева.
 	local wrappers: { [Node]: any } = {}
@@ -223,6 +236,9 @@ function RobloxRequire.new(options: LoaderOptions?): Loader
 					end
 					return service
 				end
+			end
+			if gameProperties[key] ~= nil then
+				return gameProperties[key]
 			end
 			error(`game.{key} недоступен в тестах`, 2)
 		end,

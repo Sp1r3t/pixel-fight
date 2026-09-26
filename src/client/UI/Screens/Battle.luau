@@ -89,7 +89,8 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 		local def = CharacterRegistry.get(fighter.characterId)
 		local text = string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
 		if battle.localSlot == slot then
-			text ..= " (YOU)"
+			-- В эстафете, пока бьётся напарник, это «союзник», а не вы.
+			text ..= if battle.teams and not use(state.hud.controlling) then " (ALLY)" else " (YOU)"
 		end
 		return text
 	end)
@@ -169,6 +170,77 @@ local function SuperPanel(
 	end)
 end
 
+-- Эстафета: мини-портреты участников команды (активный — в рамке, выбывшие — затемнены).
+local function TeamRoster(scope: Scope, state: AppState.AppState, slot: number): Instance
+	local isLeft = slot == 1
+	local barX = if isLeft then 16 + PORTRAIT + 8 else SCREEN_WIDTH - 16 - PORTRAIT - 8
+	return scope:New "Frame" {
+		Name = `TeamRoster{slot}`,
+		AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(barX, 80),
+		Size = UDim2.fromOffset(120, 30),
+		[Children] = scope:Computed(function(use, innerScope: Scope): { Instance }
+			local battle = use(state.battle)
+			local teams = if battle then battle.teams else nil
+			local team = if teams then teams[slot] else nil
+			local items: { Instance } = {}
+			if team == nil then
+				return items
+			end
+			local active = use(state.hud.members)[slot]
+			local out = use(state.hud.eliminated)[slot] or {}
+			for index, member in team do
+				local def = CharacterRegistry.get(member.characterId)
+				if def then
+					local isOut = out[index] == true
+					table.insert(
+						items,
+						innerScope:New "Frame" {
+							Name = `Member{index}`,
+							BackgroundColor3 = Theme.Colors.Panel,
+							BackgroundTransparency = if isOut then 0.6 else 0,
+							BorderSizePixel = 0,
+							LayoutOrder = index,
+							Size = UDim2.fromOffset(28, 28),
+							[Children] = {
+								innerScope:New "UIStroke" {
+									ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+									Color = if index == active then Theme.Colors.Accent else Theme.Colors.Outline,
+									Thickness = if index == active then 2 else 1,
+								},
+								PixelFigure(innerScope, { Palette = def.palette }),
+								innerScope:New "TextLabel" {
+									Name = "Out",
+									BackgroundTransparency = 1,
+									Font = Theme.Fonts.Pixel,
+									Size = UDim2.fromScale(1, 1),
+									Text = "X",
+									TextColor3 = Color3.fromHex("#FF4D6D"),
+									TextSize = 24,
+									Visible = isOut,
+								},
+							} :: { Fusion.Child },
+						}
+					)
+				end
+			end
+			table.insert(
+				items,
+				innerScope:New "UIListLayout" {
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = if isLeft
+						then Enum.HorizontalAlignment.Left
+						else Enum.HorizontalAlignment.Right,
+					Padding = UDim.new(0, 4),
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				}
+			)
+			return items
+		end),
+	}
+end
+
 -- «N HITS» у атакующего, пока противник в комбо.
 local function ComboCounter(scope: Scope, state: AppState.AppState, attackerSlot: number): Instance
 	local victim = state.hud.fighters[3 - attackerSlot]
@@ -237,6 +309,8 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 		[Children] = {
 			FighterPanel(scope, state, 1),
 			FighterPanel(scope, state, 2),
+			TeamRoster(scope, state, 1),
+			TeamRoster(scope, state, 2),
 			Timer(scope, state),
 			SuperPanel(scope, state, 1, clock),
 			SuperPanel(scope, state, 2, clock),
@@ -265,6 +339,10 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				Position = UDim2.new(0.5, 0, 1, -6),
 				Size = UDim2.fromOffset(440, 30),
 				Text = scope:Computed(function(use)
+					local battle = use(state.battle)
+					if battle and battle.teams and battle.localSlot and not use(state.hud.controlling) then
+						return "Сейчас бьётся напарник. Если он выбудет — на арену выйдете вы."
+					end
 					return HINTS[use(state.platform)] or ""
 				end),
 				TextColor3 = Theme.Colors.Text,

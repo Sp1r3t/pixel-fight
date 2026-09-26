@@ -10,7 +10,8 @@
 	  requireServer("AI", "BossAI")           — чистые серверные модули без сервисов (ИИ, правила);
 	  newRuntime(options?)                    — эмуляция клиента/сервера Roblox (tests/lib/RobloxRuntime.luau);
 	  newLoader(options?)                     — загрузчик модулей проекта (tests/lib/RobloxRequire.luau);
-	  Harness.new(options?)                   — сервер + клиенты + сеть в одном процессе (tests/lib/Harness.luau).
+	  Harness.new(options?)                   — сервер + клиенты + сеть в одном процессе (tests/lib/Harness.luau);
+	  FakeMemoryStore.new(clock)              — поддельный MemoryStoreService (общий для нескольких «серверов»).
 ]]
 
 local fs = require("@lune/fs")
@@ -21,6 +22,7 @@ local roblox = require("@lune/roblox")
 local RobloxRequire = require("./lib/RobloxRequire")
 local RobloxRuntime = require("./lib/RobloxRuntime")
 local Harness = require("./lib/Harness")
+local FakeMemoryStore = require("./lib/FakeMemoryStore")
 local TestKit = require("./lib/TestKit")
 
 local SPEC_DIR = "tests/specs"
@@ -49,6 +51,7 @@ for _, file in files do
 				newRuntime = RobloxRuntime.new,
 				newLoader = RobloxRequire.new,
 				Harness = Harness,
+				FakeMemoryStore = FakeMemoryStore,
 				Vector2 = roblox.Vector2,
 				Vector3 = roblox.Vector3,
 				Enum = RobloxRuntime.Enum,

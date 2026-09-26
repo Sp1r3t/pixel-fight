@@ -14,6 +14,7 @@
 ]]
 
 local roblox = require("@lune/roblox")
+local FakeMemoryStore = require("./FakeMemoryStore")
 
 local RobloxRuntime = {}
 
@@ -125,8 +126,20 @@ export type Runtime = {
 	unwrap: (instance: any) -> any,
 }
 
+export type Teleport = {
+	placeId: number,
+	players: { any },
+	accessCode: string?,
+	serverInstanceId: string?,
+	data: any?,
+}
+
 export type World = {
 	errors: { string },
+	studio: boolean,
+	teleports: { Teleport }, -- все вызовы TeleportService:TeleportAsync
+	reservedCount: number,
+	memoryStore: any,
 	warnings: { string },
 	screenSize: Vector2,
 	players: { any },
@@ -142,7 +155,13 @@ export type World = {
 	unwrap: (value: any) -> any,
 }
 
-function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
+export type WorldOptions = {
+	screenSize: Vector2?,
+	studio: boolean?, -- RunService:IsStudio() (по умолчанию true)
+	memoryStore: any?, -- общий FakeMemoryStore (несколько «серверов» — один объект)
+}
+
+function RobloxRuntime.newWorld(options: WorldOptions?): World
 	local world = {} :: World
 	world.errors = {}
 	world.warnings = {}
@@ -150,6 +169,9 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 	world.players = {}
 	world.runtimes = {}
 	world.stepHooks = {}
+	world.studio = if options and options.studio ~= nil then options.studio else true
+	world.teleports = {}
+	world.reservedCount = 0
 
 	local clock = 0
 	local deferred: { { any } } = {}
@@ -166,6 +188,10 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 		clock += 1e-7
 		return clock
 	end
+
+	world.memoryStore = if options and options.memoryStore
+		then options.memoryStore
+		else FakeMemoryStore.new(world.clock)
 
 	local function recordError(err: any)
 		table.insert(world.errors, tostring(err))
@@ -322,6 +348,16 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 		end,
 		Clone = function(self: any): any
 			return proxyOf(proxyData[self].real:Clone())
+		end,
+		GetJoinData = function(self: any): { [string]: any }
+			local joinData = proxyData[self].overrides.JoinData
+			return if type(joinData) == "table" then joinData else {}
+		end,
+		SetTeleportData = function(self: any, data: any)
+			proxyData[self].overrides.TeleportData = data
+		end,
+		GetTeleportData = function(self: any): any
+			return proxyData[self].overrides.TeleportData
 		end,
 		GetNetworkPing = function(self: any): number
 			local ping = proxyData[self].overrides.NetworkPing
@@ -557,8 +593,11 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 
 	local playerAdded, playerRemoving = newSignal(), newSignal()
 
-	function world.addPlayer(name: string, userId: number): any
+	function world.addPlayer(name: string, userId: number, teleportData: any?): any
 		local player = newInstance("Player")
+		if teleportData ~= nil then
+			proxyData[player].overrides.JoinData = { TeleportData = teleportData }
+		end
 		player.Name = name
 		player.UserId = userId
 		player.DisplayName = name
@@ -659,7 +698,7 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 				Heartbeat = heartbeat,
 				Stepped = stepped,
 				IsStudio = function(): boolean
-					return true
+					return world.studio
 				end,
 				IsClient = function(): boolean
 					return isClient
@@ -719,6 +758,24 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 			Workspace = workspace,
 			Lighting = lighting,
 			SoundService = soundService,
+			MemoryStoreService = world.memoryStore,
+			TeleportService = {
+				ReserveServer = function(_self: any, _placeId: number): (string, string)
+					world.reservedCount += 1
+					return `access-{world.reservedCount}`, `private-{world.reservedCount}`
+				end,
+				TeleportAsync = function(_self: any, placeId: number, players: { any }, teleportOptions: any?): any
+					local entry: Teleport = { placeId = placeId, players = table.clone(players) }
+					if teleportOptions ~= nil then
+						local data = proxyData[teleportOptions]
+						entry.accessCode = teleportOptions.ReservedServerAccessCode
+						entry.serverInstanceId = teleportOptions.ServerInstanceId
+						entry.data = if data then data.overrides.TeleportData else nil
+					end
+					table.insert(world.teleports, entry)
+					return nil
+				end,
+			},
 		}
 
 		runtime.globals = table.clone(sharedGlobals)

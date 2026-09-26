@@ -33,7 +33,8 @@ export type Game = {
 	server: RobloxRuntime.Runtime,
 	serverLoader: RobloxRequire.Loader,
 	clients: { Client },
-	addClient: (name: string) -> Client,
+	addClient: (name: string, teleportData: any?) -> Client,
+	removeClient: (client: Client) -> (),
 	step: (frames: number?) -> (),
 	serverRequire: (...string) -> any,
 	errors: () -> { string },
@@ -42,8 +43,25 @@ export type Game = {
 
 local Harness = {}
 
-function Harness.new(options: { latencyFrames: number?, dropEveryNth: number?, screenSize: Vector2? }?): Game
-	local world = RobloxRuntime.newWorld({ screenSize = if options then options.screenSize else nil })
+export type Options = {
+	latencyFrames: number?,
+	dropEveryNth: number?,
+	screenSize: Vector2?,
+	-- Опубликованная игра / отдельный сервер: для проверки межсерверного подбора.
+	studio: boolean?,
+	placeId: number?,
+	jobId: string?,
+	privateServerId: string?,
+	memoryStore: any?,
+	firstUserId: number?, -- с какого UserId нумеровать клиентов (разные «серверы» — разные игроки)
+}
+
+function Harness.new(options: Options?): Game
+	local world = RobloxRuntime.newWorld({
+		screenSize = if options then options.screenSize else nil,
+		studio = if options then options.studio else nil,
+		memoryStore = if options then options.memoryStore else nil,
+	})
 	local channelsLoader = RobloxRequire.new()
 	local channels = channelsLoader.require(channelsLoader.get("ReplicatedStorage", "Shared", "Net", "Channels"))
 	local hub = NetHub.new({
@@ -58,6 +76,12 @@ function Harness.new(options: { latencyFrames: number?, dropEveryNth: number?, s
 		globals = server.globals,
 		services = server.services,
 		overrides = { [TRANSPORT_PATH] = hub.serverTransport() },
+		gameProperties = {
+			PlaceId = if options and options.placeId then options.placeId else 0,
+			JobId = if options and options.jobId then options.jobId else "test-job",
+			PrivateServerId = if options and options.privateServerId then options.privateServerId else "",
+			PrivateServerOwnerId = 0,
+		},
 	})
 	serverLoader.run(serverLoader.get("ServerScriptService", "Server"))
 
@@ -72,8 +96,10 @@ function Harness.new(options: { latencyFrames: number?, dropEveryNth: number?, s
 		return serverLoader.require(serverLoader.get("ServerScriptService", "Server", ...))
 	end
 
-	function game.addClient(name: string): Client
-		local player = world.addPlayer(name, #game.clients + 1)
+	local nextUserId = if options and options.firstUserId then options.firstUserId else 1
+	function game.addClient(name: string, teleportData: any?): Client
+		local player = world.addPlayer(name, nextUserId, teleportData)
+		nextUserId += 1
 		local runtime = world.runtime({ isClient = true, localPlayer = player })
 		local loader = RobloxRequire.new({
 			globals = runtime.globals,
@@ -105,6 +131,10 @@ function Harness.new(options: { latencyFrames: number?, dropEveryNth: number?, s
 		end
 		table.insert(game.clients, client)
 		return client
+	end
+
+	function game.removeClient(client: Client)
+		world.removePlayer(client.player)
 	end
 
 	function game.step(frames: number?)

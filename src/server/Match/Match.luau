@@ -11,7 +11,8 @@ local MatchFlow = require(ReplicatedStorage.Shared.Combat.MatchFlow)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Types = require(ReplicatedStorage.Shared.Types)
 
-export type MatchMode = "Training" | "Boss" | "Versus" | "Team" | "Private"
+-- Versus — 1 на 1 игроков, Team — эстафета 2 на 2, Cpu — против компьютера.
+export type MatchMode = "Training" | "Boss" | "Versus" | "Team" | "Cpu"
 
 export type ControllerKind = "Player" | "Dummy" | "AI"
 
@@ -34,6 +35,13 @@ export type NetEvent = {
 	r: number?, -- номер раунда (события раундов)
 	w: { number }?, -- победы в раундах (события раундов)
 	fin: boolean?, -- финальный раунд
+	ms: { number }?, -- эстафета: активные участники команд
+}
+
+-- Участник команды в эстафете 2 на 2.
+export type TeamMember = {
+	controller: SlotController,
+	characterId: string,
 }
 
 -- Как показывать бойца клиентам (боссы выглядят и называются по-своему).
@@ -71,6 +79,8 @@ export type Match = {
 	flow: MatchFlow.Flow?, -- раунды (nil — без раундов, например тренировка)
 	presentation: { [number]: Presentation }, -- по слотам
 	boss: BossInfo?,
+	teams: { { TeamMember } }?, -- эстафета: слот = команда
+	ranked: boolean, -- матч из общей очереди (награда за победу)
 	-- Вызывается один раз, когда матч закончился (любым способом).
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
 	data: { [string]: any }, -- данные режима (боссы, эстафета и т.п.)
@@ -87,6 +97,9 @@ export type MatchConfig = {
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
 	presentation: { [number]: Presentation }?,
 	boss: BossInfo?,
+	-- Эстафета 2 на 2: участники команд; characters и controllers тогда берутся из первых участников.
+	teams: { { TeamMember } }?,
+	ranked: boolean?,
 }
 
 local Match = {}
@@ -95,8 +108,27 @@ local nextId = 0
 
 function Match.new(config: MatchConfig): Match
 	nextId += 1
-	local sim = Simulation.new({ characters = config.characters, hpMultipliers = config.hpMultipliers })
-	for slot, controller in config.controllers do
+	local characters = config.characters
+	local controllers = config.controllers
+	local rosters: { { string } }? = nil
+	local teams = config.teams
+	if teams then
+		characters, controllers = {}, {}
+		local list: { { string } } = {}
+		for slot, team in teams do
+			assert(#team > 0, `В команде {slot} нет участников`)
+			characters[slot] = team[1].characterId
+			controllers[slot] = team[1].controller
+			local roster: { string } = {}
+			for _, member in team do
+				table.insert(roster, member.characterId)
+			end
+			list[slot] = roster
+		end
+		rosters = list
+	end
+	local sim = Simulation.new({ characters = characters, hpMultipliers = config.hpMultipliers })
+	for slot, controller in controllers do
 		-- ИИ делает рывки кнопкой: двойное нажатие направления ему не нужно.
 		if controller.kind ~= "Player" and sim.fighters[slot] then
 			sim.fighters[slot].tapDash = false
@@ -107,16 +139,18 @@ function Match.new(config: MatchConfig): Match
 		mode = config.mode,
 		arenaId = config.arenaId,
 		sim = sim,
-		controllers = config.controllers,
-		characters = table.clone(config.characters),
+		controllers = controllers,
+		characters = table.clone(characters),
 		participants = table.clone(config.participants),
 		accumulator = 0,
 		framesSinceSnapshot = 0,
 		pendingEvents = {},
 		ended = false,
-		flow = if config.roundsToWin then MatchFlow.new({ roundsToWin = config.roundsToWin }) else nil,
+		flow = if config.roundsToWin then MatchFlow.new({ roundsToWin = config.roundsToWin, teams = rosters }) else nil,
 		presentation = config.presentation or {},
 		boss = config.boss,
+		teams = teams,
+		ranked = config.ranked == true,
 		onFinished = config.onFinished,
 		data = {},
 	}
@@ -130,6 +164,61 @@ function Match.slotOf(match: Match, player: Player): number?
 		end
 	end
 	return nil
+end
+
+-- Команда (сторона) игрока: в эстафете — даже если он сейчас ждёт своей очереди.
+function Match.teamOf(match: Match, player: Player): number?
+	local teams = match.teams
+	if teams then
+		for slot, team in teams do
+			for _, member in team do
+				if member.controller.player == player then
+					return slot
+				end
+			end
+		end
+		return nil
+	end
+	return Match.slotOf(match, player)
+end
+
+-- Номер участника команды для игрока (эстафета).
+function Match.memberOf(match: Match, player: Player): number?
+	local teams = match.teams
+	if teams == nil then
+		return nil
+	end
+	for _, team in teams do
+		for index, member in team do
+			if member.controller.player == player then
+				return index
+			end
+		end
+	end
+	return nil
+end
+
+-- Эстафета: передать управление слотами активным участникам. Возвращает игроков, получивших управление.
+function Match.syncControllers(match: Match): { Player }
+	local teams = match.teams
+	local flow = match.flow
+	local handedOver: { Player } = {}
+	if teams == nil or flow == nil then
+		return handedOver
+	end
+	for slot, team in teams do
+		local member = MatchFlow.activeMember(flow, slot)
+		local entry = if member then team[member] else nil
+		if entry and match.controllers[slot] ~= entry.controller then
+			match.controllers[slot] = entry.controller
+			match.characters[slot] = entry.characterId
+			local player = entry.controller.player
+			if player then
+				table.insert(handedOver, player)
+			end
+		end
+	end
+	return handedOver
 end
 
 function Match.hasParticipant(match: Match, player: Player): boolean
