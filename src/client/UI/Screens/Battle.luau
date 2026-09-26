@@ -59,9 +59,10 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 	local portrait = scope:Computed(function(use, innerScope: Scope): Instance?
 		local fighter = use(info)
 		local def = if fighter then CharacterRegistry.get(fighter.characterId) else nil
-		if def == nil then
+		if fighter == nil or def == nil then
 			return nil
 		end
+		local palette = fighter.palette or def.palette
 		return innerScope:New "Frame" {
 			Name = "Portrait",
 			BackgroundColor3 = Theme.Colors.Panel,
@@ -71,10 +72,10 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 			[Children] = {
 				innerScope:New "UIStroke" {
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-					Color = Color3.fromHex(def.palette.accent),
+					Color = Color3.fromHex(palette.accent),
 					Thickness = 3,
 				},
-				PixelFigure(innerScope, { Palette = def.palette }),
+				PixelFigure(innerScope, { Palette = palette }),
 			},
 		}
 	end)
@@ -86,7 +87,7 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 			return ""
 		end
 		local def = CharacterRegistry.get(fighter.characterId)
-		local text = string.upper(if def then def.displayName else fighter.characterId)
+		local text = string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
 		if battle.localSlot == slot then
 			text ..= " (YOU)"
 		end

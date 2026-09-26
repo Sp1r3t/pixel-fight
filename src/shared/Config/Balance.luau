@@ -77,6 +77,9 @@ local Balance = deepFreeze({
 	-- (плюс вспышка-заморозка, на которую можно отреагировать).
 	SuperMinStartup = 4,
 	SuperMaxStartup = 14,
+
+	-- Боссы: сложность — в поведении ИИ, бонус HP только умеренный.
+	BossMaxHpMultiplier = 1.3,
 })
 
 return Balance

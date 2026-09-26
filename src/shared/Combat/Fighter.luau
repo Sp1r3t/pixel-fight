@@ -57,6 +57,15 @@ local STATES: { StateName } = {
 	"Lose",
 }
 
+-- Модификаторы боя (механики боссов). У обычных бойцов — нейтральные значения.
+export type Modifiers = {
+	damageDealt: number, -- множитель наносимого урона
+	damageTaken: number, -- множитель получаемого урона
+	firstHitTaken: number, -- множитель урона первого удара серии (0.5 — «железная кожа»)
+	lifesteal: number, -- доля нанесённого урона, которая лечит бойца
+	meterGain: number, -- множитель набора шкалы супера
+}
+
 export type Fighter = {
 	slot: number,
 	characterId: string,
@@ -86,6 +95,9 @@ export type Fighter = {
 	dashRequestFrames: number,
 	tapDir: number, -- последнее нажатое направление (для двойного нажатия)
 	tapFrame: number,
+	-- Рывок двойным нажатием направления. ИИ делает рывки кнопкой и отключает это,
+	-- чтобы частые смены направления (блок/отход) не превращались в случайные рывки.
+	tapDash: boolean,
 
 	invulnerable: number, -- кадры неуязвимости к ударам
 
@@ -112,6 +124,8 @@ export type Fighter = {
 	lagFrames: number,
 	-- Недавние хартбоксы бойца (новые — в начале); не передаются по сети.
 	history: { HurtRecord },
+
+	modifiers: Modifiers,
 }
 
 export type HurtRecord = { x: number, y: number, kind: Hitbox.HurtKind }
@@ -131,6 +145,10 @@ end
 
 function Fighter.indexToState(index: number): StateName?
 	return STATES[index]
+end
+
+function Fighter.neutralModifiers(): Modifiers
+	return { damageDealt = 1, damageTaken = 1, firstHitTaken = 1, lifesteal = 0, meterGain = 1 }
 end
 
 function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): Fighter
@@ -163,6 +181,7 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): 
 		dashRequestFrames = 0,
 		tapDir = 0,
 		tapFrame = -1000,
+		tapDash = true,
 		invulnerable = 0,
 		move = nil,
 		moveFrame = 0,
@@ -181,6 +200,7 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): 
 		ko = false,
 		lagFrames = 0,
 		history = {},
+		modifiers = Fighter.neutralModifiers(),
 	}
 end
 

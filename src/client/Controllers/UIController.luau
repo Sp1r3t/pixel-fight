@@ -27,6 +27,8 @@ local UIController = {
 
 local ERROR_TEXT: { [string]: string } = {
 	CharacterNotAvailable = "Этот боец пока недоступен",
+	BossLocked = "Сначала победите предыдущего босса",
+	BadRequest = "Некорректный запрос",
 	RateLimited = "Слишком часто — подождите секунду",
 	NotInMatch = "Вы не в бою",
 	ServerError = "Ошибка сервера, попробуйте ещё раз",
@@ -52,6 +54,9 @@ function UIController.Init()
 	local appState = AppState.new(rootScope)
 	appState.actions.startTraining = function()
 		request("StartTraining", { characterId = peek(appState.selectedCharacterId) })
+	end
+	appState.actions.startBoss = function(bossId: string)
+		request("StartBoss", { bossId = bossId, characterId = peek(appState.selectedCharacterId) })
 	end
 	appState.actions.leaveMatch = function()
 		request("LeaveMatch", nil)
@@ -82,6 +87,16 @@ function UIController.Start()
 	appState.platform:set(InputController.getPlatform())
 	InputController.onPlatformChanged(function(platform)
 		appState.platform:set(platform)
+	end)
+	-- Профиль: сервер присылает его после каждого изменения; при запуске — запрашиваем сами.
+	Transport.onClientEvent("Profile", function(profile: any)
+		AppState.applyProfile(appState, profile)
+	end)
+	task.spawn(function()
+		local ok, profile = Transport.invokeServer("Request", "GetProfile", nil)
+		if ok then
+			AppState.applyProfile(appState, profile)
+		end
 	end)
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 

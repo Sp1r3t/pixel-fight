@@ -170,6 +170,7 @@ function Simulation.replaceFighter(sim: Sim, slot: number, characterId: string, 
 	fighter.x = old.x
 	fighter.facing = old.facing
 	fighter.lagFrames = old.lagFrames
+	fighter.tapDash = old.tapDash
 	sim.fighters[slot] = fighter
 	return fighter
 end
@@ -192,7 +193,25 @@ local function gainMeter(fighter: Fighter, amount: number)
 	if amount <= 0 or fighter.ko then
 		return
 	end
-	fighter.meter = math.min(METER_MAX, fighter.meter + amount * fighter.stats.superGainMultiplier)
+	local gain = amount * fighter.stats.superGainMultiplier * fighter.modifiers.meterGain
+	fighter.meter = math.min(METER_MAX, fighter.meter + gain)
+end
+
+-- Множитель урона от модификаторов бойцов (механики боссов). firstHit — учитывать «железную кожу».
+local function modifierScale(attacker: Fighter, defender: Fighter, firstHit: boolean): number
+	local scale = attacker.modifiers.damageDealt * defender.modifiers.damageTaken
+	if firstHit and defender.comboHits == 0 then
+		scale *= defender.modifiers.firstHitTaken
+	end
+	return scale
+end
+
+-- Вампиризм: атакующий лечится частью нанесённого урона.
+local function drainLife(attacker: Fighter, damage: number)
+	local rate = attacker.modifiers.lifesteal
+	if rate > 0 and damage > 0 and not attacker.ko then
+		attacker.health = math.min(attacker.maxHealth, attacker.health + math.floor(damage * rate + 0.5))
+	end
 end
 
 ----------------------------------------------------------------------------------------------
@@ -244,7 +263,7 @@ local function processInput(sim: Sim, fighter: Fighter, input: FrameInput)
 	elseif InputBits.has(newlyHeld, InputBits.Right) and not InputBits.has(held, InputBits.Left) then
 		tap = 1
 	end
-	if tap ~= 0 and not InputBits.has(held, InputBits.Down) then
+	if tap ~= 0 and fighter.tapDash and not InputBits.has(held, InputBits.Down) then
 		if fighter.tapDir == tap and sim.frame - fighter.tapFrame <= Physics.DoubleTapWindow then
 			fighter.dashRequest = tap
 			fighter.dashRequestFrames = GameConfig.Input.BufferFrames
@@ -842,7 +861,7 @@ local function startCinematic(sim: Sim, attacker: Fighter, defender: Fighter, mo
 	local style = if def then def.super.cinematic.style else "Default"
 	local seconds = if def then def.super.cinematic.duration else 2
 	local hits = if def then def.super.cinematic.hits else 5
-	local scale = math.max(0.5, comboScale(defender.comboHits))
+	local scale = math.max(0.5, comboScale(defender.comboHits)) * modifierScale(attacker, defender, false)
 	local damage = math.max(1, math.floor(move.damage * attacker.stats.damageMultiplier * scale + 0.5))
 	local cinematic: Cinematic = {
 		attacker = attacker.slot,
@@ -877,7 +896,8 @@ local function applyHit(sim: Sim, hit: PendingHit)
 
 	-- Блок.
 	if canBlock(defender, attacker, move.guard) then
-		local chip = math.floor(perChip * attacker.stats.damageMultiplier + 0.5)
+		local chip =
+			math.floor(perChip * attacker.stats.damageMultiplier * modifierScale(attacker, defender, false) + 0.5)
 		if chip > 0 then
 			-- Блоком нельзя проиграть, кроме супера.
 			defender.health = math.max(if isSuper then 0 else 1, defender.health - chip)
@@ -904,7 +924,10 @@ local function applyHit(sim: Sim, hit: PendingHit)
 	-- Броня: удар «впитывается», урон вдвое меньше, приём не прерывается.
 	if defender.armor > 0 and defenderAttacking then
 		defender.armor -= 1
-		local absorbed = math.max(1, math.floor(perHit * attacker.stats.damageMultiplier * 0.5 + 0.5))
+		local absorbed = math.max(
+			1,
+			math.floor(perHit * attacker.stats.damageMultiplier * modifierScale(attacker, defender, false) * 0.5 + 0.5)
+		)
 		defender.health = math.max(1, defender.health - absorbed)
 		local stop = hitstopFor(perHit)
 		attacker.hitstop, defender.hitstop = stop, stop
@@ -922,8 +945,11 @@ local function applyHit(sim: Sim, hit: PendingHit)
 	local counter = defenderAttacking
 	local scale = comboScale(defender.comboHits)
 	local counterBonus = if counter then Combat.CounterHitDamage else 1
-	local damage = math.max(1, math.floor(perHit * attacker.stats.damageMultiplier * scale * counterBonus + 0.5))
+	local modifiers = modifierScale(attacker, defender, true)
+	local damage =
+		math.max(1, math.floor(perHit * attacker.stats.damageMultiplier * scale * counterBonus * modifiers + 0.5))
 	defender.health = math.max(0, defender.health - damage)
+	drainLife(attacker, damage)
 	defender.comboHits += 1
 	defender.comboDamage += damage
 	defender.move = nil
@@ -981,6 +1007,7 @@ local function updateCinematic(sim: Sim)
 			else math.floor(cinematic.damage / cinematic.hits)
 		cinematic.dealt += part
 		defender.health = math.max(0, defender.health - part)
+		drainLife(attacker, part)
 		defender.comboHits += 1
 		defender.comboDamage += part
 		gainMeter(defender, part * Combat.MeterPerDamageTaken)

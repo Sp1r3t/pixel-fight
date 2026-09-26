@@ -203,6 +203,62 @@ export type DerivedStats = {
 	superGainMultiplier: number,
 }
 
+-- Параметры поведения ИИ: вероятности и уровни — 0..1, время — кадры 60 FPS.
+-- Сложность задаётся ПОВЕДЕНИЕМ (реакция, блок, чтение, комбо), а не характеристиками.
+export type AiProfile = {
+	reactionFrames: number, -- задержка восприятия: ИИ видит противника «в прошлом»
+	thinkInterval: number, -- как часто пересматривает решение в нейтрали, кадры
+	blockChance: number, -- блокирует замеченную атаку
+	guardRead: number, -- правильно выбирает блок сидя/стоя против низких/верхних ударов
+	punishChance: number, -- наказывает промахи противника
+	antiAirChance: number, -- сбивает прыжки
+	comboSkill: number, -- длина и точность комбо, проверка попадания, отмены в особый приём/супер
+	superUsage: number, -- использует полную шкалу супера с толком
+	readChance: number, -- учится на привычках игрока (прыжки, низкие удары, атаки после блока)
+	mistakeChance: number, -- «человеческие» ошибки: забыл заблокировать, уронил комбо, махнул мимо
+	aggression: number, -- наступает, а не ждёт
+	jumpChance: number, -- прыжки с атакой сверху
+	dashChance: number, -- рывки в нейтрали
+	specialChance: number, -- особый приём в нейтрали
+	preferredRange: number, -- желаемая дистанция, студов
+}
+
+-- Стиль поведения босса: меняет «характер» (дистанцию, агрессию, любимые приёмы), но не уровень.
+export type AiStyle = "Balanced" | "Rushdown" | "Zoner" | "Turtle" | "Aerial" | "Grappler" | "Counter" | "Trickster"
+
+export type DifficultyTier = "Easy" | "Medium" | "Hard" | "VeryHard" | "Final"
+
+-- Уникальные механики боссов (действуют через модификаторы бойца в симуляции).
+export type BossMechanic =
+	"IronSkin" -- первый удар каждой серии наносит половину урона
+	| "Regeneration" -- восстанавливает HP, если несколько секунд не получает урон
+	| "Enrage" -- ниже 35% HP наносит больше урона
+	| "Vampiric" -- лечится частью нанесённого урона
+	| "Momentum" -- шкала супера растёт быстрее
+	| "SuperStart" -- начинает каждый раунд с полной шкалой супера
+	| "Mirror" -- сражается персонажем игрока
+
+export type BossAi = {
+	style: AiStyle,
+	-- Точечная настройка отдельных параметров профиля (редко нужна).
+	overrides: { [string]: number }?,
+}
+
+export type BossDef = {
+	id: string,
+	order: number, -- номер босса (1..20), открываются по порядку
+	name: string,
+	title: string,
+	description: string,
+	character: CharacterId, -- набор приёмов (для Mirror — запасной вариант)
+	palette: Palette, -- собственные цвета босса
+	arena: string,
+	hpMultiplier: number, -- только умеренный бонус (≤ Balance.BossMaxHpMultiplier)
+	mechanics: { BossMechanic },
+	ai: BossAi,
+	reward: number, -- монеты за первую победу
+}
+
 -- Общий интерфейс сервисов (сервер) и контроллеров (клиент).
 -- Init вызывается у всех модулей по порядку, затем Start — у всех в отдельных потоках.
 export type Lifecycle = {

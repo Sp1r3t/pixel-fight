@@ -6,7 +6,8 @@
 	  • ввод бойцов: игроки — через InputService, ИИ/манекен — локально на сервере;
 	  • рассылка снапшотов (двоичный buffer) и событий боя участникам матча;
 	  • запросы клиентов: StartTraining, LeaveMatch.
-	Раунды, таймер и победы добавляются на этапе 4, боссы — на этапе 6, PvP — на этапе 7.
+	Режимы подключаются через конфиг матча (контроллеры слотов, раунды, onFinished) и хуки шага:
+	тренировка — TrainingRules, боссы — BossService/BossRules, PvP — этап 7.
 ]]
 
 local Players = game:GetService("Players")
@@ -60,11 +61,14 @@ local function sendSetup(match: Match, player: Player)
 	local fighters = {}
 	for slot, characterId in match.characters do
 		local controller = match.controllers[slot]
+		local look = match.presentation[slot]
 		table.insert(fighters, {
 			slot = slot,
 			characterId = characterId,
 			playerName = if controller.player then controller.player.DisplayName else nil,
 			maxHealth = match.sim.fighters[slot].maxHealth,
+			displayName = if look then look.displayName else nil,
+			palette = if look then look.palette else nil,
 		})
 	end
 	Transport.fireClient("MatchEvent", player, "MatchStart", {
@@ -75,6 +79,7 @@ local function sendSetup(match: Match, player: Player)
 		fighters = fighters,
 		tickRate = GameConfig.TickRate,
 		roundsToWin = if match.flow then match.flow.roundsToWin else 0,
+		boss = match.boss,
 	})
 end
 

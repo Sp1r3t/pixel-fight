@@ -7,6 +7,7 @@
 	Глобальные функции в спеках:
 	  describe / it / expect                  — тест-раннер (tests/lib/TestKit.luau);
 	  requireShared("Config", "Characters")   — require(ReplicatedStorage.Shared.Config.Characters);
+	  requireServer("AI", "BossAI")           — чистые серверные модули без сервисов (ИИ, правила);
 	  newRuntime(options?)                    — эмуляция клиента/сервера Roblox (tests/lib/RobloxRuntime.luau);
 	  newLoader(options?)                     — загрузчик модулей проекта (tests/lib/RobloxRequire.luau);
 	  Harness.new(options?)                   — сервер + клиенты + сеть в одном процессе (tests/lib/Harness.luau).
@@ -41,6 +42,9 @@ for _, file in files do
 				expect = TestKit.expect,
 				requireShared = function(...: string): any
 					return sharedLoader.require(sharedLoader.get("ReplicatedStorage", "Shared", ...))
+				end,
+				requireServer = function(...: string): any
+					return sharedLoader.require(sharedLoader.get("ServerScriptService", "Server", ...))
 				end,
 				newRuntime = RobloxRuntime.new,
 				newLoader = RobloxRequire.new,

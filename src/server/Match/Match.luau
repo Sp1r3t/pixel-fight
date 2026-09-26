@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
 local MatchFlow = require(ReplicatedStorage.Shared.Combat.MatchFlow)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
+local Types = require(ReplicatedStorage.Shared.Types)
 
 export type MatchMode = "Training" | "Boss" | "Versus" | "Team" | "Private"
 
@@ -35,6 +36,20 @@ export type NetEvent = {
 	fin: boolean?, -- финальный раунд
 }
 
+-- Как показывать бойца клиентам (боссы выглядят и называются по-своему).
+export type Presentation = {
+	displayName: string?,
+	palette: Types.Palette?,
+}
+
+-- Кого игрок встречает в режиме боссов (для экрана боя).
+export type BossInfo = {
+	id: string,
+	order: number,
+	name: string,
+	title: string,
+}
+
 export type MatchResult = {
 	winner: number, -- слот победителя (0 — нет)
 	wins: { number },
@@ -54,6 +69,8 @@ export type Match = {
 	pendingEvents: { NetEvent },
 	ended: boolean,
 	flow: MatchFlow.Flow?, -- раунды (nil — без раундов, например тренировка)
+	presentation: { [number]: Presentation }, -- по слотам
+	boss: BossInfo?,
 	-- Вызывается один раз, когда матч закончился (любым способом).
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
 	data: { [string]: any }, -- данные режима (боссы, эстафета и т.п.)
@@ -68,6 +85,8 @@ export type MatchConfig = {
 	hpMultipliers: { number }?,
 	roundsToWin: number?, -- nil — без раундов
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
+	presentation: { [number]: Presentation }?,
+	boss: BossInfo?,
 }
 
 local Match = {}
@@ -76,11 +95,18 @@ local nextId = 0
 
 function Match.new(config: MatchConfig): Match
 	nextId += 1
+	local sim = Simulation.new({ characters = config.characters, hpMultipliers = config.hpMultipliers })
+	for slot, controller in config.controllers do
+		-- ИИ делает рывки кнопкой: двойное нажатие направления ему не нужно.
+		if controller.kind ~= "Player" and sim.fighters[slot] then
+			sim.fighters[slot].tapDash = false
+		end
+	end
 	return {
 		id = nextId,
 		mode = config.mode,
 		arenaId = config.arenaId,
-		sim = Simulation.new({ characters = config.characters, hpMultipliers = config.hpMultipliers }),
+		sim = sim,
 		controllers = config.controllers,
 		characters = table.clone(config.characters),
 		participants = table.clone(config.participants),
@@ -89,6 +115,8 @@ function Match.new(config: MatchConfig): Match
 		pendingEvents = {},
 		ended = false,
 		flow = if config.roundsToWin then MatchFlow.new({ roundsToWin = config.roundsToWin }) else nil,
+		presentation = config.presentation or {},
+		boss = config.boss,
 		onFinished = config.onFinished,
 		data = {},
 	}

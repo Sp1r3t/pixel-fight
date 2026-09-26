@@ -15,6 +15,8 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
+local Types = require(ReplicatedStorage.Shared.Types)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
@@ -87,6 +89,39 @@ local function cleanup()
 	battleInfo = nil
 end
 
+local function isHex(value: any): boolean
+	return type(value) == "string" and string.match(value, "^#%x%x%x%x%x%x$") ~= nil
+end
+
+-- Свои цвета бойца (боссы). Данные из сети — проверяем формат.
+local function readPalette(value: any): Types.Palette?
+	if type(value) ~= "table" or not (isHex(value.primary) and isHex(value.secondary) and isHex(value.accent)) then
+		return nil
+	end
+	return { primary = value.primary, secondary = value.secondary, accent = value.accent }
+end
+
+local function readBoss(value: any): AppState.BattleBoss?
+	if type(value) ~= "table" or type(value.id) ~= "string" then
+		return nil
+	end
+	local def = BossRegistry.get(value.id)
+	if def == nil then
+		return nil
+	end
+	return { id = def.id, order = def.order, name = def.name, title = def.title }
+end
+
+-- Описание персонажа для отрисовки с учётом своих цветов (боссы).
+local function viewDefinition(def: Types.CharacterDef, palette: Types.Palette?): Types.CharacterDef
+	if palette == nil then
+		return def
+	end
+	local copy = table.clone(def) :: any
+	copy.palette = palette
+	return copy
+end
+
 local function readSetup(payload: any): AppState.BattleInfo?
 	if type(payload) ~= "table" or type(payload.matchId) ~= "number" or type(payload.fighters) ~= "table" then
 		return nil
@@ -103,6 +138,10 @@ local function readSetup(payload: any): AppState.BattleInfo?
 				characterId = fighter.characterId,
 				playerName = if type(fighter.playerName) == "string" then fighter.playerName else nil,
 				maxHealth = tonumber(fighter.maxHealth) or 1000,
+				displayName = if type(fighter.displayName) == "string"
+					then string.sub(fighter.displayName, 1, 40)
+					else nil,
+				palette = readPalette(fighter.palette),
 			})
 		end
 	end
@@ -116,6 +155,7 @@ local function readSetup(payload: any): AppState.BattleInfo?
 		localSlot = if type(payload.localSlot) == "number" then payload.localSlot else nil,
 		fighters = fighters,
 		roundsToWin = if type(payload.roundsToWin) == "number" then payload.roundsToWin else 0,
+		boss = readBoss(payload.boss),
 	}
 end
 
@@ -133,7 +173,7 @@ local function onMatchStart(payload: any)
 	for _, fighter in info.fighters do
 		local def = CharacterRegistry.get(fighter.characterId)
 		if def then
-			views[fighter.slot] = FighterView.new(built.folder, def, fighter.slot)
+			views[fighter.slot] = FighterView.new(built.folder, viewDefinition(def, fighter.palette), fighter.slot)
 		end
 	end
 	CameraController.enterFight()
@@ -144,6 +184,8 @@ local function onMatchStart(payload: any)
 		AppState.enterBattle(state, info)
 		if info.roundsToWin == 0 then
 			AppState.showBanner(state, "TRAINING", 1.2, BANNER_GOLD)
+		elseif info.boss then
+			AppState.showBanner(state, `BOSS {info.boss.order}: {string.upper(info.boss.name)}`, 1.4, BANNER_RED)
 		end
 	end
 end
@@ -166,6 +208,34 @@ local function onMatchEnd(payload: any)
 			end
 		end
 	end
+end
+
+-- Итог боя с боссом (приходит после MatchEnd): награда и открытие следующего босса.
+local function onBossResult(payload: any)
+	local state = UIController.getState()
+	if state == nil or type(payload) ~= "table" or type(payload.bossId) ~= "string" then
+		return
+	end
+	local boss = BossRegistry.get(payload.bossId)
+	if boss == nil then
+		return
+	end
+	if payload.won ~= true then
+		AppState.notify(state, `{boss.name} оказался сильнее. Попробуйте ещё раз!`, 4)
+		return
+	end
+	local text = `{boss.name} повержен!`
+	local reward = tonumber(payload.reward) or 0
+	if reward > 0 then
+		text ..= ` +{reward} монет.`
+	end
+	local unlocked = if type(payload.unlocked) == "string" then BossRegistry.get(payload.unlocked) else nil
+	if unlocked then
+		text ..= ` Открыт босс {unlocked.order}: {unlocked.name}`
+	elseif boss.order == BossRegistry.count() and payload.firstClear == true then
+		text ..= " Башня пройдена!"
+	end
+	AppState.notify(state, text, 5)
 end
 
 local function onEvents(events: any)
@@ -215,7 +285,8 @@ local function playFlowEvent(event: NetEvent)
 				for _, fighter in battleInfo.fighters do
 					if fighter.slot == event.s then
 						local def = CharacterRegistry.get(fighter.characterId)
-						winnerName = string.upper(if def then def.displayName else fighter.characterId)
+						local name = fighter.displayName or (if def then def.displayName else fighter.characterId)
+						winnerName = string.upper(name)
 					end
 				end
 			end
@@ -277,6 +348,14 @@ local function playEvent(event: NetEvent)
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
 	elseif kind == "CinematicEnd" then
 		CameraController.shake(0.7, 0.35)
+	elseif kind == "Mechanic" then
+		-- Механика босса сработала (ярость): красная вспышка и надпись.
+		EffectsController.screenFlash(BANNER_RED, 0.4, 0.35)
+		CameraController.shake(0.35, 0.3)
+		local state = UIController.getState()
+		if state and event.t == "Enrage" then
+			AppState.showBanner(state, "RAGE!", 1, BANNER_RED)
+		end
 	else
 		playFlowEvent(event)
 	end
@@ -369,6 +448,8 @@ function FightController.Init()
 			onMatchEnd(payload)
 		elseif kind == "Events" then
 			onEvents(payload)
+		elseif kind == "BossResult" then
+			onBossResult(payload)
 		end
 	end)
 end

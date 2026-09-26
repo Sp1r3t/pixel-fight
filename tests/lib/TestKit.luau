@@ -50,7 +50,14 @@ function TestKit.expect(actual: any)
 				)
 			end
 		end,
+		-- Строка содержит шаблон или хотя бы один элемент списка строк содержит его.
 		toContainMatch = function(pattern: string)
+			if type(actual) == "string" then
+				if string.find(actual, pattern) == nil then
+					fail(`строка "{actual}" не содержит "{pattern}"`)
+				end
+				return
+			end
 			for _, item in actual do
 				if string.find(item, pattern) then
 					return

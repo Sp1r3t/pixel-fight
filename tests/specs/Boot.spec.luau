@@ -37,7 +37,7 @@ describe("Клиент", function()
 		function()
 			local game, client = boot()
 			local sections = {
-				{ button = "Одиночная игра", screen = "PlaceholderScreen" },
+				{ button = "Одиночная игра", screen = "BossMap" },
 				{ button = "Мультиплеер", screen = "PlaceholderScreen" },
 				{ button = "Персонажи", screen = "CharacterSelect" },
 				{ button = "Магазин", screen = "PlaceholderScreen" },

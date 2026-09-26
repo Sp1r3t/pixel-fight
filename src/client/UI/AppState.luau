@@ -14,6 +14,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
+local Types = require(ReplicatedStorage.Shared.Types)
+local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 
 local peek = Fusion.peek
 
@@ -33,6 +35,15 @@ export type BattleFighter = {
 	characterId: string,
 	playerName: string?,
 	maxHealth: number,
+	displayName: string?, -- своё имя (боссы)
+	palette: Types.Palette?, -- свои цвета (боссы)
+}
+
+export type BattleBoss = {
+	id: string,
+	order: number,
+	name: string,
+	title: string,
 }
 
 export type BattleInfo = {
@@ -42,6 +53,7 @@ export type BattleInfo = {
 	localSlot: number?,
 	fighters: { BattleFighter },
 	roundsToWin: number, -- 0 — без раундов (тренировка)
+	boss: BattleBoss?,
 }
 
 -- Живые данные бойца для HUD (обновляет FightController каждый кадр).
@@ -67,6 +79,7 @@ export type Hud = {
 -- Действия, которые UI может попросить выполнить (реализует UIController).
 export type Actions = {
 	startTraining: () -> (),
+	startBoss: (bossId: string) -> (),
 	leaveMatch: () -> (),
 	saveControls: (layout: ControlsLayout.Layout) -> (),
 	-- Сенсорное управление в бою → InputController.
@@ -80,8 +93,13 @@ export type AppState = {
 	screen: Fusion.Value<string>,
 	history: { string },
 	selectedCharacterId: Fusion.Value<string>,
-	-- Какие персонажи доступны игроку. Пока — только бесплатные (покупки — этап 9).
+	-- Какие персонажи доступны игроку (бесплатные + купленные) — из профиля с сервера.
 	ownedCharacters: Fusion.Value<{ [string]: boolean }>,
+	coins: Fusion.Value<number>,
+	-- Прогресс боссов: пройдено по порядку (открыт следующий), победы над каждым.
+	bossProgress: Fusion.Value<number>,
+	bossClears: Fusion.Value<{ [string]: number }>,
+	selectedBossId: Fusion.Value<string>,
 	-- Текущий бой (nil — не в бою).
 	battle: Fusion.Value<BattleInfo?>,
 	-- Короткое уведомление внизу экрана ("" — нет уведомления).
@@ -129,6 +147,10 @@ function AppState.new(scope: Scope): AppState
 		history = {},
 		selectedCharacterId = scope:Value(firstCharacter.id),
 		ownedCharacters = scope:Value(owned),
+		coins = scope:Value(0),
+		bossProgress = scope:Value(0),
+		bossClears = scope:Value({}),
+		selectedBossId = scope:Value(BossRegistry.list()[1].id),
 		battle = scope:Value(noBattle),
 		notice = scope:Value(""),
 		noticeId = 0,
@@ -149,12 +171,58 @@ function AppState.new(scope: Scope): AppState
 		uiScale = scope:Value(1),
 		actions = {
 			startTraining = noop,
+			startBoss = function(_bossId: string) end,
 			leaveMatch = noop,
 			saveControls = function(_layout: ControlsLayout.Layout) end,
 			touchPress = function(_bit: number) end,
 			touchHeld = function(_mask: number) end,
 		},
 	}
+end
+
+-- Профиль с сервера (канал "Profile" или ответ GetProfile). Данные проверяются: это сеть.
+function AppState.applyProfile(state: AppState, profile: unknown)
+	if type(profile) ~= "table" then
+		return
+	end
+	local raw = profile :: { [string]: any }
+	if type(raw.coins) == "number" then
+		state.coins:set(raw.coins)
+	end
+	if type(raw.bossProgress) == "number" then
+		local previous = peek(state.bossProgress)
+		local progress = math.clamp(math.floor(raw.bossProgress), 0, BossRegistry.count())
+		state.bossProgress:set(progress)
+		-- Выбор на карте переходит к новому открытому боссу.
+		local selected = BossRegistry.get(peek(state.selectedBossId))
+		if progress ~= previous and (selected == nil or selected.order <= progress) then
+			local nextBoss = BossRegistry.byOrder(math.min(progress + 1, BossRegistry.count()))
+			if nextBoss then
+				state.selectedBossId:set(nextBoss.id)
+			end
+		end
+	end
+	if type(raw.bossClears) == "table" then
+		local clears: { [string]: number } = {}
+		for id, count in raw.bossClears do
+			if type(id) == "string" and type(count) == "number" then
+				clears[id] = count
+			end
+		end
+		state.bossClears:set(clears)
+	end
+	if type(raw.ownedCharacters) == "table" then
+		local owned: { [string]: boolean } = {}
+		for id, value in raw.ownedCharacters do
+			if type(id) == "string" and value == true and CharacterRegistry.get(id) then
+				owned[id] = true
+			end
+		end
+		state.ownedCharacters:set(owned)
+	end
+	if raw.controls ~= nil then
+		state.controlsLayout:set(ControlsLayout.sanitize(raw.controls))
+	end
 end
 
 function AppState.navigate(state: AppState, screen: ScreenName)
