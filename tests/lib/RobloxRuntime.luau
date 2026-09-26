@@ -138,6 +138,8 @@ export type World = {
 	errors: { string },
 	studio: boolean,
 	teleports: { Teleport }, -- все вызовы TeleportService:TeleportAsync
+	prompts: { { kind: string, player: any, id: number } }, -- окна покупок, открытые клиентами
+	ownedPasses: { [string]: boolean }, -- "UserId:PassId" → куплен ли Game Pass
 	reservedCount: number,
 	memoryStore: any,
 	warnings: { string },
@@ -172,6 +174,8 @@ function RobloxRuntime.newWorld(options: WorldOptions?): World
 	world.studio = if options and options.studio ~= nil then options.studio else true
 	world.teleports = {}
 	world.reservedCount = 0
+	world.prompts = {}
+	world.ownedPasses = {}
 
 	local clock = 0
 	local deferred: { { any } } = {}
@@ -759,6 +763,20 @@ function RobloxRuntime.newWorld(options: WorldOptions?): World
 			Lighting = lighting,
 			SoundService = soundService,
 			MemoryStoreService = world.memoryStore,
+			MarketplaceService = {
+				ProcessReceipt = nil :: any,
+				PromptGamePassPurchaseFinished = newSignal(),
+				PromptProductPurchaseFinished = newSignal(),
+				UserOwnsGamePassAsync = function(_self: any, userId: number, passId: number): boolean
+					return world.ownedPasses[`{userId}:{passId}`] == true
+				end,
+				PromptGamePassPurchase = function(_self: any, player: any, passId: number)
+					table.insert(world.prompts, { kind = "GamePass", player = player, id = passId })
+				end,
+				PromptProductPurchase = function(_self: any, player: any, productId: number)
+					table.insert(world.prompts, { kind = "Product", player = player, id = productId })
+				end,
+			},
 			TeleportService = {
 				ReserveServer = function(_self: any, _placeId: number): (string, string)
 					world.reservedCount += 1

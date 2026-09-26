@@ -330,6 +330,23 @@ local function DetailsPanel(scope: Scope, boss: BossDef, state: AppState.AppStat
 				end,
 			}),
 			Button(scope, {
+				Name = "SkipBoss",
+				Text = "Пропустить",
+				Color = Theme.Colors.Paid,
+				Position = UDim2.fromOffset(236, 394),
+				Size = UDim2.fromOffset(110, 44),
+				TextSize = 16,
+				-- Пропуск (покупка) — только для следующего открытого босса.
+				Disabled = scope:Computed(function(use)
+					return use(status) ~= "Next"
+				end),
+				OnClick = function()
+					if statusOf(boss, Fusion.peek(state.bossProgress)) == "Next" then
+						state.actions.promptProduct("SkipBoss")
+					end
+				end,
+			}),
+			Button(scope, {
 				Name = "FightBoss",
 				Text = "В БОЙ",
 				Color = Theme.Colors.ButtonPrimary,
@@ -337,7 +354,7 @@ local function DetailsPanel(scope: Scope, boss: BossDef, state: AppState.AppStat
 					return use(status) == "Locked"
 				end),
 				Position = UDim2.fromOffset(14, 394),
-				Size = UDim2.fromOffset(332, 44),
+				Size = UDim2.fromOffset(212, 44),
 				OnClick = function()
 					if statusOf(boss, Fusion.peek(state.bossProgress)) ~= "Locked" then
 						state.actions.startBoss(boss.id)

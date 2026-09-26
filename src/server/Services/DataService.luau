@@ -1,15 +1,16 @@
 --!strict
 --[[
-	DataService — данные игрока.
+	DataService — сохранения игрока.
 
-	Ответственность:
-	• профиль игрока (Shared/Data/ProfileSchema): валюта, прогресс боссов, купленные персонажи,
-	  настройки управления;
-	• изменения профиля только через функции сервиса (сервер — единственный источник правды);
-	• публикация профиля клиенту (канал "Profile" → Fusion Values в UI) после каждого изменения.
-
-	До этапа 9 профиль живёт в памяти сервера. На этапе 9 хранилище заменяется на ProfileStore
-	(сессионная блокировка — защита от дюпа и потери данных) без изменения API сервиса.
+	  • профиль (Shared/Data/ProfileSchema) открывается при входе через хранилище с сессионной
+	    блокировкой (Data/ProfileStoreBackend → ProfileStore): профиль открыт только на одном сервере,
+	    поэтому нет дюпа и потери данных; при выходе сессия закрывается и данные сохраняются;
+	  • не удалось открыть профиль — игрок отключается с понятным сообщением; профиль забрал другой
+	    сервер — тоже (иначе изменения здесь потерялись бы);
+	  • данные меняются только функциями сервиса (сервер — единственный источник правды);
+	    после изменений профиль публикуется клиенту (канал "Profile" → Fusion Values в UI).
+	Пока профиль загружается, функции чтения отвечают безопасными значениями по умолчанию,
+	а функции изменения ничего не делают.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,41 +22,73 @@ local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local RequestRouter = require(script.Parent.Parent.Net.RequestRouter)
+local Session = require(script.Parent.Parent.Data.Session)
+local Backend = require(script.Parent.Parent.Data.ProfileStoreBackend) :: Session.Backend
 
 type PlayerData = ProfileSchema.PlayerData
+
+local MAX_COINS = 1e9
 
 local DataService = {
 	Name = "DataService",
 }
 
-local profiles: { [Player]: PlayerData } = {}
+local sessions: { [Player]: Session.Session } = {}
+local loading: { [Player]: boolean } = {}
+local loadedCallbacks: { (player: Player) -> () } = {}
 
--- Профиль игрока (создаётся при первом обращении).
-function DataService.get(player: Player): PlayerData
-	local data = profiles[player]
-	if data == nil then
-		data = ProfileSchema.default()
-		profiles[player] = data
+-- Данные профиля (nil — ещё загружается или игрок вышел).
+function DataService.get(player: Player): PlayerData?
+	local session = sessions[player]
+	return if session then session.data else nil
+end
+
+function DataService.getSession(player: Player): Session.Session?
+	return sessions[player]
+end
+
+function DataService.isLoaded(player: Player): boolean
+	return sessions[player] ~= nil
+end
+
+-- Подождать загрузки профиля (для обработки покупок). nil — не дождались.
+function DataService.waitForSession(player: Player, timeout: number): Session.Session?
+	local deadline = os.clock() + timeout
+	while sessions[player] == nil and player.Parent ~= nil and os.clock() < deadline do
+		task.wait(0.25)
 	end
-	return data
+	return sessions[player]
+end
+
+-- Вызвать callback, когда профиль игрока загружен (сразу — если уже).
+function DataService.onLoaded(callback: (player: Player) -> ())
+	table.insert(loadedCallbacks, callback)
+	for player in sessions do
+		task.spawn(callback, player)
+	end
 end
 
 -- Отправить клиенту актуальный профиль.
 function DataService.publish(player: Player)
-	if player.Parent == nil then
+	local data = DataService.get(player)
+	if data == nil or player.Parent == nil then
 		return
 	end
-	Transport.fireClient("Profile", player, ProfileSchema.toPublic(DataService.get(player)))
+	Transport.fireClient("Profile", player, ProfileSchema.toPublic(data))
 end
 
 function DataService.getControls(player: Player): ControlsLayout.Layout
-	return DataService.get(player).controls
+	local data = DataService.get(player)
+	return if data then data.controls else ControlsLayout.default()
 end
 
 -- Сохранить раскладку управления (данные от клиента проверяются sanitize).
-function DataService.setControls(player: Player, data: unknown): ControlsLayout.Layout
-	local layout = ControlsLayout.sanitize(data)
-	DataService.get(player).controls = layout
+function DataService.setControls(player: Player, raw: unknown): ControlsLayout.Layout
+	local layout = ControlsLayout.sanitize(raw)
+	local data = DataService.get(player)
+	if data then
+		data.controls = layout
+	end
 	return layout
 end
 
@@ -65,22 +98,57 @@ function DataService.ownsCharacter(player: Player, characterId: string): boolean
 	if def == nil then
 		return false
 	end
-	return def.unlock == "Free" or DataService.get(player).ownedCharacters[characterId] == true
+	if def.unlock == "Free" then
+		return true
+	end
+	local data = DataService.get(player)
+	return data ~= nil and data.ownedCharacters[characterId] == true
+end
+
+-- Открыть платного персонажа (покупка). false — профиль не загружен или персонаж бесплатный.
+function DataService.grantCharacter(player: Player, characterId: string): boolean
+	local def = CharacterRegistry.get(characterId)
+	local data = DataService.get(player)
+	if def == nil or def.unlock ~= "Paid" or data == nil then
+		return false
+	end
+	data.ownedCharacters[characterId] = true
+	DataService.publish(player)
+	return true
 end
 
 function DataService.getCoins(player: Player): number
-	return DataService.get(player).coins
+	local data = DataService.get(player)
+	return if data then data.coins else 0
 end
 
-function DataService.addCoins(player: Player, amount: number)
+function DataService.addCoins(player: Player, amount: number): boolean
 	assert(amount >= 0 and amount == math.floor(amount), "Некорректная сумма")
-	DataService.get(player).coins += amount
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	data.coins = math.min(MAX_COINS, data.coins + amount)
 	DataService.publish(player)
+	return true
+end
+
+-- Списать монеты. false — не хватает или профиль не загружен.
+function DataService.spendCoins(player: Player, amount: number): boolean
+	assert(amount >= 0 and amount == math.floor(amount), "Некорректная сумма")
+	local data = DataService.get(player)
+	if data == nil or data.coins < amount then
+		return false
+	end
+	data.coins -= amount
+	DataService.publish(player)
+	return true
 end
 
 -- Сколько боссов пройдено по порядку (открыт следующий за ним).
 function DataService.getBossProgress(player: Player): number
-	return DataService.get(player).bossProgress
+	local data = DataService.get(player)
+	return if data then data.bossProgress else 0
 end
 
 --[[
@@ -90,6 +158,9 @@ end
 ]]
 function DataService.recordBossWin(player: Player, bossId: string, order: number, reward: number): (boolean, number)
 	local data = DataService.get(player)
+	if data == nil then
+		return false, 0
+	end
 	local clears = data.bossClears[bossId] or 0
 	data.bossClears[bossId] = clears + 1
 	if order == data.bossProgress + 1 then
@@ -97,9 +168,49 @@ function DataService.recordBossWin(player: Player, bossId: string, order: number
 	end
 	local firstClear = clears == 0
 	local granted = if firstClear then math.max(0, math.floor(reward)) else 0
-	data.coins += granted
+	data.coins = math.min(MAX_COINS, data.coins + granted)
 	DataService.publish(player)
 	return firstClear, granted
+end
+
+local function load(player: Player)
+	if loading[player] or sessions[player] then
+		return -- уже загружается (PlayerAdded и Start могут встретить одного игрока дважды)
+	end
+	loading[player] = true
+	local ok, result = pcall(Backend.start, player)
+	loading[player] = nil
+	local session: Session.Session? = if ok then result else nil
+	if not ok then
+		warn(`[DataService] Ошибка загрузки профиля {player.UserId}: {result}`)
+	end
+	if session == nil then
+		if player.Parent ~= nil then
+			player:Kick(
+				"Не удалось загрузить сохранения. Попробуйте зайти ещё раз через минуту."
+			)
+		end
+		return
+	end
+	if player.Parent == nil then
+		session.endSession() -- вышел, пока грузили
+		return
+	end
+	sessions[player] = session
+	session.onEnded(function()
+		sessions[player] = nil
+		-- Сессию закрыли не мы (профиль открыт на другом сервере) — дальше играть здесь нельзя.
+		local parent: Instance? = player.Parent
+		if parent ~= nil then
+			player:Kick(
+				"Ваши сохранения открыты на другом сервере. Перезайдите в игру."
+			)
+		end
+	end)
+	for _, callback in loadedCallbacks do
+		task.spawn(callback, player)
+	end
+	DataService.publish(player)
 end
 
 function DataService.Init()
@@ -108,13 +219,28 @@ function DataService.Init()
 		return true, nil
 	end)
 	RequestRouter.register("GetProfile", function(player: Player)
-		return true, ProfileSchema.toPublic(DataService.get(player))
+		local data = DataService.get(player)
+		if data == nil then
+			return false, "ProfileLoading" -- профиль придёт каналом Profile после загрузки
+		end
+		return true, ProfileSchema.toPublic(data)
+	end)
+	Players.PlayerAdded:Connect(function(player: Player)
+		task.spawn(load, player)
 	end)
 	Players.PlayerRemoving:Connect(function(player: Player)
-		profiles[player] = nil
+		local session = sessions[player]
+		sessions[player] = nil
+		if session then
+			session.endSession()
+		end
 	end)
 end
 
-function DataService.Start() end
+function DataService.Start()
+	for _, player in Players:GetPlayers() do
+		task.spawn(load, player)
+	end
+end
 
 return DataService

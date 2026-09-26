@@ -28,6 +28,7 @@ luau-lsp analyze \
 	--sourcemap=sourcemap.json \
 	--definitions="$DEFINITIONS" \
 	--ignore="Packages/**" \
+	--ignore="ServerPackages/**" \
 	src
 
 echo "== тесты (lune)"

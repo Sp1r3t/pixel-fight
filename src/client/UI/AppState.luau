@@ -112,6 +112,10 @@ export type Actions = {
 	joinRoom: (code: string) -> (),
 	leaveRoom: () -> (),
 	startCpu: (level: number) -> (),
+	-- Покупки.
+	buyCharacter: (characterId: string) -> (), -- за монеты
+	promptPass: (characterId: string) -> (), -- Game Pass за Robux
+	promptProduct: (key: string) -> (), -- Developer Product (пропуск босса, монеты)
 	leaveMatch: () -> (),
 	saveControls: (layout: ControlsLayout.Layout) -> (),
 	-- Сенсорное управление в бою → InputController.
@@ -215,6 +219,9 @@ function AppState.new(scope: Scope): AppState
 			joinRoom = function(_code: string) end,
 			leaveRoom = noop,
 			startCpu = function(_level: number) end,
+			buyCharacter = function(_characterId: string) end,
+			promptPass = function(_characterId: string) end,
+			promptProduct = function(_key: string) end,
 			leaveMatch = noop,
 			saveControls = function(_layout: ControlsLayout.Layout) end,
 			touchPress = function(_bit: number) end,

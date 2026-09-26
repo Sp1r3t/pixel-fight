@@ -14,6 +14,9 @@ local StarterGui = game:GetService("StarterGui")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
+local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
+local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local InputController = require(script.Parent.InputController)
 local UI = script.Parent.Parent.UI
 local App = require(UI.App)
@@ -34,6 +37,8 @@ local QUEUE_REASON_TEXT: { [string]: string } = {
 	TeleportFailed = "Не удалось подключиться к серверу матча",
 }
 
+local NOT_CONFIGURED = "Товар ещё не настроен: укажите его ID в Config/Monetization"
+
 local ERROR_TEXT: { [string]: string } = {
 	CharacterNotAvailable = "Этот боец пока недоступен",
 	BossLocked = "Сначала победите предыдущего босса",
@@ -46,6 +51,9 @@ local ERROR_TEXT: { [string]: string } = {
 	RateLimited = "Слишком часто — подождите секунду",
 	NotInMatch = "Вы не в бою",
 	ServerError = "Ошибка сервера, попробуйте ещё раз",
+	NotEnoughCoins = "Не хватает монет",
+	AlreadyOwned = "Этот боец уже открыт",
+	ProfileLoading = "Сохранения ещё загружаются — секунду",
 }
 
 local scope: Fusion.Scope<typeof(Fusion)>? = nil
@@ -92,6 +100,34 @@ function UIController.Init()
 	end
 	appState.actions.startCpu = function(level: number)
 		request("StartCpu", { level = level, characterId = characterId() })
+	end
+	appState.actions.buyCharacter = function(id: string)
+		request("BuyCharacter", { characterId = id })
+	end
+	appState.actions.promptPass = function(id: string)
+		local passId = Monetization.gamePasses[id] or 0
+		if passId == 0 then
+			AppState.notify(appState, NOT_CONFIGURED, 4)
+			return
+		end
+		pcall(function()
+			game:GetService("MarketplaceService"):PromptGamePassPurchase(Players.LocalPlayer, passId)
+		end)
+	end
+	appState.actions.promptProduct = function(key: string)
+		local productId = 0
+		for _, product in Monetization.products do
+			if product.key == key then
+				productId = product.id
+			end
+		end
+		if productId == 0 then
+			AppState.notify(appState, NOT_CONFIGURED, 4)
+			return
+		end
+		pcall(function()
+			game:GetService("MarketplaceService"):PromptProductPurchase(Players.LocalPlayer, productId)
+		end)
 	end
 	appState.actions.leaveMatch = function()
 		request("LeaveMatch", nil)
@@ -145,6 +181,23 @@ function UIController.Start()
 			end
 		elseif kind == "Reward" and type(payload) == "table" and type(payload.coins) == "number" then
 			AppState.notify(appState, `Победа! +{payload.coins} монет`, 4)
+		elseif kind == "Purchase" and type(payload) == "table" then
+			-- Покупка прошла (данные уже обновились каналом Profile).
+			if payload.kind == "Character" and type(payload.characterId) == "string" then
+				local def = CharacterRegistry.get(payload.characterId)
+				AppState.notify(appState, `Боец {if def then def.displayName else "?"} открыт!`, 4)
+			elseif payload.kind == "Coins" and type(payload.amount) == "number" then
+				AppState.notify(appState, `+{payload.amount} монет`, 4)
+			elseif payload.kind == "SkipBoss" then
+				local boss = if type(payload.bossId) == "string" then BossRegistry.get(payload.bossId) else nil
+				AppState.notify(
+					appState,
+					if boss
+						then `Босс {boss.order} ({boss.name}) засчитан`
+						else "Все боссы уже пройдены",
+					4
+				)
+			end
 		end
 	end)
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")

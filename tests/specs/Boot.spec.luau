@@ -40,7 +40,7 @@ describe("Клиент", function()
 				{ button = "Одиночная игра", screen = "BossMap" },
 				{ button = "Мультиплеер", screen = "ModeSelect" },
 				{ button = "Персонажи", screen = "CharacterSelect" },
-				{ button = "Магазин", screen = "PlaceholderScreen" },
+				{ button = "Магазин", screen = "Shop" },
 				{ button = "Управление", screen = "ControlsSettings" },
 			}
 			for _, section in sections do
@@ -83,12 +83,16 @@ describe("Клиент", function()
 			expect(runtime.findByName(runtime.findByName(roster, "mira"), "ChosenMark").Visible).toBe(true)
 			expect(runtime.findByName(runtime.findByName(roster, "rook"), "ChosenMark").Visible).toBe(false)
 
-			-- Платный персонаж: покупка появится на этапе 9, кнопка неактивна.
+			-- Платный персонаж: не выбирается, кнопка ведёт в магазин.
 			runtime.fire(runtime.findByName(roster, "ashka"), "Activated")
 			game.step(2)
 			expect(client.findText("ASHKA", "TextLabel") ~= nil).toBeTruthy()
-			client.click("Купить (этап 9)")
+			client.click("Купить в магазине")
 			game.step(2)
+			expect(client.find("Shop") ~= nil).toBeTruthy()
+			client.click("← Назад")
+			game.step(2)
+			roster = client.find("Roster")
 			expect(runtime.findByName(runtime.findByName(roster, "ashka"), "ChosenMark").Visible).toBe(false)
 
 			-- Выбор отражается в главном меню.

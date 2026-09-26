@@ -36,6 +36,7 @@ local SERVICE_MAPPING: Mapping = {
 	},
 	ServerScriptService = {
 		Server = "src/server",
+		ServerPackages = "ServerPackages",
 	},
 	StarterPlayer = {
 		StarterPlayerScripts = {

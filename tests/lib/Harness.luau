@@ -15,6 +15,7 @@ local RobloxRequire = require("./RobloxRequire")
 local NetHub = require("./NetHub")
 
 local TRANSPORT_PATH = "src/shared/Net/Transport.luau"
+local PROFILE_BACKEND_PATH = "src/server/Data/ProfileStoreBackend.luau"
 
 export type Client = {
 	player: any,
@@ -33,10 +34,11 @@ export type Game = {
 	server: RobloxRuntime.Runtime,
 	serverLoader: RobloxRequire.Loader,
 	clients: { Client },
-	addClient: (name: string, teleportData: any?) -> Client,
+	addClient: (name: string, teleportData: any?, userId: number?) -> Client,
 	removeClient: (client: Client) -> (),
 	step: (frames: number?) -> (),
 	serverRequire: (...string) -> any,
+	backend: any, -- хранилище профилей в памяти (вместо ProfileStore)
 	errors: () -> { string },
 	warnings: () -> { string },
 }
@@ -53,10 +55,22 @@ export type Options = {
 	jobId: string?,
 	privateServerId: string?,
 	memoryStore: any?,
+	backend: any?, -- общее хранилище профилей (несколько «серверов» — один объект)
+	-- Подмена модулей на сервере и клиентах: путь файла → значение (например, конфиг с тестовыми ID).
+	overrides: { [string]: any }?,
 	firstUserId: number?, -- с какого UserId нумеровать клиентов (разные «серверы» — разные игроки)
 }
 
 function Harness.new(options: Options?): Game
+	local function withOverrides(base: { [string]: any }): { [string]: any }
+		if options and options.overrides then
+			for path, value in options.overrides do
+				base[path] = value
+			end
+		end
+		return base
+	end
+
 	local world = RobloxRuntime.newWorld({
 		screenSize = if options then options.screenSize else nil,
 		studio = if options then options.studio else nil,
@@ -72,10 +86,17 @@ function Harness.new(options: Options?): Game
 	table.insert(world.stepHooks, hub.step)
 
 	local server = world.runtime({ isClient = false })
+	-- Профили — в памяти (ProfileStore требует DataStore и task.wait, которых в Lune нет).
+	local backend = if options and options.backend then options.backend else nil
+	if backend == nil then
+		local backendLoader = RobloxRequire.new({ globals = server.globals, services = server.services })
+		backend =
+			backendLoader.require(backendLoader.get("ServerScriptService", "Server", "Data", "MemoryBackend")).new()
+	end
 	local serverLoader = RobloxRequire.new({
 		globals = server.globals,
 		services = server.services,
-		overrides = { [TRANSPORT_PATH] = hub.serverTransport() },
+		overrides = withOverrides({ [TRANSPORT_PATH] = hub.serverTransport(), [PROFILE_BACKEND_PATH] = backend }),
 		gameProperties = {
 			PlaceId = if options and options.placeId then options.placeId else 0,
 			JobId = if options and options.jobId then options.jobId else "test-job",
@@ -90,6 +111,7 @@ function Harness.new(options: Options?): Game
 	game.hub = hub
 	game.server = server
 	game.serverLoader = serverLoader
+	game.backend = backend
 	game.clients = {}
 
 	function game.serverRequire(...: string): any
@@ -97,14 +119,16 @@ function Harness.new(options: Options?): Game
 	end
 
 	local nextUserId = if options and options.firstUserId then options.firstUserId else 1
-	function game.addClient(name: string, teleportData: any?): Client
-		local player = world.addPlayer(name, nextUserId, teleportData)
-		nextUserId += 1
+	function game.addClient(name: string, teleportData: any?, userId: number?): Client
+		local player = world.addPlayer(name, userId or nextUserId, teleportData)
+		if userId == nil then
+			nextUserId += 1
+		end
 		local runtime = world.runtime({ isClient = true, localPlayer = player })
 		local loader = RobloxRequire.new({
 			globals = runtime.globals,
 			services = runtime.services,
-			overrides = { [TRANSPORT_PATH] = hub.clientTransport(player) },
+			overrides = withOverrides({ [TRANSPORT_PATH] = hub.clientTransport(player) }),
 		})
 		loader.run(loader.get("StarterPlayer", "StarterPlayerScripts", "Client"))
 

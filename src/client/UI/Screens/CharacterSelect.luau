@@ -2,7 +2,7 @@
 --[[
 	Выбор персонажа: сетка из 16 бойцов + панель с превью, характеристиками и приёмами.
 	Данные берутся из Config/Characters через CharacterRegistry — экран сам ничего не хранит.
-	Покупка платных персонажей подключится на этапе 9 (сейчас кнопка неактивна).
+	Платного персонажа, которого ещё нет, кнопка ведёт в магазин (Game Pass или монеты).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -378,14 +378,15 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				} :: { Fusion.Child },
 			},
 			Button(scope, {
+				Name = "ChooseButton",
 				Text = scope:Computed(function(use)
 					if not use(isOwned) then
-						return "Купить (этап 9)"
+						return "Купить в магазине"
 					end
 					return if use(isChosen) then "Выбран" else "Выбрать"
 				end),
 				Disabled = scope:Computed(function(use)
-					return not use(isOwned) or use(isChosen)
+					return use(isOwned) and use(isChosen)
 				end),
 				Color = Theme.Colors.ButtonPrimary,
 				AnchorPoint = Vector2.new(0.5, 1),
@@ -394,6 +395,8 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				OnClick = function()
 					if peek(isOwned) then
 						state.selectedCharacterId:set(def.id)
+					else
+						AppState.navigate(state, "Shop")
 					end
 				end,
 			}),
