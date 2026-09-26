@@ -258,7 +258,7 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				BackgroundTransparency = 1,
 				Font = Theme.Fonts.Body,
 				Position = UDim2.new(0.5, 0, 1, -6),
-				Size = UDim2.new(0, 440, 0, 30),
+				Size = UDim2.fromOffset(440, 30),
 				Text = CONTROLS_HINT,
 				TextColor3 = Theme.Colors.Text,
 				TextSize = 13,
