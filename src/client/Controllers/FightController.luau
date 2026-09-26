@@ -29,6 +29,10 @@ local CameraController = require(script.Parent.CameraController)
 local EffectsController = require(script.Parent.EffectsController)
 local InputController = require(script.Parent.InputController)
 local SparkStyles = require(script.Parent.Parent.Fight.SparkStyles)
+local ProjectileView = require(script.Parent.Parent.Fight.ProjectileView)
+local Cinematics = require(script.Parent.Parent.Fight.Cinematics)
+local CosmeticStyles = require(script.Parent.Parent.Fight.CosmeticStyles)
+local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 local UIController = require(script.Parent.UIController)
 
 local peek = Fusion.peek
@@ -73,8 +77,20 @@ local views: { [number]: FighterView.FighterView } = {}
 local buffer = SnapshotBuffer.new()
 local pendingEvents: { NetEvent } = {}
 local lastSample: SnapshotBuffer.Sample? = nil
+local projectileViews: ProjectileView.ProjectileViews? = nil
+-- Deluxe-косметика: накопители частиц ауры и шлейфа по слотам.
+local auraCarry: { [number]: number } = {}
+local trailCarry: { [number]: number } = {}
+local cosmeticRng = Rng.new(31)
 
 local function cleanup()
+	Cinematics.stop()
+	if projectileViews then
+		projectileViews.destroy()
+		projectileViews = nil
+	end
+	table.clear(auraCarry)
+	table.clear(trailCarry)
 	for _, view in views do
 		view.destroy()
 	end
@@ -264,6 +280,7 @@ local function onMatchStart(payload: any)
 	battleInfo = info
 	local built = Arena.build(info.arenaId, Workspace)
 	arena = built
+	projectileViews = ProjectileView.new(built.folder)
 	for _, fighter in info.fighters do
 		local def = CharacterRegistry.get(fighter.characterId)
 		if def then
@@ -447,8 +464,14 @@ local function playEvent(event: NetEvent)
 		local defenderX = if lastSample and lastSample.fighters[event.s] then lastSample.fighters[event.s].x else x
 		local direction = if defenderX >= x then 1 else -1
 		local strength = if event.t == "Super" then 1.4 else strengthOf(event.v)
-		local hitY = if kind == "CinematicHit" then y + 3 else y
-		EffectsController.hitSpark(x, hitY, strength, style.primary, style.secondary, direction)
+		local hitX, hitY = x, y
+		if kind == "CinematicHit" and defenderView then
+			-- В ролике противник смещён постановкой — искры там, где его видно.
+			local position = defenderView.anchor.CFrame.Position
+			hitX, hitY = position.X, position.Y
+			Cinematics.hit()
+		end
+		EffectsController.hitSpark(hitX, hitY, strength, style.primary, style.secondary, direction)
 		if defenderView then
 			defenderView.flash(1)
 		end
@@ -474,8 +497,89 @@ local function playEvent(event: NetEvent)
 		CameraController.shake(0.3, 0.3)
 	elseif kind == "CinematicStart" then
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
+		local attackerView = views[event.s]
+		local defenderView = views[3 - event.s]
+		local sample = lastSample
+		if attackerView and defenderView and arena and sample then
+			local def = attackerView.def
+			Cinematics.start({
+				folder = arena.folder,
+				attacker = attackerView,
+				defender = defenderView,
+				attackerX = sample.fighters[event.s].x,
+				defenderX = sample.fighters[3 - event.s].x,
+				duration = (event.v or 120) / TICK,
+				hits = def.super.cinematic.hits,
+			})
+			local state = UIController.getState()
+			if state then
+				AppState.showBanner(
+					state,
+					string.upper(def.super.move.name),
+					1.2,
+					Color3.fromHex(def.cosmetics.superFlash)
+				)
+			end
+		end
 	elseif kind == "CinematicEnd" then
+		Cinematics.stop()
 		CameraController.shake(0.7, 0.35)
+	elseif kind == "Parry" then
+		-- Контратака: белая вспышка, «звон» и надпись.
+		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.15, 0.5)
+		EffectsController.hitSpark(x, y, 1, Color3.new(1, 1, 1), Color3.fromRGB(150, 220, 255), 1)
+		CameraController.shake(0.3, 0.2)
+		local state = UIController.getState()
+		if state then
+			AppState.showBanner(state, "COUNTER!", 0.8, BANNER_GOLD)
+		end
+	elseif kind == "Vanish" or kind == "Appear" then
+		-- Телепорт: облачко дыма, боец исчезает до появления.
+		local view = views[event.s]
+		if view then
+			view.setVisible(kind == "Appear")
+			local color = Color3.fromHex(view.def.palette.accent)
+			EffectsController.burst(Vector3.new(x, y + 3, 0), {
+				count = 14,
+				color = color,
+				secondary = Color3.fromRGB(40, 30, 60),
+				speed = 7,
+				size = 0.5,
+				life = 0.35,
+				spread = 360,
+			})
+		end
+	elseif kind == "Projectile" then
+		local view = views[event.s]
+		if view then
+			local color = Color3.fromHex(view.def.palette.accent)
+			EffectsController.burst(Vector3.new(x, y, 0), {
+				count = 6,
+				color = color,
+				secondary = Color3.new(1, 1, 1),
+				speed = 6,
+				size = 0.3,
+				life = 0.2,
+				spread = 360,
+			})
+		end
+	elseif kind == "ProjectileEnd" then
+		if event.t == "Clash" or event.t == "Swept" or event.t == "Ground" or event.t == "Wall" then
+			local strong = event.t == "Clash" or event.t == "Swept"
+			EffectsController.burst(Vector3.new(x, y, 0), {
+				count = if strong then 16 else 6,
+				color = Color3.new(1, 1, 1),
+				secondary = Color3.fromRGB(255, 214, 90),
+				speed = if strong then 14 else 6,
+				size = 0.35,
+				life = 0.3,
+				gravity = 6,
+				spread = 360,
+			})
+			if strong then
+				CameraController.shake(0.15, 0.1)
+			end
+		end
 	elseif kind == "Mechanic" then
 		-- Механика босса сработала (ярость): красная вспышка и надпись.
 		EffectsController.screenFlash(BANNER_RED, 0.4, 0.35)
@@ -520,6 +624,53 @@ local function updateHud(sample: SnapshotBuffer.Sample)
 	end
 end
 
+-- Deluxe-косметика: аура вокруг бойца и шлейф при рывках.
+local function updateCosmetics(slot: number, view: FighterView.FighterView, fighter: any, dt: number)
+	local cosmetics = view.def.cosmetics
+	local aura = CosmeticStyles.aura(cosmetics.aura)
+	local position = view.anchor.CFrame.Position
+	if aura and fighter.state ~= "KO" then
+		auraCarry[slot] = (auraCarry[slot] or 0) + dt * aura.rate
+		while (auraCarry[slot] or 0) >= 1 do
+			auraCarry[slot] -= 1
+			local color = aura.colors[Rng.integer(cosmeticRng, 1, #aura.colors)]
+			EffectsController.burst(
+				Vector3.new(
+					position.X + Rng.range(cosmeticRng, -aura.spread, aura.spread),
+					fighter.y + Rng.range(cosmeticRng, 0.3, 5),
+					-0.2
+				),
+				{
+					count = 1,
+					color = color,
+					speed = math.abs(aura.rise) + 0.5,
+					size = aura.size,
+					life = aura.life,
+					spread = 40,
+					direction = if aura.rise >= 0 then 90 else -90,
+				}
+			)
+		end
+	end
+	local trail = CosmeticStyles.trail(cosmetics.trail)
+	local dashing = fighter.state == "Dash" or fighter.state == "Backdash" or math.abs(fighter.vx) > 14
+	if trail and dashing then
+		trailCarry[slot] = (trailCarry[slot] or 0) + dt * 40
+		while (trailCarry[slot] or 0) >= 1 do
+			trailCarry[slot] -= 1
+			EffectsController.burst(Vector3.new(position.X, fighter.y + Rng.range(cosmeticRng, 1, 4.5), -0.1), {
+				count = 2,
+				color = trail.colors[1],
+				secondary = trail.colors[2],
+				speed = 1,
+				size = trail.size,
+				life = 0.3,
+				spread = 360,
+			})
+		end
+	end
+end
+
 local function onRenderStep(dt: number)
 	if matchId == nil then
 		return
@@ -531,10 +682,12 @@ local function onRenderStep(dt: number)
 	lastSample = sample
 
 	local minX, maxX, topY = math.huge, -math.huge, 0
+	Cinematics.update(dt)
 	for slot, fighter in sample.fighters do
 		local view = views[slot]
 		if view then
 			view.update(fighter, dt)
+			updateCosmetics(slot, view, fighter, dt)
 		end
 		minX = math.min(minX, fighter.x)
 		maxX = math.max(maxX, fighter.x)
@@ -542,6 +695,13 @@ local function onRenderStep(dt: number)
 	end
 	if minX <= maxX then
 		CameraController.setFocus(minX, maxX, topY)
+	end
+	local projectiles = projectileViews
+	if projectiles then
+		projectiles.update(sample.projectiles, function(owner: number): Types.Palette?
+			local view = views[owner]
+			return if view then view.def.palette else nil
+		end)
 	end
 	updateHud(sample)
 

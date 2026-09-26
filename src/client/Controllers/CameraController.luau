@@ -36,6 +36,8 @@ local current = { x = 0, y = 5, distance = 60 }
 local target = { x = 0, y = 5, distance = 60 }
 local shakes: { Shake } = {}
 local shakeSeed = 0
+-- Постановка ролика супера: камера наезжает на точку (x, y) с шириной кадра width.
+local override: { x: number, y: number, width: number }? = nil
 
 local function getCamera(): Camera?
 	return Workspace.CurrentCamera
@@ -61,6 +63,7 @@ end
 
 function CameraController.exitFight()
 	inFight = false
+	override = nil
 	table.clear(shakes)
 end
 
@@ -78,6 +81,12 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 		return
 	end
 	local tanV, tanH = viewTangents(camera)
+	local focus = override
+	if focus then
+		local distance = focus.width / (2 * tanH)
+		target.x, target.y, target.distance = focus.x, focus.y, distance
+		return
+	end
 	local width = math.clamp(maxX - minX + VIEW_MARGIN, MIN_VIEW_WIDTH, MAX_VIEW_WIDTH)
 	local distance = math.max(width / (2 * tanH), MIN_VIEW_HEIGHT / (2 * tanV))
 	local halfWidth = distance * tanH
@@ -98,6 +107,15 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 	if snapNext then
 		current.x, current.y, current.distance = centerX, centerY, distance
 		snapNext = false
+	end
+end
+
+-- Наезд камеры на время ролика супера (nil — вернуть обычное слежение).
+function CameraController.setOverride(x: number?, y: number?, width: number?)
+	if x and y and width then
+		override = { x = x, y = y, width = width }
+	else
+		override = nil
 	end
 end
 

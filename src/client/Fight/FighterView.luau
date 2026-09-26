@@ -18,6 +18,10 @@ export type FighterView = {
 	anchor: Part,
 	update: (fighter: Snapshot.FighterSnapshot, dt: number) -> (),
 	flash: (amount: number) -> (),
+	-- Смещение отрисовки (постановка роликов суперов): бой на сервере при этом стоит.
+	setOffset: (dx: number, dy: number) -> (),
+	-- Скрыть бойца (телепорт: исчез — появился).
+	setVisible: (visible: boolean) -> (),
 	destroy: () -> (),
 }
 
@@ -68,6 +72,7 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 	shadow.Parent = parent
 
 	local flashAmount = 0
+	local offsetX, offsetY = 0, 0
 
 	local view = {} :: FighterView
 	view.slot = slot
@@ -77,7 +82,7 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 	function view.update(fighter: Snapshot.FighterSnapshot, dt: number)
 		-- Атакующий боец чуть ближе к камере, чтобы его удар рисовался поверх противника.
 		local z = if fighter.state == "Attack" then 0.3 else 0.1 * slot
-		anchor.CFrame = CFrame.new(fighter.x, fighter.y + CENTER_OFFSET, z)
+		anchor.CFrame = CFrame.new(fighter.x + offsetX, fighter.y + offsetY + CENTER_OFFSET, z)
 
 		local shadowScale = math.clamp(1 - fighter.y / 12, 0.4, 1)
 		shadow.Size = Vector3.new(0.05, 3 * shadowScale, 2 * shadowScale)
@@ -96,6 +101,15 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 
 	function view.flash(amount: number)
 		flashAmount = math.max(flashAmount, amount)
+	end
+
+	function view.setOffset(dx: number, dy: number)
+		offsetX, offsetY = dx, dy
+	end
+
+	function view.setVisible(visible: boolean)
+		gui.Enabled = visible
+		shadow.Transparency = if visible then 0.55 else 1
 	end
 
 	function view.destroy()

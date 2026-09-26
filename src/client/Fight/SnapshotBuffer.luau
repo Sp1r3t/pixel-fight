@@ -54,6 +54,32 @@ local function interpolateFighter(a: FighterSnapshot, b: FighterSnapshot, t: num
 	return result
 end
 
+-- Снаряды сопоставляются по id: новые появляются, когда до них дошла картинка, исчезнувшие — пропадают.
+local function interpolateProjectiles(
+	a: { Snapshot.ProjectileSnapshot },
+	b: { Snapshot.ProjectileSnapshot },
+	t: number
+): { Snapshot.ProjectileSnapshot }
+	local byId: { [number]: Snapshot.ProjectileSnapshot } = {}
+	for _, projectile in b do
+		byId[projectile.id] = projectile
+	end
+	local result: { Snapshot.ProjectileSnapshot } = {}
+	for _, projectile in a do
+		local other = byId[projectile.id]
+		if other then
+			local copy = table.clone(projectile)
+			copy.x = lerp(projectile.x, other.x, t)
+			copy.y = lerp(projectile.y, other.y, t)
+			copy.age = lerp(projectile.age, other.age, t)
+			table.insert(result, copy)
+		elseif t < 0.5 then
+			table.insert(result, projectile)
+		end
+	end
+	return result
+end
+
 local HITSTOP_FLAG = Snapshot.Flags.Hitstop
 
 local function extrapolateFighter(a: FighterSnapshot, frames: number): FighterSnapshot
@@ -129,7 +155,12 @@ function SnapshotBuffer.new(delaySeconds: number?): Buffer
 					local other = b.fighters[slot]
 					fighters[slot] = if other then interpolateFighter(fighter, other, t) else fighter
 				end
-				return { frame = target, latest = snapshots[count], fighters = fighters, projectiles = a.projectiles }
+				return {
+					frame = target,
+					latest = snapshots[count],
+					fighters = fighters,
+					projectiles = interpolateProjectiles(a.projectiles, b.projectiles, t),
+				}
 			end
 		end
 

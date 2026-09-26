@@ -57,18 +57,20 @@ local function rushBot(seed)
 	end
 end
 
--- Сколько атак бота ИИ заблокировал за frames кадров.
-local function blocksAgainstRush(level, frames)
+-- Какую долю атак бота ИИ заблокировал за frames кадров.
+local function blockRateAgainstRush(level, frames)
 	local sim = Simulation.new({ characters = { "rook", "rook" } })
 	sim.fighters[2].tapDash = false
 	local bot = rushBot(level * 13)
 	local brain = BossAI.new(BossRegistry.profileForLevel(level), level * 31)
-	local blocks = 0
+	local blocks, hits = 0, 0
 	for _ = 1, frames do
 		Simulation.step(sim, { bot(sim, 1), BossAI.think(brain, sim, 2) })
 		for _, event in sim.events do
 			if event.kind == "Block" and event.slot == 2 then
 				blocks += 1
+			elseif event.kind == "Hit" and event.slot == 2 then
+				hits += 1
 			end
 		end
 		-- Бесконечный бой: восстанавливаем HP и позиции после нокаута.
@@ -77,7 +79,7 @@ local function blocksAgainstRush(level, frames)
 			Simulation.restoreHealth(sim)
 		end
 	end
-	return blocks
+	return blocks / math.max(1, blocks + hits)
 end
 
 describe("Боссы: конфиг", function()
@@ -259,9 +261,10 @@ describe("ИИ боссов", function()
 	end)
 
 	it("сильный ИИ блокирует натиск намного чаще слабого", function()
-		local weak = blocksAgainstRush(1, 2400)
-		local strong = blocksAgainstRush(18, 2400)
-		expect(strong > weak * 2 + 5).toBeTruthy()
+		local weak = blockRateAgainstRush(1, 3600)
+		local strong = blockRateAgainstRush(18, 3600)
+		expect(strong > weak + 0.15).toBeTruthy()
+		expect(weak < 0.3).toBeTruthy()
 	end)
 
 	it(

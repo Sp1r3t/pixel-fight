@@ -19,6 +19,7 @@ local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
+local Projectiles = require(ReplicatedStorage.Shared.Combat.Projectiles)
 local MatchFlow = require(ReplicatedStorage.Shared.Combat.MatchFlow)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -194,13 +195,25 @@ local function broadcast(match: Match)
 	for _, fighter in match.sim.fighters do
 		table.insert(fighters, Snapshot.fromFighter(fighter))
 	end
+	local projectiles = {}
+	for _, projectile in match.sim.projectiles do
+		table.insert(projectiles, {
+			id = projectile.id,
+			owner = projectile.owner,
+			kind = Projectiles.kindToIndex(projectile.kind),
+			x = projectile.x,
+			y = projectile.y,
+			direction = projectile.facing,
+			age = projectile.age,
+		})
+	end
 	local flow = match.flow
 	local encoded = Snapshot.encode({
 		frame = match.sim.frame,
 		phase = if flow then MatchFlow.phaseIndex(flow.phase) else 0,
 		timer = if flow then flow.timer else 0,
 		fighters = fighters,
-		projectiles = {},
+		projectiles = projectiles,
 	})
 	local events = if #match.pendingEvents > 0 then match.pendingEvents else nil
 	match.pendingEvents = {}

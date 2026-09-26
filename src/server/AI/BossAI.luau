@@ -31,6 +31,7 @@ local Fighter = require(ReplicatedStorage.Shared.Combat.Fighter)
 local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
 local Hitbox = require(ReplicatedStorage.Shared.Combat.Hitbox)
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
+local Specials = require(ReplicatedStorage.Shared.Combat.Specials)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 
 local StateMachine = require(script.Parent.StateMachine)
@@ -114,6 +115,7 @@ export type Brain = {
 	guardHold: number, -- «прочитанный» натиск: держать блок дольше
 	cautious: boolean, -- не входит в дальность ударов противника без нужды
 	approachHandled: boolean, -- по этому сближению противника уже решили
+	lastProjectile: number, -- по какому снаряду уже решили
 	punishWindow: number, -- на сколько кадров противник откроется после нашего блокстана
 	wasBlocked: boolean, -- последний удар плана заблокирован
 	anticipateJump: boolean, -- «прочитал» прыжок: реагирует без задержки
@@ -336,6 +338,33 @@ local function predict(brain: Brain, frames: number): (number, number, Hitbox.Hu
 	return x, y, kind
 end
 
+-- Приёмы, дальность которых определяется не хитбоксом на месте: снаряды, рывки, прыжки, телепорт.
+local RANGED_KINDS: { [string]: boolean } = {
+	Projectile = true,
+	ArcProjectile = true,
+	Boomerang = true,
+	GroundWave = true,
+	Trap = true,
+	Teleport = true,
+	RushStrike = true,
+	ArmorCharge = true,
+	SpinDash = true,
+	OverheadLeap = true,
+	DiveKick = true,
+	LongThrust = true,
+	Rush = true,
+	Counter = true,
+}
+
+-- Снаряды летят сами: угрозой считается сам снаряд, а не бросок (см. reactToProjectile).
+local PROJECTILE_KINDS: { [string]: boolean } = {
+	Projectile = true,
+	ArcProjectile = true,
+	Boomerang = true,
+	GroundWave = true,
+	Trap = true,
+}
+
 -- Попадёт ли приём, если нажать его сейчас (по видимой и предсказанной позиции противника).
 local function wouldHit(brain: Brain, moveId: string): boolean
 	local move = moveData(brain, moveId)
@@ -343,6 +372,21 @@ local function wouldHit(brain: Brain, moveId: string): boolean
 		return false
 	end
 	local me = brain.me
+	if moveId == "Special" or moveId == "Super" then
+		local behaviour = Specials.behaviour(me, moveId)
+		if behaviour and RANGED_KINDS[behaviour.kind] then
+			if behaviour.kind == "Counter" then
+				return false -- стойка контратаки — только в ответ на атаку (reactToThreat)
+			end
+			local minRange, maxRange, grounded = Specials.reach(me, moveId)
+			local x, y, kind: Hitbox.HurtKind = predict(brain, move.startup)
+			if kind == "None" or (grounded and y > 0.5) then
+				return false
+			end
+			local distance = math.abs(x - me.x)
+			return distance >= minRange and distance <= maxRange
+		end
+	end
 	local reach = if MoveBook.isNormal(moveId) then me.stats.rangeMultiplier else 1
 	local facing = brain.dir
 	for _, offset in { 0, math.floor(move.active / 2) } do
@@ -359,10 +403,21 @@ local function wouldHit(brain: Brain, moveId: string): boolean
 end
 
 -- Дальность приёма противника (насколько близко опасно стоять).
-local function opponentReach(seen: Observation, moveId: string): number
+local function opponentReach(brain: Brain, moveId: string): number
+	local seen = brain.seen
 	local move = MoveBook.get(seen.characterId, moveId)
 	if move == nil then
 		return 0
+	end
+	if moveId == "Special" or moveId == "Super" then
+		local opponent = Simulation.opponentOf(brain.sim, brain.me)
+		local behaviour = Specials.behaviour(opponent, moveId)
+		if behaviour and PROJECTILE_KINDS[behaviour.kind] then
+			return 0
+		elseif behaviour and RANGED_KINDS[behaviour.kind] then
+			local _, maxRange = Specials.reach(opponent, moveId)
+			return maxRange + 0.6
+		end
 	end
 	return move.hitbox.x + move.hitbox.w / 2 + Combat.HurtboxWidth / 2 + 0.6
 end
@@ -450,7 +505,7 @@ local function opponentCanHit(brain: Brain): boolean
 	if DISABLED[state] or state == "Blockstun" or seen.airborne then
 		return false
 	end
-	return brain.dist < opponentReach(seen, "Light2")
+	return brain.dist < opponentReach(brain, "Light2")
 end
 
 --[[
@@ -508,11 +563,26 @@ local function reactToThreat(brain: Brain): string?
 	if key == brain.lastAttackKey then
 		return nil -- по этой атаке уже решили
 	end
-	if brain.dist > opponentReach(seen, seen.move :: string) + math.abs(seen.vx) * remaining / TICK then
+	if brain.dist > opponentReach(brain, seen.move :: string) + math.abs(seen.vx) * remaining / TICK then
 		return nil -- не достанет
 	end
 	brain.lastAttackKey = key
 	local profile = brain.profile
+	-- Стойка контратаки успевает, если до удара противника ещё есть время (и это не захват).
+	local mine = Specials.behaviour(brain.me, "Special")
+	local untilHit = move.startup - (seen.moveFrame + profile.reactionFrames)
+	if
+		mine
+		and mine.kind == "Counter"
+		and canAct(brain.me)
+		and brain.me.specialCooldown == 0
+		and move.guard ~= "Unblockable"
+		and untilHit > mine.move.startup + 1
+		and chance(brain, profile.punishChance * 0.6)
+	then
+		startPlan(brain, { { button = "Special" } })
+		return "Attack"
+	end
 	-- Контр-супер: неуязвим на старте, поэтому перебивает атаку.
 	if superReady(brain.me) and canAct(brain.me) and chance(brain, profile.superUsage * 0.35) then
 		startPlan(brain, { { button = "Super" } })
@@ -572,6 +642,41 @@ local function reactToApproach(brain: Brain): string?
 	end
 	startPlan(brain, extendPlan(brain, starter))
 	return "Attack"
+end
+
+-- Летит снаряд противника → блок (или прыжок через низкую волну).
+local function reactToProjectile(brain: Brain): string?
+	local me = brain.me
+	if not canAct(me) then
+		return nil
+	end
+	local profile = brain.profile
+	local lag = profile.reactionFrames / TICK
+	for _, projectile in brain.sim.projectiles do
+		if projectile.owner ~= me.slot and projectile.kind ~= "Mine" and projectile.id ~= brain.lastProjectile then
+			-- Снаряд тоже виден с задержкой реакции.
+			local seenX = projectile.x - projectile.vx * lag
+			local approaching = (me.x - seenX) * projectile.vx > 0
+			local speed = math.abs(projectile.vx)
+			local frames = if speed > 0
+				then (math.abs(me.x - seenX) - 1.5) / speed * TICK - profile.reactionFrames
+				else 0
+			if approaching and frames < 30 then
+				brain.lastProjectile = projectile.id
+				if projectile.kind == "Wave" and chance(brain, profile.jumpChance + profile.readChance * 0.5) then
+					return "JumpIn"
+				end
+				if chance(brain, profile.blockChance) then
+					local correct = chance(brain, profile.guardRead)
+					local low = projectile.move.guard == "Low"
+					brain.guardLow = if correct then low else not low
+					return "Defend"
+				end
+				return nil
+			end
+		end
+	end
+	return nil
 end
 
 -- Противник прыгнул → сбивать?
@@ -643,7 +748,7 @@ local function decide(brain: Brain): string?
 
 	-- Противник часто атакует вблизи — «прочитал» натиск: держит блок и ждёт ошибки.
 	local pressure = pressureRate(brain.habits)
-	if dist < opponentReach(seen, "Heavy") and pressure > 0.6 then
+	if dist < opponentReach(brain, "Heavy") and pressure > 0.6 then
 		local readIt = math.min(1, pressure / 2) * (profile.readChance * 0.7 + profile.blockChance * 0.5)
 		if chance(brain, readIt) then
 			brain.guardLow = chance(brain, lowRatio(brain.habits) * (0.5 + profile.readChance))
@@ -692,7 +797,7 @@ local function decide(brain: Brain): string?
 		brain.intent = "Back"
 	else
 		-- На своей дистанции: либо держит защиту, либо подшагивает.
-		local threatRange = dist < opponentReach(seen, "Heavy") + 1
+		local threatRange = dist < opponentReach(brain, "Heavy") + 1
 		local defensive = 1 - profile.aggression
 		if threatRange and chance(brain, defensive * (0.3 + profile.readChance)) then
 			brain.intent = "Guard"
@@ -713,7 +818,11 @@ states.Neutral = {
 	end,
 	update = function(brain: Brain): string?
 		local profile = brain.profile
-		local reaction = reactToThreat(brain) or reactToWhiff(brain) or reactToJump(brain) or reactToApproach(brain)
+		local reaction = reactToThreat(brain)
+			or reactToProjectile(brain)
+			or reactToWhiff(brain)
+			or reactToJump(brain)
+			or reactToApproach(brain)
 		if reaction then
 			return reaction
 		end
@@ -740,7 +849,7 @@ states.Neutral = {
 		if intent == "Forward" then
 			-- Осторожный боец не входит в дальность ударов противника «просто так»,
 			-- а останавливается на её границе и ждёт промаха (футсис).
-			local edge = opponentReach(brain.seen, "Heavy") + 0.3
+			local edge = opponentReach(brain, "Heavy") + 0.3
 			if brain.dist < 2.3 or (brain.cautious and brain.dist < edge) then
 				brain.intent = "Idle"
 			else
@@ -1114,6 +1223,7 @@ function BossAI.new(profile: AiProfile, seed: number): Brain
 		guardHold = 0,
 		cautious = false,
 		approachHandled = false,
+		lastProjectile = -1,
 		punishWindow = 0,
 		wasBlocked = false,
 		anticipateJump = false,

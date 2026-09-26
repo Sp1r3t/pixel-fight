@@ -21,6 +21,9 @@ local InputBits = require(script.Parent.InputBits)
 local Fighter = require(script.Parent.Fighter)
 local MoveBook = require(script.Parent.MoveBook)
 local Hitbox = require(script.Parent.Hitbox)
+local SimState = require(script.Parent.SimState)
+local Projectiles = require(script.Parent.Projectiles)
+local Specials = require(script.Parent.Specials)
 
 type Fighter = Fighter.Fighter
 type FrameInput = InputBits.FrameInput
@@ -34,36 +37,9 @@ local METER_MAX = GameConfig.SuperMeter.Max
 local PUSH_SCALE = 2 -- knockback из фреймдаты → скорость отбрасывания (студ/с)
 local HISTORY_SIZE = Combat.MaxLagCompensationFrames
 
-export type SimEvent = {
-	kind: string, -- "Jump" | "Land" | "Dash" | "Hit" | "Block" | "KO" | "SuperFlash" | ...
-	slot: number, -- о каком бойце событие
-	x: number?,
-	y: number?,
-	value: number?, -- урон, длительность и т.п.
-	attacker: number?, -- кто ударил
-	tag: string?, -- уточнение: "Counter", "Heavy", id сценария супера, ...
-}
-
-export type Cinematic = {
-	attacker: number,
-	defender: number,
-	frame: number,
-	duration: number, -- кадры
-	hits: number,
-	damage: number, -- суммарный урон серии
-	dealt: number,
-	hitsDone: number,
-}
-
-export type Sim = {
-	frame: number,
-	fighters: { Fighter },
-	inputEnabled: boolean, -- false во время заставок раунда
-	events: { SimEvent }, -- события последнего шага (для эффектов на клиенте)
-	freeze: number, -- кадры вспышки супера (всё замирает)
-	freezeOwner: number,
-	cinematic: Cinematic?,
-}
+export type SimEvent = SimState.SimEvent
+export type Cinematic = SimState.Cinematic
+export type Sim = SimState.Sim
 
 export type SimOptions = {
 	characters: { string }, -- два id персонажей
@@ -72,30 +48,8 @@ export type SimOptions = {
 
 local Simulation = {}
 
-local function emitAt(
-	sim: Sim,
-	kind: string,
-	fighter: Fighter,
-	x: number,
-	y: number,
-	value: number?,
-	attacker: number?,
-	tag: string?
-)
-	table.insert(sim.events, {
-		kind = kind,
-		slot = fighter.slot,
-		x = x,
-		y = y,
-		value = value,
-		attacker = attacker,
-		tag = tag,
-	})
-end
-
-local function emit(sim: Sim, kind: string, fighter: Fighter, value: number?, attacker: number?, tag: string?)
-	emitAt(sim, kind, fighter, fighter.x, fighter.y, value, attacker, tag)
-end
+local emitAt = SimState.emitAt
+local emit = SimState.emit
 
 function Simulation.new(options: SimOptions): Sim
 	assert(#options.characters == 2, "Симуляция рассчитана на двух бойцов")
@@ -111,6 +65,8 @@ function Simulation.new(options: SimOptions): Sim
 		freeze = 0,
 		freezeOwner = 0,
 		cinematic = nil,
+		projectiles = {},
+		nextProjectileId = 0,
 	}
 	Simulation.resetPositions(sim)
 	return sim
@@ -141,6 +97,7 @@ function Simulation.resetPositions(sim: Sim)
 	local half = Physics.StartDistance / 2
 	sim.freeze = 0
 	sim.cinematic = nil
+	table.clear(sim.projectiles)
 	for _, fighter in sim.fighters do
 		fighter.x = if fighter.slot == 1 then -half else half
 		fighter.y = 0
@@ -176,7 +133,7 @@ function Simulation.replaceFighter(sim: Sim, slot: number, characterId: string, 
 end
 
 function Simulation.opponentOf(sim: Sim, fighter: Fighter): Fighter
-	return sim.fighters[3 - fighter.slot]
+	return SimState.opponentOf(sim, fighter)
 end
 
 -- Компенсация пинга для атак бойца в слоте (сервер вызывает по пингу игрока; у ИИ — 0).
@@ -322,6 +279,14 @@ local function startMove(sim: Sim, fighter: Fighter, id: string, button: number)
 	elseif id == "Special" then
 		emit(sim, "Special", fighter)
 	end
+	if id == "Special" or id == "Super" then
+		Specials.onStart(sim, fighter, id)
+		-- Кадр 0 приёма: движение (рывки, прыжки) начинается сразу.
+		local behaviour = Specials.behaviour(fighter, id)
+		if behaviour then
+			Specials.update(sim, fighter, behaviour)
+		end
+	end
 	return true
 end
 
@@ -350,7 +315,13 @@ local function tryStartAttack(sim: Sim, fighter: Fighter, allowed: { string }?):
 		return allowed == nil or table.find(allowed, id) ~= nil
 	end
 
-	if buffered(fighter, InputBits.Super) and not airborne and fighter.meter >= METER_MAX and permitted("Super") then
+	if
+		buffered(fighter, InputBits.Super)
+		and not airborne
+		and fighter.meter >= METER_MAX
+		and permitted("Super")
+		and Specials.canStart(sim, fighter, "Super")
+	then
 		return startMove(sim, fighter, "Super", InputBits.Super)
 	end
 	if
@@ -358,6 +329,7 @@ local function tryStartAttack(sim: Sim, fighter: Fighter, allowed: { string }?):
 		and not airborne
 		and fighter.specialCooldown == 0
 		and permitted("Special")
+		and Specials.canStart(sim, fighter, "Special")
 	then
 		return startMove(sim, fighter, "Special", InputBits.Special)
 	end
@@ -414,6 +386,11 @@ local function updateAttack(sim: Sim, fighter: Fighter)
 		end
 	end
 
+	-- Особые приёмы и суперы двигают бойца по-своему (рывки, прыжки, телепорт, снаряды).
+	local behaviour = Specials.behaviour(fighter, fighter.move)
+	if behaviour and Specials.update(sim, fighter, behaviour) then
+		return
+	end
 	if Fighter.isAirborne(fighter) then
 		fighter.vy -= Physics.Gravity * DT
 	else
@@ -624,6 +601,8 @@ local function onLand(sim: Sim, fighter: Fighter)
 		end
 		fighter.knockdownOnLand = false
 		emit(sim, "Knockdown", fighter)
+	elseif state == "Attack" and Specials.keepsMoveOnLand(fighter) then
+		return -- удар при приземлении (прыжок-дуга): приём продолжается
 	elseif state == "Air" or state == "Attack" then
 		fighter.vx = 0
 		fighter.move = nil
@@ -761,6 +740,7 @@ type PendingHit = {
 	move: MoveData,
 	x: number,
 	y: number,
+	projectile: SimState.Projectile?, -- попадание снарядом (владелец не «застывает» и не получает отмен)
 }
 
 local function hitstopFor(damage: number): number
@@ -837,7 +817,8 @@ local function collectHits(sim: Sim): { PendingHit }
 	local pending: { PendingHit } = {}
 	for _, attacker in sim.fighters do
 		local move = if attacker.state == "Attack" and attacker.hitstop == 0 then moveOf(attacker) else nil
-		if move and MoveBook.isActive(move, attacker.moveFrame) then
+		local melee = move ~= nil and Specials.usesMeleeHitbox(attacker, attacker.move :: string)
+		if move and melee and MoveBook.isActive(move, attacker.moveFrame) then
 			local hitsTotal = move.hits or 1
 			local interval = math.max(1, math.floor(move.active / hitsTotal))
 			local due = math.min(hitsTotal, math.floor((attacker.moveFrame - move.startup) / interval) + 1)
@@ -881,18 +862,58 @@ local function startCinematic(sim: Sim, attacker: Fighter, defender: Fighter, mo
 	emit(sim, "CinematicStart", attacker, cinematic.duration, attacker.slot, style)
 end
 
-local function applyHit(sim: Sim, hit: PendingHit)
+local applyHit: (sim: Sim, hit: PendingHit) -> ()
+
+-- Контратака: стойка перехватила удар — удар гасится, защитник отвечает своим приёмом.
+local function counterAttack(sim: Sim, counterer: Fighter, striker: Fighter, hit: PendingHit)
+	local behaviour = Specials.behaviour(counterer, counterer.move)
+	if behaviour == nil then
+		return
+	end
+	counterer.moveConnected = true
+	striker.moveConnected = true
+	striker.moveHits = 99 -- этот удар больше не попадёт
+	emitAt(sim, "Parry", counterer, hit.x, hit.y, 0, counterer.slot, if behaviour.isSuper then "Super" else nil)
+	if behaviour.isSuper then
+		startCinematic(sim, counterer, striker, behaviour.move)
+		emitAt(sim, "Hit", striker, hit.x, hit.y, 0, counterer.slot, "Super")
+		return
+	end
+	applyHit(sim, {
+		attacker = counterer,
+		defender = striker,
+		move = behaviour.move,
+		x = hit.x,
+		y = hit.y,
+	})
+end
+
+function applyHit(sim: Sim, hit: PendingHit)
 	local attacker, defender, move = hit.attacker, hit.defender, hit.move
-	local hitsTotal = move.hits or 1
+	local projectile = hit.projectile
+	local hitsTotal = if projectile then 1 else move.hits or 1
 	local perHit = move.damage / hitsTotal
 	local perChip = move.chip / hitsTotal
-	local direction = if defender.x > attacker.x then 1 elseif defender.x < attacker.x then -1 else attacker.facing
-	local isSuper = attacker.move == "Super"
+	local direction = if projectile
+		then projectile.facing
+		elseif defender.x > attacker.x then 1
+		elseif defender.x < attacker.x then -1
+		else attacker.facing
+	local isSuper = projectile == nil and attacker.move == "Super"
 	-- Защитник сам атаковал (для брони и контрудара).
 	local defenderAttacking = defender.state == "Attack"
+	local behaviour = if projectile then nil else Specials.behaviour(attacker, attacker.move)
 
-	attacker.moveConnected = true
-	attacker.moveHits += 1
+	-- Стойка контратаки перехватывает удары вплотную (но не снаряды и не захваты).
+	if projectile == nil and move.guard ~= "Unblockable" and Specials.isCountering(defender) then
+		counterAttack(sim, defender, attacker, hit)
+		return
+	end
+
+	if projectile == nil then
+		attacker.moveConnected = true
+		attacker.moveHits += 1
+	end
 
 	-- Блок.
 	if canBlock(defender, attacker, move.guard) then
@@ -909,8 +930,14 @@ local function applyHit(sim: Sim, hit: PendingHit)
 		gainMeter(attacker, perHit * Combat.MeterPerDamageDealt * Combat.MeterBlockFactor)
 		gainMeter(defender, perHit * Combat.MeterPerDamageTaken * Combat.MeterBlockFactor)
 		local stop = math.floor(hitstopFor(perHit) * Combat.BlockHitstopFactor)
-		attacker.hitstop, defender.hitstop = stop, stop
+		defender.hitstop = stop
+		if projectile == nil then
+			attacker.hitstop = stop
+		end
 		emitAt(sim, "Block", defender, hit.x, hit.y, chip, attacker.slot, nil)
+		if behaviour then
+			Specials.afterHit(attacker, defender, behaviour, true)
+		end
 		if defender.health <= 0 then
 			defender.ko = true
 			Fighter.setState(defender, "Juggle")
@@ -921,8 +948,8 @@ local function applyHit(sim: Sim, hit: PendingHit)
 		return
 	end
 
-	-- Броня: удар «впитывается», урон вдвое меньше, приём не прерывается.
-	if defender.armor > 0 and defenderAttacking then
+	-- Броня: удар «впитывается», урон вдвое меньше, приём не прерывается (захват броню пробивает).
+	if defender.armor > 0 and defenderAttacking and move.guard ~= "Unblockable" then
 		defender.armor -= 1
 		local absorbed = math.max(
 			1,
@@ -930,7 +957,10 @@ local function applyHit(sim: Sim, hit: PendingHit)
 		)
 		defender.health = math.max(1, defender.health - absorbed)
 		local stop = hitstopFor(perHit)
-		attacker.hitstop, defender.hitstop = stop, stop
+		defender.hitstop = stop
+		if projectile == nil then
+			attacker.hitstop = stop
+		end
 		emitAt(sim, "Armor", defender, hit.x, hit.y, absorbed, attacker.slot, nil)
 		return
 	end
@@ -983,8 +1013,15 @@ local function applyHit(sim: Sim, hit: PendingHit)
 		defender.push = direction * move.knockback * PUSH_SCALE
 	end
 
+	if behaviour then
+		Specials.afterHit(attacker, defender, behaviour, false)
+	end
+
 	local stop = hitstopFor(damage)
-	attacker.hitstop, defender.hitstop = stop, stop
+	defender.hitstop = stop
+	if projectile == nil then
+		attacker.hitstop = stop
+	end
 	local tag = if counter then "Counter" elseif perHit >= 60 then "Heavy" else nil
 	emitAt(sim, "Hit", defender, hit.x, hit.y, damage, attacker.slot, tag)
 	if defender.ko then
@@ -1086,6 +1123,24 @@ function Simulation.step(sim: Sim, inputs: { FrameInput })
 				break
 			end
 			applyHit(sim, hit)
+		end
+		-- Снаряды и ловушки: полёт, столкновения, попадания.
+		for _, hit in Projectiles.step(sim, Specials.sweepsProjectiles) do
+			if sim.cinematic then
+				break
+			end
+			local projectile = hit.projectile
+			if table.find(sim.projectiles, projectile) then
+				applyHit(sim, {
+					attacker = sim.fighters[projectile.owner],
+					defender = hit.defender,
+					move = projectile.move,
+					x = hit.x,
+					y = hit.y,
+					projectile = projectile,
+				})
+				Projectiles.consume(sim, projectile)
+			end
 		end
 	end
 
