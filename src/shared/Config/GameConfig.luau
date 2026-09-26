@@ -58,6 +58,37 @@ local GameConfig = deepFreeze({
 		AirPushTop = 4.5,
 	},
 
+	-- Боевые правила (общие для всех персонажей).
+	Combat = {
+		-- Хитстоп: «замирание» обоих бойцов при попадании, кадры.
+		HitstopBase = 5,
+		HitstopPerDamage = 1 / 18,
+		HitstopMax = 14,
+		BlockHitstopFactor = 0.7,
+		-- Масштабирование урона в комбо: каждый следующий удар слабее, но не меньше минимума.
+		ComboScalingPerHit = 0.1,
+		ComboScalingMin = 0.4,
+		-- Контрудар (попадание в противника, который сам начал атаку).
+		CounterHitDamage = 1.2,
+		CounterHitStun = 4,
+		-- Шкала супера: сколько единиц за 1 урон (с учётом множителя персонажа).
+		MeterPerDamageDealt = 1.4,
+		MeterPerDamageTaken = 0.8,
+		MeterBlockFactor = 0.5, -- на блоке шкала растёт слабее
+		-- Нокдаун: лежит, затем встаёт (в обоих состояниях неуязвим).
+		KnockdownFrames = 36,
+		WakeUpFrames = 14,
+		AirHitPop = 16, -- студ/с вверх, когда попали по бойцу в воздухе
+		PushFriction = 0.82, -- затухание отбрасывания за кадр
+		ProximityGuardRange = 9, -- на таком расстоянии от атакующего «назад» = стойка блока
+		CancelWindow = 10, -- кадров после активных, когда можно отменить удар в следующий
+		SpecialCooldownFrames = 20,
+		SuperFreezeFrames = 24, -- вспышка супера: всё замирает
+		MaxLagCompensationFrames = 6, -- компенсация пинга: не больше 100 мс
+		HurtboxWidth = 2.2,
+		WakeUpInvulnerable = true,
+	},
+
 	Input = {
 		BufferFrames = 8, -- нажатие «запоминается» на столько кадров
 		MaxPacketsPerSecond = 75, -- лимит пакетов ввода от одного игрока

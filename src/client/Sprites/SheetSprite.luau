@@ -43,8 +43,21 @@ local function resolve(sheet: Types.SpriteSheet, animation: Types.AnimationName)
 		end
 		current = Animations.fallbacks[current]
 	end
-	local def = Animations.defaults[animation] or Animations.defaults[IDLE]
-	return { row = def.row, frames = def.frames, fps = def.fps, loop = def.loop }
+	-- Стандартная раскладка: если строки анимации нет в листе — запасная анимация.
+	local name: Types.AnimationName = animation
+	for _ = 1, 4 do
+		local def = Animations.defaults[name]
+		if def and (sheet.rows == nil or def.row < (sheet.rows :: number)) then
+			return { row = def.row, frames = def.frames, fps = def.fps, loop = def.loop }
+		end
+		local fallback = Animations.fallbacks[name]
+		if fallback == nil then
+			break
+		end
+		name = fallback :: Types.AnimationName
+	end
+	local idle = Animations.defaults[IDLE]
+	return { row = idle.row, frames = idle.frames, fps = idle.fps, loop = idle.loop }
 end
 
 -- Номер кадра (с 0) для момента времени или прогресса удара.

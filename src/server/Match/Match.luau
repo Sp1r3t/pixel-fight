@@ -27,6 +27,8 @@ export type NetEvent = {
 	x: number?,
 	y: number?,
 	v: number?,
+	a: number?, -- слот атакующего
+	t: string?, -- уточнение ("Counter", сценарий супера, ...)
 }
 
 export type Match = {

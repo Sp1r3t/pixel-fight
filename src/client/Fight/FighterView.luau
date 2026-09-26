@@ -84,7 +84,7 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 		-- Цилиндр лежит на боку: ось X вверх.
 		shadow.CFrame = CFrame.new(fighter.x, 0.03, 0) * CFrame.Angles(0, 0, math.rad(90))
 
-		local choice = AnimationSelect.choose(fighter)
+		local choice = AnimationSelect.choose(fighter, def.id)
 		animator.setFacing(fighter.facing)
 		animator.show(choice.name, choice.time, choice.progress)
 

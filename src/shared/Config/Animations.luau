@@ -32,6 +32,11 @@ local Animations: { [Types.AnimationName]: AnimationDef } = {
 	Knockdown = { frames = 4, fps = 10, loop = false, driven = false, row = 11 },
 	Win = { frames = 4, fps = 6, loop = true, driven = false, row = 12 },
 	Lose = { frames = 2, fps = 4, loop = false, driven = false, row = 13 },
+	-- Необязательные варианты ударов (если в листе их нет — берутся Light/Heavy).
+	CrouchLight = { frames = 3, fps = 0, loop = false, driven = true, row = 14 },
+	CrouchHeavy = { frames = 4, fps = 0, loop = false, driven = true, row = 15 },
+	AirLight = { frames = 3, fps = 0, loop = false, driven = true, row = 16 },
+	AirHeavy = { frames = 4, fps = 0, loop = false, driven = true, row = 17 },
 }
 
 -- Запасные анимации, если в спрайт-листе персонажа какой-то нет.
@@ -42,6 +47,10 @@ local FALLBACKS: { [Types.AnimationName]: Types.AnimationName } = {
 	Super = "Special",
 	Lose = "Knockdown",
 	Win = "Idle",
+	CrouchLight = "Light",
+	CrouchHeavy = "Heavy",
+	AirLight = "Light",
+	AirHeavy = "Heavy",
 }
 
 return deepFreeze({

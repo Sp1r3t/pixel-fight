@@ -6,6 +6,8 @@
 ]]
 
 local Fighter = require(script.Parent.Fighter)
+local MoveBook = require(script.Parent.MoveBook)
+local GameConfig = require(script.Parent.Parent.Config.GameConfig)
 
 export type FighterSnapshot = {
 	x: number,
@@ -20,7 +22,7 @@ export type FighterSnapshot = {
 	meter: number,
 	move: number, -- индекс приёма (0 — нет), см. Combat/Moves
 	moveFrame: number,
-	flags: number, -- биты Snapshot.Flags
+	flags: number, -- биты Snapshot.Flags (LowBlock — боец присел: блок/атака сидя)
 	combo: number, -- сколько ударов подряд получил боец в текущем комбо
 }
 
@@ -52,6 +54,7 @@ Snapshot.Flags = table.freeze({
 	Hitstop = 4,
 	LowBlock = 8,
 	SuperReady = 16,
+	KO = 32,
 })
 
 local FIGHTER_BYTES = 4 + 4 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 2 + 1 + 1
@@ -67,6 +70,21 @@ function Snapshot.fromFighter(fighter: Fighter.Fighter): FighterSnapshot
 	if fighter.invulnerable > 0 then
 		flags = bit32.bor(flags, Snapshot.Flags.Invulnerable)
 	end
+	if fighter.armor > 0 then
+		flags = bit32.bor(flags, Snapshot.Flags.Armor)
+	end
+	if fighter.hitstop > 0 then
+		flags = bit32.bor(flags, Snapshot.Flags.Hitstop)
+	end
+	if Fighter.isCrouching(fighter) then
+		flags = bit32.bor(flags, Snapshot.Flags.LowBlock)
+	end
+	if fighter.meter >= GameConfig.SuperMeter.Max then
+		flags = bit32.bor(flags, Snapshot.Flags.SuperReady)
+	end
+	if fighter.ko then
+		flags = bit32.bor(flags, Snapshot.Flags.KO)
+	end
 	return {
 		x = fighter.x,
 		y = fighter.y,
@@ -78,10 +96,10 @@ function Snapshot.fromFighter(fighter: Fighter.Fighter): FighterSnapshot
 		health = fighter.health,
 		maxHealth = fighter.maxHealth,
 		meter = fighter.meter,
-		move = 0,
-		moveFrame = 0,
+		move = MoveBook.toIndex(fighter.move),
+		moveFrame = fighter.moveFrame,
 		flags = flags,
-		combo = 0,
+		combo = fighter.comboHits,
 	}
 end
 

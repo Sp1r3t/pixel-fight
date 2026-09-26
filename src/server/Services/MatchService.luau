@@ -22,6 +22,7 @@ local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local Match = require(script.Parent.Parent.Match.Match)
+local TrainingRules = require(script.Parent.Parent.Match.TrainingRules)
 local RequestRouter = require(script.Parent.Parent.Net.RequestRouter)
 local InputService = require(script.Parent.InputService)
 local DataService = require(script.Parent.DataService)
@@ -162,6 +163,8 @@ function MatchService.stepMatch(match: Match, now: number)
 			x = event.x,
 			y = event.y,
 			v = event.value,
+			a = event.attacker,
+			t = event.tag,
 		})
 	end
 	for _, hook in stepHooks do
@@ -225,6 +228,8 @@ function MatchService.startTraining(player: Player, characterId: string): Match
 end
 
 function MatchService.Init()
+	MatchService.addStepHook(TrainingRules.step)
+
 	RequestRouter.register("StartTraining", function(player: Player, payload: unknown)
 		local characterId = readCharacterId(player, payload)
 		if characterId == nil then

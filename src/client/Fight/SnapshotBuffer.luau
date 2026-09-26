@@ -39,30 +39,32 @@ local function lerp(a: number, b: number, t: number): number
 	return a + (b - a) * t
 end
 
-local function interpolateFighter(
-	a: FighterSnapshot,
-	b: FighterSnapshot,
-	t: number,
-	framesSinceA: number
-): FighterSnapshot
+local function interpolateFighter(a: FighterSnapshot, b: FighterSnapshot, t: number): FighterSnapshot
 	local result = table.clone(a)
 	result.x = lerp(a.x, b.x, t)
 	result.y = lerp(a.y, b.y, t)
 	result.vx = lerp(a.vx, b.vx, t)
 	result.vy = lerp(a.vy, b.vy, t)
-	if b.state == a.state and b.move == a.move then
-		result.stateFrame = a.stateFrame + framesSinceA
-		result.moveFrame = a.moveFrame + framesSinceA
+	-- Кадры состояния интерполируются между снапшотами: во время хитстопа они стоят,
+	-- и анимация тоже «замирает».
+	if b.state == a.state and b.move == a.move and b.stateFrame >= a.stateFrame then
+		result.stateFrame = math.floor(lerp(a.stateFrame, b.stateFrame, t))
+		result.moveFrame = math.floor(lerp(a.moveFrame, b.moveFrame, t))
 	end
 	return result
 end
 
+local HITSTOP_FLAG = Snapshot.Flags.Hitstop
+
 local function extrapolateFighter(a: FighterSnapshot, frames: number): FighterSnapshot
 	local result = table.clone(a)
-	result.x = a.x + a.vx * frames / TICK
-	result.y = math.max(0, a.y + a.vy * frames / TICK)
-	result.stateFrame = a.stateFrame + frames
-	result.moveFrame = a.moveFrame + frames
+	if bit32.band(a.flags, HITSTOP_FLAG) ~= 0 then
+		return result -- в хитстопе всё стоит
+	end
+	result.x = a.x + (a.vx * frames) / TICK
+	result.y = math.max(0, a.y + (a.vy * frames) / TICK)
+	result.stateFrame = a.stateFrame + math.floor(frames)
+	result.moveFrame = a.moveFrame + math.floor(frames)
 	return result
 end
 
@@ -122,11 +124,10 @@ function SnapshotBuffer.new(delaySeconds: number?): Buffer
 			if target >= a.frame and target <= b.frame then
 				local span = b.frame - a.frame
 				local t = if span > 0 then (target - a.frame) / span else 0
-				local framesSinceA = math.floor(target - a.frame)
 				local fighters = {}
 				for slot, fighter in a.fighters do
 					local other = b.fighters[slot]
-					fighters[slot] = if other then interpolateFighter(fighter, other, t, framesSinceA) else fighter
+					fighters[slot] = if other then interpolateFighter(fighter, other, t) else fighter
 				end
 				return { frame = target, latest = snapshots[count], fighters = fighters, projectiles = a.projectiles }
 			end

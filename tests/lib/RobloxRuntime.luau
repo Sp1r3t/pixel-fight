@@ -323,6 +323,13 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 		Clone = function(self: any): any
 			return proxyOf(proxyData[self].real:Clone())
 		end,
+		GetNetworkPing = function(self: any): number
+			local ping = proxyData[self].overrides.NetworkPing
+			return if type(ping) == "number" then ping else 0
+		end,
+		Kick = function(self: any, message: string?)
+			proxyData[self].overrides.Kicked = message or ""
+		end,
 		-- Сетевые методы в тестах не используются (Transport подменяется «петлёй»).
 		FireServer = function() end,
 		FireClient = function() end,
@@ -351,6 +358,8 @@ function RobloxRuntime.newWorld(options: { screenSize: Vector2? }?): World
 	end
 
 	local WRITABLE_OVERRIDES: { [string]: boolean } = {
+		NetworkPing = true,
+		Kicked = true,
 		CurrentCamera = true,
 		UserId = true,
 		DisplayName = true,

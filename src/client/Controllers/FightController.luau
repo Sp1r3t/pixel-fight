@@ -25,9 +25,10 @@ local AppState = require(script.Parent.Parent.UI.AppState)
 local CameraController = require(script.Parent.CameraController)
 local EffectsController = require(script.Parent.EffectsController)
 local InputController = require(script.Parent.InputController)
+local SparkStyles = require(script.Parent.Parent.Fight.SparkStyles)
 local UIController = require(script.Parent.UIController)
 
-type NetEvent = { k: string, s: number, f: number, x: number?, y: number?, v: number? }
+type NetEvent = { k: string, s: number, f: number, x: number?, y: number?, v: number?, a: number?, t: string? }
 
 local FightController = {
 	Name = "FightController",
@@ -138,14 +139,59 @@ local function onEvents(events: any)
 	end
 end
 
+-- Сила эффекта удара: 0.3 (лёгкий) … 1.5+ (супер).
+local function strengthOf(damage: number?): number
+	return math.clamp((damage or 30) / 60, 0.3, 1.6)
+end
+
 local function playEvent(event: NetEvent)
 	local x, y = event.x or 0, event.y or 0
-	if event.k == "Jump" or event.k == "Land" then
+	local kind = event.k
+	if kind == "Jump" or kind == "Land" then
 		EffectsController.dust(x, y, nil)
-	elseif event.k == "Dash" or event.k == "Backdash" then
+	elseif kind == "Dash" or kind == "Backdash" then
 		local facing = if lastSample and lastSample.fighters[event.s] then lastSample.fighters[event.s].facing else 1
 		-- Пыль летит назад от направления рывка.
-		EffectsController.dust(x, y, if event.k == "Dash" then -facing else facing)
+		EffectsController.dust(x, y, if kind == "Dash" then -facing else facing)
+	elseif kind == "Knockdown" then
+		EffectsController.dust(x, y, nil)
+		CameraController.shake(0.25, 0.15)
+	elseif kind == "Hit" or kind == "CinematicHit" then
+		local attackerView = if event.a then views[event.a] else nil
+		local defenderView = views[event.s]
+		local style = SparkStyles.get(if attackerView then attackerView.def.cosmetics.hitSpark else "Impact")
+		local defenderX = if lastSample and lastSample.fighters[event.s] then lastSample.fighters[event.s].x else x
+		local direction = if defenderX >= x then 1 else -1
+		local strength = if event.t == "Super" then 1.4 else strengthOf(event.v)
+		local hitY = if kind == "CinematicHit" then y + 3 else y
+		EffectsController.hitSpark(x, hitY, strength, style.primary, style.secondary, direction)
+		if defenderView then
+			defenderView.flash(1)
+		end
+		CameraController.shake(0.15 + 0.35 * strength, 0.12 + 0.1 * strength)
+		if event.t == "Counter" then
+			EffectsController.screenFlash(style.secondary, 0.12, 0.25)
+		end
+	elseif kind == "Block" then
+		local style = SparkStyles.block()
+		local defenderX = if lastSample and lastSample.fighters[event.s] then lastSample.fighters[event.s].x else x
+		EffectsController.hitSpark(x, y, 0.35, style.primary, style.secondary, if defenderX >= x then 1 else -1)
+		CameraController.shake(0.08, 0.08)
+	elseif kind == "Armor" then
+		EffectsController.hitSpark(x, y, 0.6, Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 240, 200), 1)
+		CameraController.shake(0.2, 0.12)
+	elseif kind == "KO" then
+		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.5, 0.7)
+		CameraController.shake(0.9, 0.5)
+	elseif kind == "SuperFlash" then
+		local view = views[event.s]
+		local color = if view then Color3.fromHex(view.def.cosmetics.superFlash) else Color3.new(1, 1, 1)
+		EffectsController.screenFlash(color, 0.45, 0.55)
+		CameraController.shake(0.3, 0.3)
+	elseif kind == "CinematicStart" then
+		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
+	elseif kind == "CinematicEnd" then
+		CameraController.shake(0.7, 0.35)
 	end
 end
 

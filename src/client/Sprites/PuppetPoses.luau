@@ -86,6 +86,28 @@ local P: { [Types.AnimationName]: { Pose } } = {
 		{ lean = 6, armF = 50, armB = 35, legF = 18, legB = -18, glow = 0.4 },
 		{ lean = 4, armF = 38, armB = 22, legF = 14, legB = -14, glow = 0.1 },
 	},
+	CrouchLight = {
+		{ lean = 14, armF = 60, armB = 45, legF = 50, legB = -48 },
+		{ lean = 18, armF = 92, armB = 30, legF = 55, legB = -52, x = 0.03 },
+		{ lean = 12, armF = 65, armB = 45, legF = 50, legB = -48 },
+	},
+	CrouchHeavy = { -- подсечка
+		{ lean = 18, armF = 60, armB = 40, legF = 55, legB = -45 },
+		{ lean = 30, armF = 70, armB = 20, legF = 80, legB = -60, hip = 0.8 },
+		{ lean = 34, armF = 75, armB = 15, legF = 95, legB = -65, hip = 0.83, x = 0.02 },
+		{ lean = 16, armF = 60, armB = 40, legF = 55, legB = -45 },
+	},
+	AirLight = {
+		{ lean = 6, armF = 70, armB = 90, legF = 60, legB = 30, hip = 0.6 },
+		{ lean = 14, armF = 110, armB = 70, legF = 70, legB = 40, hip = 0.6, x = 0.03 },
+		{ lean = 8, armF = 80, armB = 80, legF = 60, legB = 30, hip = 0.6 },
+	},
+	AirHeavy = {
+		{ lean = -4, armF = 90, armB = 110, legF = 70, legB = 40, hip = 0.58 },
+		{ lean = -12, armF = 70, armB = 120, legF = 120, legB = 20, hip = 0.56, x = 0.02 },
+		{ lean = -12, armF = 70, armB = 120, legF = 120, legB = 20, hip = 0.56, x = 0.02 },
+		{ lean = -2, armF = 80, armB = 100, legF = 70, legB = 40, hip = 0.58 },
+	},
 	Hit = {
 		{ lean = -24, armF = -20, armB = -35, legF = 10, legB = -26, x = -0.03 },
 		{ lean = -14, armF = 5, armB = -10, legF = 12, legB = -22, x = -0.015 },

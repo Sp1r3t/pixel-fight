@@ -8,6 +8,7 @@
 	Этап 3 добавляет искры ударов, хитстоп, тряску; этап 8 — вспышки и ролики суперов.
 ]]
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -136,6 +137,81 @@ function EffectsController.dust(x: number, y: number, direction: number?)
 	})
 end
 
+-- Искры удара: размер и количество растут с уроном.
+function EffectsController.hitSpark(
+	x: number,
+	y: number,
+	strength: number,
+	primary: Color3,
+	secondary: Color3,
+	direction: number
+)
+	local power = math.clamp(strength, 0.2, 2)
+	EffectsController.burst(Vector3.new(x, y, 0), {
+		count = math.floor(8 + 10 * power),
+		color = primary,
+		secondary = secondary,
+		speed = 10 + 10 * power,
+		size = 0.35 + 0.25 * power,
+		life = 0.22 + 0.12 * power,
+		gravity = 8,
+		spread = 140,
+		direction = if direction >= 0 then 0 else 180,
+	})
+	-- Короткая «звезда» удара в центре.
+	EffectsController.burst(Vector3.new(x, y, 0), {
+		count = 4,
+		color = Color3.new(1, 1, 1),
+		speed = 2,
+		size = 0.9 + 0.5 * power,
+		life = 0.08 + 0.04 * power,
+		spread = 360,
+	})
+end
+
+-- Вспышка на весь экран (удар супера, нокаут).
+local flashFrame: Frame? = nil
+local flashTime = 0
+local flashDuration = 0
+local flashStrength = 0
+
+local function getFlashFrame(): Frame?
+	if flashFrame and flashFrame.Parent then
+		return flashFrame
+	end
+	local player = Players.LocalPlayer
+	local playerGui = if player then player:FindFirstChildOfClass("PlayerGui") else nil
+	if playerGui == nil then
+		return nil
+	end
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "PixelFightFX"
+	gui.DisplayOrder = 5
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	local frame = Instance.new("Frame")
+	frame.Name = "Flash"
+	frame.BorderSizePixel = 0
+	frame.Size = UDim2.fromScale(1, 1)
+	frame.BackgroundTransparency = 1
+	frame.Parent = gui
+	gui.Parent = playerGui
+	flashFrame = frame
+	return frame
+end
+
+function EffectsController.screenFlash(color: Color3, duration: number, strength: number?)
+	local frame = getFlashFrame()
+	if frame == nil then
+		return
+	end
+	frame.BackgroundColor3 = color
+	flashTime = 0
+	flashDuration = math.max(duration, 0.01)
+	flashStrength = math.clamp(strength or 0.6, 0, 1)
+	frame.BackgroundTransparency = 1 - flashStrength
+end
+
 function EffectsController.clear()
 	for _, burst in bursts do
 		burst.anchor:Destroy()
@@ -143,7 +219,21 @@ function EffectsController.clear()
 	table.clear(bursts)
 end
 
+local function updateFlash(dt: number)
+	local frame = flashFrame
+	if frame == nil or flashDuration <= 0 then
+		return
+	end
+	flashTime += dt
+	local t = math.clamp(flashTime / flashDuration, 0, 1)
+	frame.BackgroundTransparency = 1 - flashStrength * (1 - t)
+	if t >= 1 then
+		flashDuration = 0
+	end
+end
+
 local function onRenderStep(dt: number)
+	updateFlash(dt)
 	for index = #bursts, 1, -1 do
 		local burst = bursts[index]
 		burst.age += dt

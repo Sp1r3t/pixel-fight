@@ -11,8 +11,8 @@
 
 export type CharacterId = string
 
--- Анимации спрайт-листа. Если у персонажа нет какой-то анимации, аниматор (этап 2)
--- использует запасную (например, Dash → Walk).
+-- Анимации спрайт-листа. Если у персонажа нет какой-то анимации, аниматор
+-- использует запасную (например, Dash → Walk, CrouchLight → Light).
 export type AnimationName =
 	"Idle"
 	| "Walk"
@@ -22,6 +22,10 @@ export type AnimationName =
 	| "Block"
 	| "Light"
 	| "Heavy"
+	| "CrouchLight"
+	| "CrouchHeavy"
+	| "AirLight"
+	| "AirHeavy"
 	| "Special"
 	| "Super"
 	| "Hit"
@@ -40,6 +44,7 @@ export type SpriteSheet = {
 	image: string, -- "rbxassetid://..."
 	frameWidth: number, -- размер одного кадра в пикселях
 	frameHeight: number,
+	rows: number?, -- сколько строк в листе (строки сверх этого берутся из запасных анимаций)
 	animations: { [AnimationName]: SpriteAnimation },
 }
 
