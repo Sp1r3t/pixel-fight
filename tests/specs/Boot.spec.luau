@@ -1,53 +1,41 @@
 -- Смоук-тесты: запуск сервера и клиента, навигация по меню на Fusion.
 -- Инстансы создаются через @lune/roblox, поэтому неверное имя/тип свойства = падение теста.
 
-local function bootClient(screenSize)
-	local runtime = newRuntime({ isClient = true, screenSize = screenSize })
-	local loader = newLoader({ globals = runtime.globals, services = runtime.services })
-	loader.run(loader.get("StarterPlayer", "StarterPlayerScripts", "Client"))
-	runtime.step(2)
-	local playerGui = runtime.localPlayer:FindFirstChild("PlayerGui")
-	return runtime, playerGui
+local function expectHealthy(game)
+	expect(game.errors()).toBeEmpty()
+	expect(game.warnings()).toBeEmpty()
 end
 
-local function expectHealthy(runtime)
-	expect(runtime.errors).toBeEmpty()
-	expect(runtime.warnings).toBeEmpty()
-end
-
-local function click(runtime, root, text)
-	local button = runtime.findGuiByText(root, text)
-	assert(button, `кнопка "{text}" не найдена`)
-	runtime.fire(button, "Activated")
-	runtime.step(2)
+local function boot(options)
+	local game = Harness.new(options)
+	local client = game.addClient("Alice")
+	game.step(2)
+	return game, client
 end
 
 describe("Сервер", function()
 	it(
 		"запускается: конфиг валиден, все сервисы проходят Init/Start",
 		function()
-			local runtime = newRuntime({ isClient = false })
-			local loader = newLoader({ globals = runtime.globals, services = runtime.services })
-			loader.run(loader.get("ServerScriptService", "Server"))
-			expectHealthy(runtime)
+			local game = Harness.new()
+			game.step(2)
+			expectHealthy(game)
 		end
 	)
 end)
 
 describe("Клиент", function()
 	it("запускается и монтирует главное меню", function()
-		local runtime, playerGui = bootClient()
-		expectHealthy(runtime)
-		local gui = playerGui:FindFirstChild("PixelFightUI")
-		expect(gui ~= nil).toBeTruthy()
-		expect(runtime.findByName(gui, "MainMenu") ~= nil).toBeTruthy()
+		local game, client = boot()
+		expectHealthy(game)
+		expect(client.gui() ~= nil).toBeTruthy()
+		expect(client.find("MainMenu") ~= nil).toBeTruthy()
 	end)
 
 	it(
 		"из главного меню открывается каждый раздел и возвращается назад",
 		function()
-			local runtime, playerGui = bootClient()
-			local gui = playerGui:FindFirstChild("PixelFightUI")
+			local game, client = boot()
 			local sections = {
 				{ button = "Одиночная игра", screen = "PlaceholderScreen" },
 				{ button = "Мультиплеер", screen = "PlaceholderScreen" },
@@ -56,24 +44,27 @@ describe("Клиент", function()
 				{ button = "Управление", screen = "PlaceholderScreen" },
 			}
 			for _, section in sections do
-				click(runtime, gui, section.button)
-				expect(runtime.findByName(gui, section.screen) ~= nil).toBeTruthy()
-				expect(runtime.findByName(gui, "MainMenu")).toBe(nil)
-				click(runtime, gui, "← Назад")
-				expect(runtime.findByName(gui, "MainMenu") ~= nil).toBeTruthy()
+				client.click(section.button)
+				game.step(2)
+				expect(client.find(section.screen) ~= nil).toBeTruthy()
+				expect(client.find("MainMenu")).toBe(nil)
+				client.click("← Назад")
+				game.step(2)
+				expect(client.find("MainMenu") ~= nil).toBeTruthy()
 			end
-			expectHealthy(runtime)
+			expectHealthy(game)
 		end
 	)
 
 	it(
 		"выбор персонажа: 16 карточек, детали, выбор бесплатного, платный заблокирован",
 		function()
-			local runtime, playerGui = bootClient()
-			local gui = playerGui:FindFirstChild("PixelFightUI")
-			click(runtime, gui, "Персонажи")
+			local game, client = boot()
+			local runtime = client.runtime
+			client.click("Персонажи")
+			game.step(2)
 
-			local roster = runtime.findByName(gui, "Roster")
+			local roster = client.find("Roster")
 			local cards = 0
 			for _, child in roster:GetChildren() do
 				if child:IsA("TextButton") then
@@ -84,35 +75,37 @@ describe("Клиент", function()
 
 			-- Бесплатный персонаж: можно выбрать.
 			runtime.fire(runtime.findByName(roster, "mira"), "Activated")
-			runtime.step(2)
-			expect(runtime.findGuiByText(gui, "MIRA VOSS", "TextLabel") ~= nil).toBeTruthy()
-			click(runtime, gui, "Выбрать")
-			expect(runtime.findGuiByText(gui, "Выбран") ~= nil).toBeTruthy()
+			game.step(2)
+			expect(client.findText("MIRA VOSS", "TextLabel") ~= nil).toBeTruthy()
+			client.click("Выбрать")
+			game.step(2)
+			expect(client.findText("Выбран") ~= nil).toBeTruthy()
 			expect(runtime.findByName(runtime.findByName(roster, "mira"), "ChosenMark").Visible).toBe(true)
 			expect(runtime.findByName(runtime.findByName(roster, "rook"), "ChosenMark").Visible).toBe(false)
 
 			-- Платный персонаж: покупка появится на этапе 9, кнопка неактивна.
 			runtime.fire(runtime.findByName(roster, "ashka"), "Activated")
-			runtime.step(2)
-			expect(runtime.findGuiByText(gui, "ASHKA", "TextLabel") ~= nil).toBeTruthy()
-			click(runtime, gui, "Купить (этап 9)")
+			game.step(2)
+			expect(client.findText("ASHKA", "TextLabel") ~= nil).toBeTruthy()
+			client.click("Купить (этап 9)")
+			game.step(2)
 			expect(runtime.findByName(runtime.findByName(roster, "ashka"), "ChosenMark").Visible).toBe(false)
 
 			-- Выбор отражается в главном меню.
-			click(runtime, gui, "← Назад")
-			expect(runtime.findGuiByText(gui, "MIRA VOSS", "TextLabel") ~= nil).toBeTruthy()
+			client.click("← Назад")
+			game.step(2)
+			expect(client.findText("MIRA VOSS", "TextLabel") ~= nil).toBeTruthy()
 
 			-- Анимации (пружины, твины, переливающиеся рамки Deluxe) отрабатывают без ошибок.
-			runtime.step(120)
-			expectHealthy(runtime)
+			game.step(120)
+			expectHealthy(game)
 		end
 	)
 
 	it("масштабируется под экран телефона", function()
-		local runtime, playerGui = bootClient(Vector2.new(844, 390))
-		local gui = playerGui:FindFirstChild("PixelFightUI")
-		local scale = runtime.findByName(runtime.findByName(gui, "Root"), "UIScale")
+		local game, client = boot({ screenSize = Vector2.new(844, 390) })
+		local scale = client.runtime.findByName(client.find("Root"), "UIScale")
 		expect(scale.Scale).toBeCloseTo(390 / 540, 1e-4)
-		expectHealthy(runtime)
+		expectHealthy(game)
 	end)
 end)

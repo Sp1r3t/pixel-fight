@@ -10,8 +10,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Types = require(ReplicatedStorage.Shared.Types)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local Transport = require(ReplicatedStorage.Shared.Net.Transport)
+local RequestRouter = require(script.Net.RequestRouter)
 
 CharacterRegistry.assertValid()
+
+-- Сетевые каналы создаются до того, как сервисы начнут на них подписываться.
+Transport.init()
+RequestRouter.init()
 
 local Services = script.Services
 

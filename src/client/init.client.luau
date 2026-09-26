@@ -7,15 +7,19 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Types = require(ReplicatedStorage.Shared.Types)
+local Transport = require(ReplicatedStorage.Shared.Net.Transport)
+
+-- Дождаться сетевых каналов, которые создаёт сервер.
+Transport.init()
 
 local Controllers = script.Controllers
 
 local controllers: { Types.Lifecycle } = {
+	require(Controllers.UIController),
 	require(Controllers.InputController),
 	require(Controllers.CameraController),
-	require(Controllers.FighterRenderer),
 	require(Controllers.EffectsController),
-	require(Controllers.UIController),
+	require(Controllers.FightController),
 }
 
 for _, controller in controllers do

@@ -18,13 +18,20 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 type MenuEntry = {
 	text: string,
-	screen: AppState.ScreenName,
+	screen: AppState.ScreenName?,
+	action: ((state: AppState.AppState) -> ())?,
 	primary: boolean?,
 }
 
 local ENTRIES: { MenuEntry } = {
 	{ text = "Одиночная игра", screen = "BossMap", primary = true },
 	{ text = "Мультиплеер", screen = "ModeSelect" },
+	{
+		text = "Тренировка",
+		action = function(state: AppState.AppState)
+			state.actions.startTraining()
+		end,
+	},
 	{ text = "Персонажи", screen = "CharacterSelect" },
 	{ text = "Магазин", screen = "Shop" },
 	{ text = "Управление", screen = "ControlsSettings" },
@@ -38,10 +45,14 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 			Button(scope, {
 				Text = entry.text,
 				LayoutOrder = index,
-				Size = UDim2.fromOffset(300, 52),
+				Size = UDim2.fromOffset(300, 48),
 				Color = if entry.primary then Theme.Colors.ButtonPrimary else Theme.Colors.Button,
 				OnClick = function()
-					AppState.navigate(state, entry.screen)
+					if entry.action then
+						entry.action(state)
+					elseif entry.screen then
+						AppState.navigate(state, entry.screen)
+					end
 				end,
 			})
 		)
@@ -124,10 +135,10 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Name = "Buttons",
 				BackgroundTransparency = 1,
 				Position = UDim2.fromOffset(60, 170),
-				Size = UDim2.fromOffset(300, 320),
+				Size = UDim2.fromOffset(300, 350),
 				[Children] = {
 					scope:New "UIListLayout" {
-						Padding = UDim.new(0, 10),
+						Padding = UDim.new(0, 8),
 						SortOrder = Enum.SortOrder.LayoutOrder,
 					},
 					buttons,
@@ -141,7 +152,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Font = Theme.Fonts.Pixel,
 				Position = UDim2.new(0, 16, 1, -10),
 				Size = UDim2.fromOffset(300, 18),
-				Text = "PROTOTYPE - STAGE 1",
+				Text = "PROTOTYPE",
 				TextColor3 = Theme.Colors.TextDim,
 				TextSize = 18,
 				TextXAlignment = Enum.TextXAlignment.Left,

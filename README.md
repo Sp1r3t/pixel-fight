@@ -8,7 +8,7 @@
 ## Статус по этапам
 
 - [x] 1. Структура проекта Rojo + Fusion, модули-заглушки, конфиг персонажей
-- [ ] 2. Движение, камера и спрайтовая анимация одного персонажа
+- [x] 2. Движение, камера и спрайтовая анимация одного персонажа
 - [ ] 3. Боевая система на сервере (удары, блок, хитбоксы, урон)
 - [ ] 4. Раунды, таймер, HUD на Fusion
 - [ ] 5. Мобильное управление
@@ -37,6 +37,22 @@ rojo sourcemap default.project.json -o sourcemap.json
 wally-package-types --sourcemap sourcemap.json Packages/   # реэкспорт типов Fusion для --!strict
 ```
 
+## Управление
+
+| Действие | ПК | Геймпад |
+|---|---|---|
+| Движение | A / D (← / →) | левый стик, крестовина |
+| Прыжок | W, Space (↑) | A, стик вверх |
+| Присед | S (↓) | стик вниз |
+| Блок | движение назад от противника | то же |
+| Рывок / отскок | Shift или двойное нажатие направления | LB / LT |
+| «Рука» (лёгкий удар) | J | X |
+| «Нога» (тяжёлый удар) | K | Y |
+| Особый приём | L | B |
+| Супер | I | RB / RT |
+
+Режим **«Тренировка»** в главном меню — бой против неподвижного манекена выбранным бойцом.
+
 ## Проверки
 
 ```bash
@@ -46,9 +62,10 @@ wally-package-types --sourcemap sourcemap.json Packages/   # реэкспорт 
 Запускает `stylua --check`, `selene`, `rojo build`, `luau-lsp analyze` (строгая типизация с
 определениями Roblox) и тесты `lune run tests/run.luau`.
 
-Тесты запускаются вне Studio: `tests/lib/RobloxRuntime.luau` эмулирует клиент Roblox поверх
-`@lune/roblox`, поэтому смоук-тесты реально строят интерфейс на Fusion, нажимают кнопки и
-ловят ошибки вроде опечатки в имени свойства или несуществующего значения Enum.
+Тесты запускаются вне Studio: `tests/lib/RobloxRuntime.luau` эмулирует Roblox поверх
+`@lune/roblox`, а `tests/lib/Harness.luau` запускает сервер и клиентов в одном процессе, соединяя их
+сетевой «петлёй» с настраиваемой задержкой и потерей пакетов. Тесты реально строят интерфейс на Fusion,
+нажимают кнопки и клавиши, проводят бой и ловят ошибки вроде опечатки в имени свойства.
 
 Про солверы типов Luau: весь код проходит стабильный солвер без ошибок; общий и серверный код
 чист и в новом солвере. В UI-файлах новый солвер пока показывает предупреждения о выводе
@@ -68,16 +85,21 @@ src/
       Characters.luau        16 персонажей — только данные
     Characters/
       CharacterRegistry.luau поиск, производные статы, валидация баланса
+    Combat/                  детерминированная симуляция боя 60 Гц, ввод, снапшоты
+    Net/                     каналы и Transport (обёртка над Remote*)
   server/  → ServerScriptService.Server
     init.server.luau         загрузчик сервисов (Init → Start)
     Services/                Data, Monetization, Combat, Input, Match, Boss, Matchmaking
+    Match/                   объект матча (симуляция + кто управляет бойцами)
+    Net/RequestRouter.luau   запросы клиента с лимитом частоты
     AI/                      StateMachine, BossAI
   client/  → StarterPlayerScripts.Client
     init.client.luau         загрузчик контроллеров
-    Controllers/             Input, Camera, FighterRenderer, Effects, UI
-    Sprites/SpriteAnimator.luau
+    Controllers/             UI, Input, Camera, Effects, Fight
+    Fight/                   арена, отрисовка бойцов, интерполяция снапшотов, выбор анимации
+    Sprites/                 SpriteAnimator: спрайт-листы (SheetSprite) и плейсхолдер-«кукла» (PuppetSprite)
     UI/                      Fusion: App, AppState, Theme, Components/, Screens/
-tests/                       тесты на Lune: конфиг/баланс + смоук-тесты запуска сервера, клиента и UI
+tests/                       тесты на Lune: симуляция, сеть, античит, UI и интеграция «клиент ↔ сервер»
 docs/ARCHITECTURE.md         ключевые архитектурные решения
 ```
 

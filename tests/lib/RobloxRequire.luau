@@ -123,6 +123,8 @@ export type LoaderOptions = {
 	globals: { [string]: any }?,
 	-- Сервисы, которых нет в дереве файлов (Players, RunService, ...).
 	services: { [string]: any }?,
+	-- Подмена модулей: путь к файлу ("src/shared/Net/Transport.luau") → готовое значение.
+	overrides: { [string]: any }?,
 }
 
 export type Loader = {
@@ -138,6 +140,7 @@ local RobloxRequire = {}
 function RobloxRequire.new(options: LoaderOptions?): Loader
 	local globals = if options and options.globals then options.globals else {}
 	local extraServices = if options and options.services then options.services else {}
+	local overrides = if options and options.overrides then options.overrides else {}
 
 	-- Обёртки-«инстансы» над узлами дерева.
 	local wrappers: { [Node]: any } = {}
@@ -247,6 +250,9 @@ function RobloxRequire.new(options: LoaderOptions?): Loader
 			error(`{tostring(module)} — не ModuleScript`, 2)
 		end
 		local source = node.source :: string
+		if overrides[source] ~= nil then
+			return overrides[source]
+		end
 		local cached = moduleCache[source]
 		if cached ~= nil then
 			return cached.value

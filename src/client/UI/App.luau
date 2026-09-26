@@ -21,6 +21,7 @@ local CharacterSelect = require(Screens.CharacterSelect)
 local BossMap = require(Screens.BossMap)
 local Shop = require(Screens.Shop)
 local ControlsSettings = require(Screens.ControlsSettings)
+local Battle = require(Screens.Battle)
 
 local Children, Out = Fusion.Children, Fusion.Out
 
@@ -34,7 +35,40 @@ local SCREENS: { [string]: ScreenComponent } = {
 	BossMap = BossMap,
 	Shop = Shop,
 	ControlsSettings = ControlsSettings,
+	Battle = Battle,
 }
+
+-- Всплывающее уведомление внизу экрана.
+local function Notice(scope: Scope, state: AppState.AppState): Instance
+	return scope:New "TextLabel" {
+		Name = "Notice",
+		AnchorPoint = Vector2.new(0.5, 1),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundColor3 = Theme.Colors.Panel,
+		BorderSizePixel = 0,
+		Font = Theme.Fonts.Body,
+		Position = UDim2.new(0.5, 0, 1, -60),
+		Size = UDim2.fromOffset(0, 40),
+		Text = state.notice,
+		TextColor3 = Theme.Colors.Text,
+		TextSize = 20,
+		Visible = scope:Computed(function(use)
+			return use(state.notice) ~= ""
+		end),
+		ZIndex = 50,
+		[Children] = {
+			scope:New "UIPadding" {
+				PaddingLeft = UDim.new(0, 16),
+				PaddingRight = UDim.new(0, 16),
+			},
+			scope:New "UIStroke" {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Theme.Colors.Accent,
+				Thickness = 2,
+			},
+		},
+	}
+end
 
 export type Props = {
 	State: AppState.AppState,
@@ -65,6 +99,10 @@ local function App(scope: Scope, props: Props): Instance
 				BackgroundColor3 = Theme.Colors.Background,
 				BorderSizePixel = 0,
 				Size = UDim2.fromScale(1, 1),
+				-- Во время боя виден мир (арена), фон меню скрыт.
+				Visible = scope:Computed(function(use)
+					return use(props.State.screen) ~= "Battle"
+				end),
 				ZIndex = 0,
 				[Children] = scope:New "UIGradient" {
 					Color = ColorSequence.new(Theme.Colors.BackgroundAlt, Theme.Colors.Background),
@@ -98,6 +136,7 @@ local function App(scope: Scope, props: Props): Instance
 							return screen(innerScope, props.State)
 						end),
 					},
+					Notice(scope, props.State),
 				},
 			},
 		},

@@ -8,7 +8,8 @@
 	  describe / it / expect                  — тест-раннер (tests/lib/TestKit.luau);
 	  requireShared("Config", "Characters")   — require(ReplicatedStorage.Shared.Config.Characters);
 	  newRuntime(options?)                    — эмуляция клиента/сервера Roblox (tests/lib/RobloxRuntime.luau);
-	  newLoader(options?)                     — загрузчик модулей проекта (tests/lib/RobloxRequire.luau).
+	  newLoader(options?)                     — загрузчик модулей проекта (tests/lib/RobloxRequire.luau);
+	  Harness.new(options?)                   — сервер + клиенты + сеть в одном процессе (tests/lib/Harness.luau).
 ]]
 
 local fs = require("@lune/fs")
@@ -18,6 +19,7 @@ local roblox = require("@lune/roblox")
 
 local RobloxRequire = require("./lib/RobloxRequire")
 local RobloxRuntime = require("./lib/RobloxRuntime")
+local Harness = require("./lib/Harness")
 local TestKit = require("./lib/TestKit")
 
 local SPEC_DIR = "tests/specs"
@@ -42,7 +44,10 @@ for _, file in files do
 				end,
 				newRuntime = RobloxRuntime.new,
 				newLoader = RobloxRequire.new,
+				Harness = Harness,
 				Vector2 = roblox.Vector2,
+				Vector3 = roblox.Vector3,
+				Enum = RobloxRuntime.Enum,
 			},
 		})
 		chunk()

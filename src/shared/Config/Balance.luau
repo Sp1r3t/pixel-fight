@@ -24,7 +24,7 @@ end
 local statScaling = {
 	health = { base = 1000, step = 60 }, -- 820..1180 HP
 	damage = { base = 1.0, step = 0.06 }, -- множитель урона 0.82..1.18
-	speed = { base = 14, step = 1.0 }, -- 11..17 студ/с
+	speed = { base = 10, step = 0.8 }, -- 7.6..12.4 студ/с
 	range = { base = 1.0, step = 0.06 }, -- множитель дальности 0.82..1.18
 	superGain = { base = 1.0, step = 0.08 }, -- множитель набора супера 0.76..1.24
 }
