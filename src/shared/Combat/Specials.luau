@@ -38,6 +38,7 @@ local WALL = Physics.ArenaHalfWidth - Physics.PushWidth / 2
 local ARC_GRAVITY = 150 -- навесной снаряд: крутая дуга на среднюю дистанцию
 local RISE_SPEED = 32 -- скорость взлёта апперкотов/лаунчеров
 local BEHIND_DISTANCE = 1.6 -- на каком расстоянии за спиной появляется телепортирующийся
+local TELEPORT_REVEAL = 5 -- за сколько кадров до удара телепортирующийся появляется (на это можно успеть)
 
 export type Behaviour = {
 	kind: string, -- тип особого приёма или способ доставки супера
@@ -147,8 +148,8 @@ function Specials.onStart(sim: Sim, fighter: Fighter, moveId: string)
 	if kind == "ArmorCharge" then
 		fighter.armor = params.armorHits or 1
 	elseif kind == "Teleport" then
-		-- Исчезает на время подготовки: по нему нельзя попасть.
-		fighter.invulnerable = math.max(fighter.invulnerable, move.startup + 1)
+		-- Исчезает на время подготовки: по нему нельзя попасть, пока не появится.
+		fighter.invulnerable = math.max(fighter.invulnerable, math.max(1, move.startup - TELEPORT_REVEAL) + 1)
 		SimState.emit(sim, "Vanish", fighter)
 	elseif kind == "Trap" then
 		Projectiles.removeOwned(sim, fighter.slot, "Mine")
@@ -318,7 +319,7 @@ function Specials.update(sim: Sim, fighter: Fighter, behaviour: Behaviour): bool
 		return true
 	elseif kind == "Teleport" then
 		fighter.vx = 0
-		if frame == startup - 1 then
+		if frame == math.max(0, startup - TELEPORT_REVEAL) then
 			teleport(sim, fighter, params.travelDistance or 10)
 		end
 		applyGravity(fighter)

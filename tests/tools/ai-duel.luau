@@ -1,7 +1,7 @@
 --[[
 	Прогон «ИИ против ИИ» для настройки сложности боссов (без Roblox, в Lune):
 
-	    lune run tests/tools/ai-duel.luau <уровень A> <уровень B> [матчей=10] [персонаж=rook]
+	    lune run tests/tools/ai-duel.luau <уровень A> <уровень B> [матчей=10] [персонаж A=rook] [персонаж B=A]
 
 	Уровень — номер босса 1..20 (профиль мастерства по кривой сложности, стиль «Универсал»);
 	уровень 0 — простой «напористый» бот (идёт вперёд и часто бьёт), модель игрока-новичка.
@@ -30,6 +30,7 @@ local levelA = tonumber(process.args[1]) or 1
 local levelB = tonumber(process.args[2]) or 20
 local matches = tonumber(process.args[3]) or 10
 local character = process.args[4] or "rook"
+local characterB = process.args[5] or character
 
 -- «Новичок»: идёт вперёд, вблизи жмёт случайные кнопки, почти не блокирует.
 local function rushBot(seed: number)
@@ -78,7 +79,7 @@ local stats: { [string]: number } = {}
 local frames = 0
 local started = os.clock()
 for index = 1, matches do
-	local sim = Simulation.new({ characters = { character, character } })
+	local sim = Simulation.new({ characters = { character, characterB } })
 	sim.fighters[1].tapDash = levelA == 0
 	sim.fighters[2].tapDash = levelB == 0
 	local flow = MatchFlow.new({ roundsToWin = 1 })
@@ -102,7 +103,7 @@ for index = 1, matches do
 end
 
 print(
-	`уровень {levelA}: {wins[1]} побед · уровень {levelB}: {wins[2]} побед ({character}, {matches} матчей)`
+	`уровень {levelA} ({character}): {wins[1]} побед · уровень {levelB} ({characterB}): {wins[2]} побед, {matches} матчей`
 )
 print(`кадров {frames}, {string.format("%.2f", os.clock() - started)} с`)
 local keys = {}

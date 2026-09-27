@@ -604,6 +604,12 @@ local function reactToThreat(brain: Brain): string?
 	return "Defend"
 end
 
+-- Есть ли у бойца готовая стойка-контратака.
+local function hasCounter(brain: Brain): boolean
+	local behaviour = Specials.behaviour(brain.me, "Special")
+	return behaviour ~= nil and behaviour.kind == "Counter" and brain.me.specialCooldown == 0 and canAct(brain.me)
+end
+
 -- Противник в восстановлении после промаха — наказать?
 local function reactToWhiff(brain: Brain): string?
 	local phase = opponentAttackPhase(brain)
@@ -751,6 +757,11 @@ local function decide(brain: Brain): string?
 	if dist < opponentReach(brain, "Heavy") and pressure > 0.6 then
 		local readIt = math.min(1, pressure / 2) * (profile.readChance * 0.7 + profile.blockChance * 0.5)
 		if chance(brain, readIt) then
+			-- Боец со стойкой-контратакой отвечает на «прочитанный» натиск стойкой.
+			if hasCounter(brain) and chance(brain, 0.35) then
+				startPlan(brain, { { button = "Special" } })
+				return "Attack"
+			end
 			brain.guardLow = chance(brain, lowRatio(brain.habits) * (0.5 + profile.readChance))
 			brain.guardHold = profile.thinkInterval * 2
 			return "Defend"
@@ -923,6 +934,10 @@ states.Defend = {
 					startPlan(brain, extendPlan(brain, starter))
 					return "Attack"
 				end
+			elseif window >= -2 and hasCounter(brain) and chance(brain, profile.readChance * 0.4) then
+				-- После блока противник часто продолжает натиск — встречаем стойкой.
+				startPlan(brain, { { button = "Special" } })
+				return "Attack"
 			elseif window >= -2 and chance(brain, profile.aggression * 0.3 + profile.comboSkill * 0.2) then
 				local starter = chooseStarter(brain, 6, false)
 				if starter then

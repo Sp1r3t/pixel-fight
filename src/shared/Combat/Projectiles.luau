@@ -52,7 +52,7 @@ export type SpawnOptions = {
 local Projectiles = {}
 
 Projectiles.KINDS = table.freeze({ "Orb", "Comet", "Disc", "Wave", "Mine" })
-Projectiles.MINE_ARM_FRAMES = 12
+Projectiles.MINE_ARM_FRAMES = 8
 Projectiles.REHIT_FRAMES = 20
 
 local kindIndex: { [string]: number } = {}
