@@ -210,3 +210,60 @@ describe("Ввод", function()
 		expect(simulate()).toBe(simulate())
 	end)
 end)
+
+describe("Случайные нажатия (все бойцы)", function()
+	it(
+		"1 на 1 и 2 на 2: без ошибок, HP, позиции и шкала супера в пределах",
+		function()
+			local MatchFlow = requireShared("Combat", "MatchFlow")
+			local CharacterRegistry = requireShared("Characters", "CharacterRegistry")
+			local Rng = requireShared("Util", "Rng")
+			local ids = {}
+			for _, def in CharacterRegistry.list() do
+				table.insert(ids, def.id)
+			end
+			local maxMeter = GameConfig.SuperMeter.Max
+			for seed = 1, 24 do
+				local rng = Rng.new(seed)
+				local team = seed % 2 == 0
+				local chars = {}
+				for i = 1, if team then 4 else 2 do
+					-- Каждый боец встречается хотя бы раз.
+					chars[i] = ids[(seed * 4 + i) % #ids + 1]
+				end
+				local sim = Simulation.new({
+					characters = chars,
+					teams = if team then { 1, 2, 1, 2 } else nil,
+					stage = if team then "TwoFloors" else nil,
+				})
+				local flow = MatchFlow.new({ roundsToWin = 2 })
+				MatchFlow.start(flow, sim)
+				local held = {}
+				for _ = 1, 3600 do
+					if flow.finished then
+						break
+					end
+					local inputs = {}
+					for i = 1, #chars do
+						if Rng.next(rng) < 0.15 then
+							held[i] = Rng.integer(rng, 0, InputBits.ALL)
+						end
+						local pressed = if Rng.next(rng) < 0.3 then bit32.lshift(1, Rng.integer(rng, 0, 9)) else 0
+						inputs[i] = { held = held[i] or 0, pressed = pressed }
+					end
+					Simulation.step(sim, inputs)
+					MatchFlow.step(flow, sim)
+					for _, f in sim.fighters do
+						assert(f.health == f.health and f.health >= 0 and f.health <= f.maxHealth, `HP {f.health}`)
+						assert(
+							f.x == f.x and f.y == f.y and math.abs(f.x) < 60 and f.y > -30,
+							`позиция {f.x},{f.y}`
+						)
+						assert(f.meter >= 0 and f.meter <= maxMeter, `шкала {f.meter}`)
+					end
+					assert(#sim.projectiles <= 16, "слишком много снарядов")
+				end
+			end
+		end
+	)
+end)
