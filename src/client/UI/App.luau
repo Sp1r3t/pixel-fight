@@ -16,6 +16,7 @@ local AppState = require(script.Parent.AppState)
 local Theme = require(script.Parent.Theme)
 local TouchControls = require(script.Parent.Components.TouchControls)
 local MenuBackdrop = require(script.Parent.Components.MenuBackdrop)
+local BattleOverlays = require(script.Parent.Components.BattleOverlays)
 
 local Screens = script.Parent.Screens
 local MainMenu = require(Screens.MainMenu)
@@ -43,7 +44,7 @@ local SCREENS: { [string]: ScreenComponent } = {
 	Battle = Battle,
 }
 
--- Всплывающее уведомление внизу экрана.
+-- Всплывающее уведомление внизу экрана: скруглённая плашка с золотым кантом.
 local function Notice(scope: Scope, state: AppState.AppState): Instance
 	return scope:New "TextLabel" {
 		Name = "Notice",
@@ -51,25 +52,26 @@ local function Notice(scope: Scope, state: AppState.AppState): Instance
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundColor3 = Theme.Colors.Panel,
 		BorderSizePixel = 0,
-		Font = Theme.Fonts.Body,
-		Position = UDim2.new(0.5, 0, 1, -60),
-		Size = UDim2.fromOffset(0, 40),
+		Font = Theme.Fonts.Title,
+		Position = UDim2.new(0.5, 0, 1, -64),
+		Size = UDim2.fromOffset(0, 44),
 		Text = state.notice,
 		TextColor3 = Theme.Colors.Text,
-		TextSize = 20,
+		TextSize = 21,
 		Visible = scope:Computed(function(use)
 			return use(state.notice) ~= ""
 		end),
 		ZIndex = 50,
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
 			scope:New "UIPadding" {
-				PaddingLeft = UDim.new(0, 16),
-				PaddingRight = UDim.new(0, 16),
+				PaddingLeft = UDim.new(0, 22),
+				PaddingRight = UDim.new(0, 22),
 			},
 			scope:New "UIStroke" {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = Theme.Colors.Accent,
-				Thickness = 2,
+				Thickness = 3,
 			},
 		},
 	}
@@ -95,7 +97,8 @@ local function EdgeLayer(scope: Scope, state: AppState.AppState): Instance
 					Selected = state.controlsSelected,
 				})
 			end
-			if screen ~= "Battle" then
+			-- Пока открыто окно (пауза, памятка), кнопки скрыты — ничего не остаётся «зажатым».
+			if screen ~= "Battle" or use(state.modal) ~= "" then
 				return nil
 			end
 			local battle = use(state.battle)
@@ -122,6 +125,25 @@ local function EdgeLayer(scope: Scope, state: AppState.AppState): Instance
 					state.actions.touchHeld(mask)
 				end,
 			})
+		end),
+	}
+end
+
+-- Окна поверх всего (выше сенсорных кнопок): пауза и памятка «Как играть».
+local function Overlay(scope: Scope, state: AppState.AppState): Instance
+	return scope:New "Frame" {
+		Name = "Overlay",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 30,
+		[Children] = scope:Computed(function(use, innerScope: Scope): Instance?
+			local modal = use(state.modal)
+			if modal == "Pause" then
+				return BattleOverlays.PauseMenu(innerScope, state)
+			elseif modal == "HowToPlay" then
+				return BattleOverlays.HowToPlay(innerScope, state)
+			end
+			return nil
 		end),
 	}
 end
@@ -187,6 +209,7 @@ local function App(scope: Scope, props: Props): Instance
 						end),
 					},
 					EdgeLayer(scope, props.State),
+					Overlay(scope, props.State),
 					Notice(scope, props.State),
 				},
 			},

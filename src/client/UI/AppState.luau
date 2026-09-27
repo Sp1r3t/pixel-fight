@@ -176,6 +176,10 @@ export type AppState = {
 	controlsSelected: Fusion.Value<string>,
 	-- Текущий масштаб интерфейса (логические пиксели → пиксели экрана).
 	uiScale: Fusion.Value<number>,
+	-- Окно поверх экрана: "" — нет, "Pause" — пауза в бою, "HowToPlay" — памятка по кнопкам.
+	modal: Fusion.Value<string>,
+	-- Памятку уже показывали в этой сессии (сама открывается только в первой тренировке).
+	howToSeen: boolean,
 	actions: Actions,
 }
 
@@ -244,6 +248,8 @@ function AppState.new(scope: Scope): AppState
 		controlsDraft = scope:Value(ControlsLayout.default()),
 		controlsSelected = scope:Value("Light"),
 		uiScale = scope:Value(1),
+		modal = scope:Value(""),
+		howToSeen = false,
 		actions = {
 			startTraining = noop,
 			startBoss = function(_bossId: string) end,
@@ -336,16 +342,19 @@ function AppState.navigate(state: AppState, screen: ScreenName)
 		return
 	end
 	table.insert(state.history, current)
+	state.modal:set("")
 	state.screen:set(screen)
 end
 
 function AppState.back(state: AppState)
 	local previous: string = table.remove(state.history) or "MainMenu"
+	state.modal:set("")
 	state.screen:set(previous)
 end
 
 -- Заменить текущий экран (без записи в историю: «назад» вернёт на предыдущий).
 function AppState.replace(state: AppState, screen: ScreenName)
+	state.modal:set("")
 	state.screen:set(screen)
 end
 

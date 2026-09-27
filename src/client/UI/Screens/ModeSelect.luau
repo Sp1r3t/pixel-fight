@@ -19,6 +19,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local PanelBox = require(script.Parent.Parent.Components.Panel)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 
 local Children, Out, peek = Fusion.Children, Fusion.Out, Fusion.peek
@@ -66,21 +67,12 @@ local function Hint(scope: Scope, text: string, position: UDim2, height: number)
 end
 
 local function Panel(scope: Scope, name: string, position: UDim2, size: UDim2, children: { Fusion.Child }): Instance
-	return scope:New "Frame" {
+	return PanelBox(scope, {
 		Name = name,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
-		BorderSizePixel = 0,
 		Position = position,
 		Size = size,
-		[Children] = {
-			scope:New "UIStroke" {
-				Color = Theme.Colors.Outline,
-				Thickness = Theme.Outline,
-			},
-			children,
-		} :: { Fusion.Child },
-	}
+		Content = children,
+	})
 end
 
 -- Панель статуса поиска/комнаты поверх экрана.
@@ -142,6 +134,7 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 		end),
 		ZIndex = 20,
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIStroke" {
 				Color = Theme.Colors.Accent,
 				Thickness = Theme.Outline,
@@ -329,10 +322,11 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				end,
 			}),
 			Panel(scope, "Online", UDim2.fromOffset(24, 76), UDim2.fromOffset(440, 290), {
-				Title(scope, "Онлайн", UDim2.fromOffset(20, 12)),
+				Title(scope, "🌐 Онлайн", UDim2.fromOffset(20, 12)),
 				Button(scope, {
 					Name = "QueueVersus",
 					Text = "Быстрый бой 1 на 1",
+					Icon = "⚔️",
 					Color = Theme.Colors.ButtonPrimary,
 					Position = UDim2.fromOffset(20, 48),
 					Size = UDim2.fromOffset(400, 48),
@@ -343,6 +337,8 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				Button(scope, {
 					Name = "QueueTeam",
 					Text = "Команды 2 на 2",
+					Icon = "👥",
+					Color = Theme.Colors.Info,
 					Position = UDim2.fromOffset(20, 108),
 					Size = UDim2.fromOffset(400, 48),
 					OnClick = function()
@@ -351,19 +347,19 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				}),
 				Hint(
 					scope,
-					`До {GameConfig.RoundsToWin.Versus} побед в раундах. 2 на 2 — все четверо на арене с двумя `
-						.. "этажами: нижние бьются внизу, верхние — наверху; через дыру в центре можно "
-						.. "запрыгнуть наверх (двойной прыжок) или спрыгнуть вниз. "
-						.. `Победа в онлайн-бою: +{GameConfig.Matchmaking.WinReward} монет.`,
+					`Бой до {GameConfig.RoundsToWin.Versus} побед. В 2 на 2 арена в два этажа: `
+						.. "прыгай через дыру в центре наверх (двойной прыжок) или вниз! "
+						.. `Победа онлайн: +{GameConfig.Matchmaking.WinReward} монет 🪙`,
 					UDim2.fromOffset(20, 170),
 					100
 				),
 			}),
 			Panel(scope, "Friends", UDim2.fromOffset(496, 76), UDim2.fromOffset(440, 290), {
-				Title(scope, "С другом", UDim2.fromOffset(20, 12)),
+				Title(scope, "👫 С другом", UDim2.fromOffset(20, 12)),
 				Button(scope, {
 					Name = "RoomVersus",
 					Text = "Комната 1 на 1",
+					Icon = "🔑",
 					Position = UDim2.fromOffset(20, 48),
 					Size = UDim2.fromOffset(194, 48),
 					TextSize = 18,
@@ -374,6 +370,7 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				Button(scope, {
 					Name = "RoomTeam",
 					Text = "Комната 2 на 2",
+					Icon = "🔑",
 					Position = UDim2.fromOffset(226, 48),
 					Size = UDim2.fromOffset(194, 48),
 					TextSize = 18,
@@ -395,10 +392,19 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 					TextColor3 = Theme.Colors.Text,
 					TextSize = 30,
 					[Out "Text"] = codeText,
+					[Children] = {
+						scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.ButtonRadius) },
+						scope:New "UIStroke" {
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = Theme.Colors.Outline,
+							Thickness = Theme.Outline,
+						},
+					},
 				},
 				Button(scope, {
 					Name = "JoinRoom",
 					Text = "Войти",
+					Icon = "🚪",
 					Color = Theme.Colors.ButtonPrimary,
 					Position = UDim2.fromOffset(282, 116),
 					Size = UDim2.fromOffset(138, 48),
@@ -408,14 +414,14 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				}),
 				Hint(
 					scope,
-					"Создайте комнату и продиктуйте код другу — или введите код, который дал вам друг. "
-						.. "Друг может быть на другом сервере: вас перенесёт к нему автоматически.",
+					"Создай комнату и скажи код другу — или введи код, который дал друг. "
+						.. "Даже если друг на другом сервере, игра сама вас соединит.",
 					UDim2.fromOffset(20, 178),
 					90
 				),
 			}),
 			Panel(scope, "Cpu", UDim2.fromOffset(24, 380), UDim2.fromOffset(912, 110), {
-				Title(scope, "Против компьютера", UDim2.fromOffset(20, 10)),
+				Title(scope, "🤖 Против компьютера", UDim2.fromOffset(20, 10)),
 				cpuButtons,
 			}),
 			StatusOverlay(scope, state, now),

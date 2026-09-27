@@ -22,6 +22,11 @@ local function startTraining(onTouch)
 	end
 	client.click("Тренировка")
 	game.step(10)
+	-- Первая тренировка открывает памятку «Как играть» (кнопки под ней скрыты) — закрываем.
+	if client.find("HowToPlay") then
+		client.press("GotIt")
+		game.step(1)
+	end
 	local MatchService = game.serverRequire("Services", "MatchService")
 	return game, client, MatchService.getMatchOf(client.player)
 end

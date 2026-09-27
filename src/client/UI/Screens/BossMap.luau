@@ -21,6 +21,8 @@ local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
+local PanelBox = require(script.Parent.Parent.Components.Panel)
+local Pill = require(script.Parent.Parent.Components.Pill)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -93,6 +95,7 @@ local function BossCard(scope: Scope, boss: BossDef, state: AppState.AppState, n
 		end,
 
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIStroke" {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = scope:Computed(function(use)
@@ -142,15 +145,23 @@ local function BossCard(scope: Scope, boss: BossDef, state: AppState.AppState, n
 				AnchorPoint = Vector2.new(1, 0),
 				BackgroundColor3 = Theme.Colors.Free,
 				BorderSizePixel = 0,
-				Font = Theme.Fonts.Body,
+				Font = Theme.Fonts.Title,
 				Position = UDim2.new(1, -4, 0, 4),
-				Size = UDim2.fromOffset(20, 20),
+				Size = UDim2.fromOffset(22, 22),
 				Text = "✓",
 				TextColor3 = Theme.Colors.Outline,
 				TextSize = 16,
 				Visible = scope:Computed(function(use)
 					return use(status) == "Cleared"
 				end),
+				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+					scope:New "UIStroke" {
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = Theme.Colors.Outline,
+						Thickness = 2,
+					},
+				},
 			},
 			scope:New "TextLabel" {
 				Name = "Lock",
@@ -259,18 +270,12 @@ local function DetailsPanel(scope: Scope, boss: BossDef, state: AppState.AppStat
 		return `Ваш боец: {if def then def.displayName else "?"}`
 	end)
 
-	return scope:New "Frame" {
+	return PanelBox(scope, {
 		Name = "BossDetails",
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
-		BorderSizePixel = 0,
 		Position = UDim2.fromOffset(576, 76),
 		Size = UDim2.fromOffset(360, 448),
-		[Children] = {
-			scope:New "UIStroke" {
-				Color = tierColor(boss),
-				Thickness = Theme.Outline,
-			},
+		StrokeColor = tierColor(boss),
+		Content = {
 			scope:Computed(function(use, innerScope: Scope): Instance?
 				if moveset == nil then
 					return nil
@@ -378,7 +383,7 @@ local function DetailsPanel(scope: Scope, boss: BossDef, state: AppState.AppStat
 				end,
 			}),
 		} :: { Fusion.Child },
-	}
+	})
 end
 
 local function BossMap(scope: Scope, state: AppState.AppState): Instance
@@ -403,38 +408,22 @@ local function BossMap(scope: Scope, state: AppState.AppState): Instance
 		[Children] = {
 			ScreenHeader(scope, {
 				Title = "БАШНЯ БОССОВ",
+				Coins = state.coins,
 				OnBack = function()
 					AppState.back(state)
 				end,
 			}),
-			scope:New "TextLabel" {
+			Pill(scope, {
 				Name = "Progress",
-				AnchorPoint = Vector2.new(1, 0),
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Body,
-				Position = UDim2.new(1, -20, 0, 12),
-				Size = UDim2.fromOffset(170, 20),
+				Icon = "🏰",
 				Text = scope:Computed(function(use)
 					return `Пройдено: {use(state.bossProgress)} / {BossRegistry.count()}`
 				end),
-				TextColor3 = Theme.Colors.Text,
+				Color = Theme.Colors.PanelLight,
+				Height = 30,
 				TextSize = 16,
-				TextXAlignment = Enum.TextXAlignment.Right,
-			},
-			scope:New "TextLabel" {
-				Name = "Coins",
-				AnchorPoint = Vector2.new(1, 0),
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Body,
-				Position = UDim2.new(1, -20, 0, 34),
-				Size = UDim2.fromOffset(170, 20),
-				Text = scope:Computed(function(use)
-					return `Монеты: {use(state.coins)}`
-				end),
-				TextColor3 = Theme.Colors.Accent,
-				TextSize = 16,
-				TextXAlignment = Enum.TextXAlignment.Right,
-			},
+				Position = UDim2.fromOffset(24, 482),
+			}),
 			scope:New "Frame" {
 				Name = "Tower",
 				BackgroundTransparency = 1,
@@ -453,9 +442,9 @@ local function BossMap(scope: Scope, state: AppState.AppState): Instance
 				Name = "Legend",
 				BackgroundTransparency = 1,
 				Font = Theme.Fonts.BodyRegular,
-				Position = UDim2.fromOffset(24, 480),
-				Size = UDim2.fromOffset(532, 40),
-				Text = "Боссы открываются по порядку. Бой до 3 побед. Цвет рамки — сложность: "
+				Position = UDim2.fromOffset(236, 478),
+				Size = UDim2.fromOffset(320, 40),
+				Text = "Боссы открываются по порядку, бой до 3 побед. Цвет рамки — сложность: "
 					.. "зелёный · синий · оранжевый · красный · фиолетовый.",
 				TextColor3 = Theme.Colors.TextDim,
 				TextSize = 13,

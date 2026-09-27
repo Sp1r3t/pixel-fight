@@ -93,8 +93,9 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 		BackgroundColor3 = Theme.Colors.Panel,
 		BorderSizePixel = 0,
 		Position = UDim2.fromOffset(x, 72),
-		Size = UDim2.fromOffset(214, 72),
+		Size = UDim2.fromOffset(200, 72),
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIStroke" {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = if isLocal then Theme.Colors.Accent else TEAM_COLORS[slot.team],
@@ -105,7 +106,7 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 				Name = "Player",
 				Text = if isLocal then "ВЫ" else slot.name,
 				Position = UDim2.fromOffset(72, 6),
-				Size = UDim2.fromOffset(136, 20),
+				Size = UDim2.fromOffset(122, 20),
 				TextSize = 17,
 				Color = TEAM_COLORS[slot.team],
 				Align = Enum.TextXAlignment.Left,
@@ -115,7 +116,7 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 				Text = string.upper(if def then def.displayName else slot.characterId),
 				Font = Theme.Fonts.Pixel,
 				Position = UDim2.fromOffset(72, 26),
-				Size = UDim2.fromOffset(136, 20),
+				Size = UDim2.fromOffset(122, 20),
 				TextSize = 18,
 				Align = Enum.TextXAlignment.Left,
 			}),
@@ -123,7 +124,7 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 				Name = "Status",
 				Text = status,
 				Position = UDim2.fromOffset(72, 47),
-				Size = UDim2.fromOffset(136, 18),
+				Size = UDim2.fromOffset(122, 18),
 				TextSize = 14,
 				Color = if (info.phase == "Character" and slot.ready) or (info.phase ~= "Character" and slot.vote)
 					then Theme.Colors.Free
@@ -147,7 +148,7 @@ local function TeamsRow(scope: Scope, state: AppState.AppState): Fusion.Child
 			counts[team] += 1
 			local index = counts[team]
 			-- Синие слева от центра, красные справа; «VS» посередине.
-			local x = if team == 1 then 480 - 40 - index * 222 + 8 else 480 + 40 + (index - 1) * 222
+			local x = if team == 1 then 480 - 44 - index * 208 + 8 else 480 + 44 + (index - 1) * 208
 			table.insert(items, SlotCard(innerScope, slot, info, x))
 		end
 		table.insert(
@@ -208,6 +209,7 @@ local function CharacterPhase(scope: Scope, state: AppState.AppState): Instance
 					end
 				end,
 				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 					scope:New "UIStroke" {
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						Color = scope:Computed(function(use)
@@ -598,10 +600,13 @@ local function Draft(scope: Scope, state: AppState.AppState): Instance
 					return if left <= 5 then Color3.fromHex("#FF4D6D") else Theme.Colors.Text
 				end),
 				TextSize = 40,
-				[Children] = scope:New "UIStroke" {
-					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-					Color = Theme.Colors.Outline,
-					Thickness = 3,
+				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
+					scope:New "UIStroke" {
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = Theme.Colors.Outline,
+						Thickness = 3,
+					},
 				},
 			},
 			TeamsRow(scope, state),

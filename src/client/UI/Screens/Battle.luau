@@ -5,7 +5,8 @@
 	    с задержанной белой полосой урона и шкала супера с подписью «SUPER!» сбоку; таймер по центру;
 	  • 2 на 2 — две компактные строки на команду (слева синие, справа красные): портрет, имя, HP и
 	    тонкая шкала супера; выбитый боец помечен «K.O.»; победы команд — по бокам от таймера;
-	  • под таймером — кнопка паузы: меню «Продолжить / Выйти» (случайно выйти из боя нельзя);
+	  • под таймером — кнопка паузы: окно «Продолжить / Как играть / Выйти» (Components/BattleOverlays,
+	    слой поверх сенсорных кнопок) — случайно выйти из боя нельзя;
 	  • счётчик комбо у атакующей стороны, крупные надписи раундов по центру;
 	  • на ПК и геймпаде внизу — подсказка клавиш: в тренировке всегда, в бою — первые секунды.
 	Верхняя полоса HUD — до y = 112 (камера держит бойцов ниже неё), комбо — ниже.
@@ -20,7 +21,6 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local Panel = require(script.Parent.Parent.Components.Panel)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local HealthBar = require(script.Parent.Parent.Components.HealthBar)
 local SuperMeter = require(script.Parent.Parent.Components.SuperMeter)
@@ -523,93 +523,6 @@ local function ControlsHint(scope: Scope, state: AppState.AppState, clock: Fusio
 	}
 end
 
--- Меню паузы: бой не останавливается (в онлайне это нечестно), но выйти можно только отсюда.
-local function PauseMenu(scope: Scope, state: AppState.AppState, open: Fusion.Value<boolean>): Instance
-	local online = scope:Computed(function(use)
-		local battle = use(state.battle)
-		return battle ~= nil and (battle.mode == "Versus" or battle.mode == "Team")
-	end)
-	return scope:New "Frame" {
-		Name = "PauseMenu",
-		BackgroundColor3 = Theme.Colors.Outline,
-		BackgroundTransparency = 0.45,
-		BorderSizePixel = 0,
-		Size = UDim2.fromScale(1, 1),
-		Visible = open,
-		ZIndex = 40,
-		[Children] = {
-			Panel(scope, {
-				Name = "Box",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.fromOffset(360, 250),
-				ZIndex = 41,
-				Content = {
-					scope:New "TextLabel" {
-						Name = "Title",
-						BackgroundTransparency = 1,
-						Font = Theme.Fonts.Title,
-						Position = UDim2.fromOffset(0, 16),
-						Size = UDim2.new(1, 0, 0, 40),
-						Text = "ПАУЗА",
-						TextColor3 = Theme.Colors.Accent,
-						TextSize = 36,
-						ZIndex = 42,
-						[Children] = scope:New "UIStroke" {
-							Color = Theme.Colors.Outline,
-							Thickness = 3,
-						},
-					},
-					scope:New "TextLabel" {
-						Name = "Note",
-						BackgroundTransparency = 1,
-						Font = Theme.Fonts.Body,
-						Position = UDim2.fromOffset(20, 58),
-						Size = UDim2.new(1, -40, 0, 40),
-						Text = scope:Computed(function(use)
-							return if use(online)
-								then "Бой продолжается — соперник ждёт!"
-								else "Отдохни и возвращайся в бой."
-						end),
-						TextColor3 = Theme.Colors.TextDim,
-						TextSize = 16,
-						TextWrapped = true,
-						ZIndex = 42,
-					},
-					Button(scope, {
-						Name = "Resume",
-						Text = "Продолжить",
-						Icon = "▶️",
-						Color = Theme.Colors.Success,
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.new(0.5, 0, 0, 108),
-						Size = UDim2.fromOffset(260, 54),
-						ZIndex = 42,
-						OnClick = function()
-							open:set(false)
-						end,
-					}),
-					Button(scope, {
-						Name = "Leave",
-						Text = "Выйти",
-						Icon = "🚪",
-						Color = Theme.Colors.Danger,
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.new(0.5, 0, 0, 174),
-						Size = UDim2.fromOffset(260, 50),
-						TextSize = 20,
-						ZIndex = 42,
-						OnClick = function()
-							open:set(false)
-							state.actions.leaveMatch()
-						end,
-					}),
-				},
-			}),
-		},
-	}
-end
-
 local function Battle(scope: Scope, state: AppState.AppState): Instance
 	-- Часы для пульсаций и подсказок; соединение удаляется вместе со scope экрана.
 	local clock = scope:Value(os.clock())
@@ -619,7 +532,12 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 			clock:set(os.clock())
 		end)
 	)
-	local paused = scope:Value(false)
+	-- Первая тренировка в сессии: сама открывается памятка «Как играть».
+	local battleInfo = peek(state.battle)
+	if battleInfo and battleInfo.mode == "Training" and not state.howToSeen then
+		state.howToSeen = true
+		state.modal:set("HowToPlay")
+	end
 
 	-- Раскладка HUD зависит от числа бойцов (пересобирается, только когда начинается новый бой).
 	local teamMode = scope:Computed(function(use)
@@ -666,11 +584,10 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				Size = UDim2.fromOffset(48, 40),
 				TextSize = 22,
 				OnClick = function()
-					paused:set(not peek(paused))
+					state.modal:set(if peek(state.modal) == "Pause" then "" else "Pause")
 				end,
 			}),
 			ControlsHint(scope, state, clock),
-			PauseMenu(scope, state, paused),
 		} :: { Fusion.Child },
 	}
 end

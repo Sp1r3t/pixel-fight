@@ -74,6 +74,7 @@ local function CharacterCard(scope: Scope, def: Types.CharacterDef, state: AppSt
 		BorderSizePixel = 0,
 		LayoutOrder = def.order,
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIStroke" {
 				Color = Color3.fromHex(def.palette.accent),
 				Thickness = 2,
@@ -166,6 +167,7 @@ local function MapCard(scope: Scope, arena: Arenas.ArenaTheme, index: number, st
 		Position = UDim2.fromOffset(24 + (index - 1) * 304, 0),
 		Size = UDim2.fromOffset(292, 330),
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIStroke" {
 				Color = Theme.Colors.Paid,
 				Thickness = 3,
@@ -320,20 +322,10 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 		[Children] = {
 			ScreenHeader(scope, {
 				Title = "МАГАЗИН",
+				Coins = state.coins,
 				OnBack = function()
 					AppState.back(state)
 				end,
-			}),
-			Text(scope, {
-				Name = "Coins",
-				Text = scope:Computed(function(use)
-					return `Монеты: {use(state.coins)}`
-				end),
-				Position = UDim2.new(1, -220, 0, 20),
-				Size = UDim2.fromOffset(200, 24),
-				Color = Theme.Colors.Accent,
-				Align = Enum.TextXAlignment.Right,
-				TextSize = 20,
 			}),
 			tabButtons,
 			scope:New "Frame" {
@@ -365,6 +357,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Size = UDim2.fromOffset(588, 400),
 				Visible = visibleOn("Fighters"),
 				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 					scope:New "UIStroke" {
 						Color = Theme.Colors.Outline,
 						Thickness = Theme.Outline,
@@ -409,6 +402,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Size = UDim2.fromOffset(300, 400),
 				Visible = visibleOn("Coins"),
 				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 					scope:New "UIStroke" {
 						Color = Theme.Colors.Outline,
 						Thickness = Theme.Outline,

@@ -7,6 +7,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
@@ -15,6 +16,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local Format = require(script.Parent.Parent.Format)
 local Button = require(script.Parent.Parent.Components.Button)
 local Pill = require(script.Parent.Parent.Components.Pill)
+local Panel = require(script.Parent.Parent.Components.Panel)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 
 local Children = Fusion.Children
@@ -64,6 +66,19 @@ local MORE: { MenuEntry } = {
 	{ text = "Управление", icon = "🎮", color = Theme.Colors.Button, screen = "ControlsSettings" },
 }
 
+-- Советы для детей внизу меню (меняются каждые TIP_SECONDS).
+local TIPS: { string } = {
+	"Держи 🛡️ «Блок» — и удары почти не отнимают здоровье.",
+	"Шкала «SUPER» полная? Жми ⚡ — и смотри супер-приём!",
+	"Дважды быстро толкни джойстик в сторону — будет рывок 💨.",
+	"В бою 2 на 2 прыгни ещё раз в воздухе — и перелетишь на другой этаж.",
+	"Проиграл боссу? Попробуй другой приём или другого бойца.",
+	"Платные бойцы не сильнее бесплатных — только красивее.",
+	"Перед онлайн-боем голосуй за карту, на которой хочешь драться.",
+	"Удары подряд — это комбо! Попробуй 👊 👊 🦶.",
+}
+local TIP_SECONDS = 7
+
 local TILE_W, TILE_H, GAP = 180, 150, 12
 local LEFT, TOP = 40, 158
 
@@ -101,6 +116,55 @@ local function open(state: AppState.AppState, entry: MenuEntry)
 	elseif entry.screen then
 		AppState.navigate(state, entry.screen)
 	end
+end
+
+local function TipBar(scope: Scope): Instance
+	local index = scope:Value(math.random(1, #TIPS))
+	local elapsed = 0
+	table.insert(
+		scope,
+		RunService.RenderStepped:Connect(function(dt: number)
+			elapsed += dt
+			if elapsed >= TIP_SECONDS then
+				elapsed = 0
+				index:set(Fusion.peek(index) % #TIPS + 1)
+			end
+		end)
+	)
+	return Panel(scope, {
+		Name = "Tips",
+		Position = UDim2.fromOffset(LEFT, TOP + TILE_H + 90),
+		Size = UDim2.fromOffset(TILE_W * 3 + GAP * 2, 58),
+		Transparency = 0.15,
+		Content = {
+			scope:New "TextLabel" {
+				Name = "Bulb",
+				AnchorPoint = Vector2.new(0, 0.5),
+				BackgroundTransparency = 1,
+				Font = Theme.Fonts.Title,
+				Position = UDim2.new(0, 10, 0.5, 0),
+				Size = UDim2.fromOffset(34, 34),
+				Text = "💡",
+				TextSize = 28,
+			},
+			scope:New "TextLabel" {
+				Name = "Tip",
+				AnchorPoint = Vector2.new(0, 0.5),
+				BackgroundTransparency = 1,
+				Font = Theme.Fonts.Body,
+				Position = UDim2.new(0, 52, 0.5, 0),
+				Size = UDim2.new(1, -64, 1, -10),
+				Text = scope:Computed(function(use)
+					return TIPS[use(index)]
+				end),
+				TextColor3 = Theme.Colors.Text,
+				TextScaled = true,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = scope:New "UITextSizeConstraint" { MaxTextSize = 17 },
+			},
+		},
+	})
 end
 
 local function MainMenu(scope: Scope, state: AppState.AppState): Instance
@@ -282,6 +346,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Position = UDim2.new(1, -24, 0, 22),
 			}),
 			items,
+			TipBar(scope),
 			fighterPreview,
 		} :: { Fusion.Child },
 	}
