@@ -291,38 +291,41 @@ describe("ИИ боссов", function()
 end)
 
 describe("ИИ: стойка контратаки", function()
-	it("Соррен не тратит стойку в комбо — только когда противник может ударить", function()
-		local sim = Simulation.new({ characters = { "sorren", "rook" } })
-		local flow = MatchFlow.new({ roundsToWin = 1 })
-		MatchFlow.start(flow, sim)
-		local profile = BossRegistry.profileForLevel(15)
-		local a, b = BossAI.new(profile, 7919), BossAI.new(profile, 104729)
-		local stances, parries = 0, 0
-		local wasted = 0
-		for _ = 1, 20000 do
-			if flow.finished then
-				break
-			end
-			Simulation.step(sim, { BossAI.think(a, sim, 1), BossAI.think(b, sim, 2) })
-			MatchFlow.step(flow, sim)
-			local me, foe = sim.fighters[1], sim.fighters[2]
-			if me.state == "Attack" and me.move == "Special" and me.moveFrame == 1 then
-				stances += 1
-				-- Противник уже в оглушении или лежит — ударить не сможет, стойка впустую.
-				if foe.state == "Juggle" or foe.state == "Knockdown" or foe.state == "Hitstun" then
-					wasted += 1
+	it(
+		"Соррен не тратит стойку в комбо — только когда противник может ударить",
+		function()
+			local sim = Simulation.new({ characters = { "sorren", "rook" } })
+			local flow = MatchFlow.new({ roundsToWin = 1 })
+			MatchFlow.start(flow, sim)
+			local profile = BossRegistry.profileForLevel(15)
+			local a, b = BossAI.new(profile, 7919), BossAI.new(profile, 104729)
+			local stances, parries = 0, 0
+			local wasted = 0
+			for _ = 1, 20000 do
+				if flow.finished then
+					break
+				end
+				Simulation.step(sim, { BossAI.think(a, sim, 1), BossAI.think(b, sim, 2) })
+				MatchFlow.step(flow, sim)
+				local me, foe = sim.fighters[1], sim.fighters[2]
+				if me.state == "Attack" and me.move == "Special" and me.moveFrame == 1 then
+					stances += 1
+					-- Противник уже в оглушении или лежит — ударить не сможет, стойка впустую.
+					if foe.state == "Juggle" or foe.state == "Knockdown" or foe.state == "Hitstun" then
+						wasted += 1
+					end
+				end
+				for _, event in sim.events do
+					if event.kind == "Parry" and event.slot == 1 then
+						parries += 1
+					end
 				end
 			end
-			for _, event in sim.events do
-				if event.kind == "Parry" and event.slot == 1 then
-					parries += 1
-				end
-			end
+			expect(stances > 0).toBeTruthy()
+			expect(parries > 0).toBeTruthy()
+			expect(wasted).toBe(0)
 		end
-		expect(stances > 0).toBeTruthy()
-		expect(parries > 0).toBeTruthy()
-		expect(wasted).toBe(0)
-	end)
+	)
 end)
 
 describe("Механики в симуляции", function()
