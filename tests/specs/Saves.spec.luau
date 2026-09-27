@@ -15,15 +15,16 @@ local function configuredMonetization()
 		copy.id = 100 + index -- SkipBoss = 101, Coins1000 = 102, Coins3000 = 103
 		table.insert(products, copy)
 	end
-	return {
-		gamePasses = { ashka = 201, glacia = 202, tempest = 203, byte = 204, morrow = 205, astra = 206 },
-		gamePassPriceHint = Monetization.gamePassPriceHint,
-		characterCoinPrice = Monetization.characterCoinPrice,
-		arenaPasses = { dragon = 301, neon = 302, cosmos = 303 },
-		arenaPassPriceHint = Monetization.arenaPassPriceHint,
-		arenaCoinPrice = Monetization.arenaCoinPrice,
-		products = products,
-	}
+	-- Остальные поля — как в настоящем конфиге (копия, чтобы можно было менять).
+	local config = {}
+	for key, value in Monetization do
+		config[key] = value
+	end
+	config.gamePasses = { ashka = 201, glacia = 202, tempest = 203, byte = 204, morrow = 205, astra = 206 }
+	config.arenaPasses = { dragon = 301, neon = 302, cosmos = 303 }
+	config.vipPass = 401
+	config.products = products -- 104–106 — кристаллы, 107 — набор новичка
+	return config
 end
 
 local function services(game)

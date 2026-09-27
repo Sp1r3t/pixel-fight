@@ -20,6 +20,8 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
+local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
@@ -29,6 +31,9 @@ local Backend = require(script.Parent.Parent.Data.ProfileStoreBackend) :: Sessio
 
 type PlayerData = ProfileSchema.PlayerData
 
+-- Надетая и доступная косметика бойца в бою.
+export type Loadout = { skin: string?, hitEffect: string?, koEffect: string? }
+
 local MAX_COINS = 1e9
 
 local DataService = {
@@ -36,6 +41,8 @@ local DataService = {
 }
 
 local sessions: { [Player]: Session.Session } = {}
+-- VIP-пропуск (проверяется при входе и после покупки; в профиль не пишется).
+local vipPlayers: { [Player]: boolean? } = {}
 local loading: { [Player]: boolean } = {}
 local loadedCallbacks: { (player: Player) -> () } = {}
 
@@ -76,7 +83,7 @@ function DataService.publish(player: Player)
 	if data == nil or player.Parent == nil then
 		return
 	end
-	Transport.fireClient("Profile", player, ProfileSchema.toPublic(data))
+	Transport.fireClient("Profile", player, ProfileSchema.toPublic(data, vipPlayers[player] == true))
 end
 
 function DataService.getControls(player: Player): ControlsLayout.Layout
@@ -194,6 +201,170 @@ function DataService.hasCombo(player: Player, comboId: string): boolean
 	return data ~= nil and data.combos[comboId] == true
 end
 
+----------------------------------------------------------------------------------------------
+-- VIP, кристаллы, косметика, ежедневная награда
+----------------------------------------------------------------------------------------------
+
+function DataService.isVip(player: Player): boolean
+	return vipPlayers[player] == true
+end
+
+function DataService.setVip(player: Player, vip: boolean)
+	if (vipPlayers[player] == true) ~= vip then
+		vipPlayers[player] = if vip then true else nil
+		DataService.publish(player)
+	end
+end
+
+-- Сколько монет получит игрок за заработанные amount (VIP — больше).
+function DataService.withVip(player: Player, amount: number): number
+	if vipPlayers[player] then
+		return math.floor(amount * Monetization.vipCoinMultiplier + 0.5)
+	end
+	return amount
+end
+
+-- Монеты, заработанные в бою (с бонусом VIP). Возвращает начисленное.
+function DataService.addEarnedCoins(player: Player, amount: number): number
+	local earned = DataService.withVip(player, math.max(0, math.floor(amount)))
+	if DataService.addCoins(player, earned) then
+		return earned
+	end
+	return 0
+end
+
+function DataService.getCrystals(player: Player): number
+	local data = DataService.get(player)
+	return if data then data.crystals else 0
+end
+
+function DataService.addCrystals(player: Player, amount: number): boolean
+	assert(amount >= 0 and amount == math.floor(amount), "Некорректная сумма")
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	data.crystals = math.min(MAX_COINS, data.crystals + amount)
+	DataService.publish(player)
+	return true
+end
+
+function DataService.spendCrystals(player: Player, amount: number): boolean
+	assert(amount >= 0 and amount == math.floor(amount), "Некорректная сумма")
+	local data = DataService.get(player)
+	if data == nil or data.crystals < amount then
+		return false
+	end
+	data.crystals -= amount
+	DataService.publish(player)
+	return true
+end
+
+-- Доступна ли косметика (бесплатная, купленная или VIP).
+function DataService.hasItem(player: Player, itemId: string): boolean
+	local data = DataService.get(player)
+	return data ~= nil and ProfileSchema.hasItem(data, itemId, vipPlayers[player] == true)
+end
+
+function DataService.grantItem(player: Player, itemId: string): boolean
+	local data = DataService.get(player)
+	local item = Cosmetics.byId[itemId]
+	if data == nil or item == nil then
+		return false
+	end
+	if item.currency == "Coins" or item.currency == "Crystals" then
+		data.items[itemId] = true
+	end
+	DataService.publish(player)
+	return true
+end
+
+--[[
+	Надеть косметику. itemId = nil — снять (slot: "Skin:<id бойца>", "HitEffect", "KoEffect").
+	Возвращает false, если вещи нет или она не подходит к слоту.
+]]
+function DataService.equip(player: Player, slot: string, itemId: string?): boolean
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	local characterId = string.match(slot, "^Skin:(.+)$")
+	if itemId ~= nil then
+		local item = Cosmetics.byId[itemId]
+		if item == nil or not DataService.hasItem(player, itemId) then
+			return false
+		end
+		if characterId then
+			if item.kind ~= "Skin" or item.character ~= characterId then
+				return false
+			end
+		elseif item.kind ~= slot then
+			return false
+		end
+	end
+	if characterId then
+		if CharacterRegistry.get(characterId) == nil then
+			return false
+		end
+		(data.equipped.skins :: { [string]: string? })[characterId] = itemId
+	elseif slot == "HitEffect" then
+		data.equipped.hitEffect = itemId
+	elseif slot == "KoEffect" then
+		data.equipped.koEffect = itemId
+	else
+		return false
+	end
+	DataService.publish(player)
+	return true
+end
+
+-- Надетая косметика, которая сейчас доступна (VIP мог закончиться — тогда не показываем).
+function DataService.getLoadout(
+	player: Player,
+	characterId: string
+): { skin: string?, hitEffect: string?, koEffect: string? }
+	local data = DataService.get(player)
+	if data == nil then
+		return { skin = nil, hitEffect = nil, koEffect = nil }
+	end
+	local function available(id: string?): string?
+		return if id and DataService.hasItem(player, id) then id else nil
+	end
+	return {
+		skin = available(data.equipped.skins[characterId]),
+		hitEffect = available(data.equipped.hitEffect),
+		koEffect = available(data.equipped.koEffect),
+	}
+end
+
+--[[
+	Ежедневная награда. now — os.time() (параметр — для тестов).
+	Раз в сутки (UTC): день серии 1..7 → монеты (Monetization.dailyCoins), на 7-й — ещё кристаллы;
+	пропуск дня — серия сначала. VIP: монеты ×1.5 и кристаллы каждый день.
+	Возвращает (выдано ли, день серии, монеты, кристаллы).
+]]
+function DataService.claimDaily(player: Player, now: number): (boolean, number, number, number)
+	local data = DataService.get(player)
+	if data == nil then
+		return false, 0, 0, 0
+	end
+	local today = math.floor(now / 86400)
+	local daily = data.daily
+	if daily.day == today then
+		return false, daily.streak, 0, 0
+	end
+	local streak = if daily.day == today - 1 then daily.streak % 7 + 1 else 1
+	local coins = DataService.withVip(player, Monetization.dailyCoins[streak] or 100)
+	local crystals = (if streak == 7 then Monetization.dailyCrystalsDay7 else 0)
+		+ (if vipPlayers[player] then Monetization.vipDailyCrystals else 0)
+	daily.day = today
+	daily.streak = streak
+	data.coins = math.min(MAX_COINS, data.coins + coins)
+	data.crystals = math.min(MAX_COINS, data.crystals + crystals)
+	DataService.publish(player)
+	return true, streak, coins, crystals
+end
+
 -- Сколько боссов пройдено по порядку (открыт следующий за ним).
 function DataService.getBossProgress(player: Player): number
 	local data = DataService.get(player)
@@ -216,7 +387,7 @@ function DataService.recordBossWin(player: Player, bossId: string, order: number
 		data.bossProgress = order
 	end
 	local firstClear = clears == 0
-	local granted = if firstClear then math.max(0, math.floor(reward)) else 0
+	local granted = if firstClear then DataService.withVip(player, math.max(0, math.floor(reward))) else 0
 	data.coins = math.min(MAX_COINS, data.coins + granted)
 	DataService.publish(player)
 	return firstClear, granted
@@ -280,6 +451,7 @@ function DataService.Init()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		local session = sessions[player]
 		sessions[player] = nil
+		vipPlayers[player] = nil
 		if session then
 			session.endSession()
 		end

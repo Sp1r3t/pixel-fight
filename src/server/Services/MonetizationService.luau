@@ -4,7 +4,10 @@
 
 	  • платные бойцы и премиальные карты: Game Pass (владение проверяется при входе и после покупки)
 	    или монеты, заработанные в игре (запросы BuyCharacter, BuyArena);
-	  • Developer Products (ProcessReceipt): «Пропустить босса», наборы монет.
+	  • Developer Products (ProcessReceipt): «Пропустить босса», наборы монет и кристаллов,
+	    набор новичка (один раз на профиль, повтор — только кристаллы);
+	  • VIP-пропуск (Game Pass): проверяется при входе и после покупки;
+	  • косметика (Config/Cosmetics) за монеты или кристаллы (BuyItem), ежедневная награда (ClaimDaily).
 	    Защита от повторной выдачи: PurchaseId записывается в профиль вместе с выдачей награды,
 	    а PurchaseGranted возвращается только после того, как профиль с этой записью сохранён.
 	    Повторный чек с тем же PurchaseId награду не выдаёт — только подтверждает сохранение;
@@ -18,6 +21,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
@@ -82,6 +86,9 @@ local function syncPasses(player: Player)
 			DataService.grantArena(player, arenaId)
 		end
 	end
+	if Monetization.vipPass ~= 0 and ownsPass(player, Monetization.vipPass) then
+		DataService.setVip(player, true)
+	end
 end
 
 -- Выдать награду продукта. Ошибка — исключение (чек не засчитывается).
@@ -93,6 +100,23 @@ local function grantProduct(player: Player, product: Monetization.Product)
 		local amount = product.amount or 0
 		assert(DataService.addCoins(player, amount), "профиль не загружен")
 		notify(player, { kind = "Coins", amount = amount })
+	elseif product.kind == "Crystals" then
+		local amount = product.amount or 0
+		assert(DataService.addCrystals(player, amount), "профиль не загружен")
+		notify(player, { kind = "Crystals", amount = amount })
+	elseif product.kind == "StarterPack" then
+		local data = assert(DataService.get(player), "профиль не загружен")
+		local pack = Monetization.starterPack
+		if data.starterPack then
+			-- Уже покупал: чтобы Robux не пропали, выдаём только кристаллы.
+			assert(DataService.addCrystals(player, pack.crystals), "профиль не загружен")
+		else
+			data.starterPack = true
+			assert(DataService.addCoins(player, pack.coins), "профиль не загружен")
+			assert(DataService.addCrystals(player, pack.crystals), "профиль не загружен")
+			DataService.grantItem(player, pack.emote)
+		end
+		notify(player, { kind = "StarterPack" })
 	else
 		error(`Неизвестный тип продукта {product.kind}`)
 	end
@@ -178,7 +202,58 @@ function MonetizationService.buyArenaWithCoins(player: Player, arenaId: string):
 	return true, nil
 end
 
+-- Покупка косметики за монеты или кристаллы.
+function MonetizationService.buyItem(player: Player, itemId: string): (boolean, string?)
+	local item = Cosmetics.byId[itemId]
+	if item == nil or (item.currency ~= "Coins" and item.currency ~= "Crystals") then
+		return false, "BadRequest"
+	end
+	if not DataService.isLoaded(player) then
+		return false, "ProfileLoading"
+	end
+	if DataService.hasItem(player, itemId) then
+		return false, "AlreadyOwned"
+	end
+	local paid = if item.currency == "Coins"
+		then DataService.spendCoins(player, item.price)
+		else DataService.spendCrystals(player, item.price)
+	if not paid then
+		return false, if item.currency == "Coins" then "NotEnoughCoins" else "NotEnoughCrystals"
+	end
+	DataService.grantItem(player, itemId)
+	-- Купленный облик или эффект сразу надевается — так понятнее детям.
+	if item.kind == "Skin" and item.character then
+		DataService.equip(player, `Skin:{item.character}`, itemId)
+	elseif item.kind == "HitEffect" or item.kind == "KoEffect" then
+		DataService.equip(player, item.kind, itemId)
+	end
+	notify(player, { kind = "Item", itemId = itemId })
+	return true, nil
+end
+
+-- Ежедневная награда (now — для тестов).
+function MonetizationService.claimDaily(player: Player, now: number?): (boolean, any)
+	if not DataService.isLoaded(player) then
+		return false, "ProfileLoading"
+	end
+	local granted, streak, coins, crystals = DataService.claimDaily(player, now or os.time())
+	if not granted then
+		return false, "AlreadyClaimed"
+	end
+	return true, { day = streak, coins = coins, crystals = crystals }
+end
+
 function MonetizationService.Init()
+	RequestRouter.register("BuyItem", function(player: Player, payload: unknown)
+		local itemId = if type(payload) == "table" then (payload :: any).itemId else nil
+		if type(itemId) ~= "string" then
+			return false, "BadRequest"
+		end
+		return MonetizationService.buyItem(player, itemId)
+	end)
+	RequestRouter.register("ClaimDaily", function(player: Player, _payload: unknown)
+		return MonetizationService.claimDaily(player, nil)
+	end)
 	RequestRouter.register("BuyCharacter", function(player: Player, payload: unknown)
 		local characterId = if type(payload) == "table" then (payload :: any).characterId else nil
 		if type(characterId) ~= "string" then
@@ -210,6 +285,10 @@ function MonetizationService.Start()
 		if purchased and arenaId then
 			DataService.grantArena(player, arenaId)
 			notify(player, { kind = "Arena", arenaId = arenaId })
+		end
+		if purchased and passId ~= 0 and passId == Monetization.vipPass then
+			DataService.setVip(player, true)
+			notify(player, { kind = "Vip" })
 		end
 	end)
 end

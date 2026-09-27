@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
@@ -63,14 +64,28 @@ local function sendSetup(match: Match, player: Player)
 	for slot, characterId in match.characters do
 		local controller = match.controllers[slot]
 		local look = match.presentation[slot]
+		local palette = if look then look.palette else nil
+		-- Косметика игрока: облик, эффекты ударов и финишер, значок VIP (только внешний вид).
+		local owner = controller.player
+		local loadout: DataService.Loadout = if owner
+			then DataService.getLoadout(owner, characterId)
+			else { skin = nil, hitEffect = nil, koEffect = nil }
+		local skin = if loadout.skin then Cosmetics.byId[loadout.skin] else nil
+		if palette == nil and skin and skin.palette then
+			palette = skin.palette
+		end
 		table.insert(fighters, {
 			slot = slot,
 			team = match.sim.fighters[slot].team,
 			characterId = characterId,
-			playerName = if controller.player then controller.player.DisplayName else nil,
+			playerName = if owner then owner.DisplayName else nil,
 			maxHealth = match.sim.fighters[slot].maxHealth,
 			displayName = if look then look.displayName else nil,
-			palette = if look then look.palette else nil,
+			palette = palette,
+			legendary = if skin and skin.legendary then true else nil,
+			hitEffect = loadout.hitEffect,
+			koEffect = loadout.koEffect,
+			vip = if owner and DataService.isVip(owner) then true else nil,
 		})
 	end
 	Transport.fireClient("MatchEvent", player, "MatchStart", {

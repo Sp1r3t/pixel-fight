@@ -29,6 +29,7 @@ local services: { Types.Lifecycle } = {
 	require(Services.InputService),
 	require(Services.MatchService),
 	require(Services.ComboService),
+	require(Services.CosmeticService),
 	require(Services.BossService),
 	require(Services.DraftService),
 	require(Services.MatchmakingService),

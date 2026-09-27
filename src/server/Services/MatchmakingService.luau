@@ -224,8 +224,9 @@ local function onPvpFinished(match: Match.Match, result: Match.MatchResult)
 	if reward > 0 and result.reason == "Finished" and result.winner ~= 0 then
 		for _, player in match.participants do
 			if Match.teamOf(match, player) == result.winner and player.Parent ~= nil then
-				DataService.addCoins(player, reward)
-				Transport.fireClient("MatchEvent", player, "Reward", { coins = reward })
+				-- VIP получает больше монет за победу (на силу бойца не влияет).
+				local earned = DataService.addEarnedCoins(player, reward)
+				Transport.fireClient("MatchEvent", player, "Reward", { coins = earned })
 			end
 		end
 	end
