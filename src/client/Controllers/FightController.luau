@@ -21,6 +21,7 @@ local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
 local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
 local CharacterLooks = require(ReplicatedStorage.Shared.Config.CharacterLooks)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local Arena = require(script.Parent.Parent.Fight.Arena)
@@ -118,6 +119,19 @@ local function isHex(value: any): boolean
 end
 
 -- Свои цвета бойца (боссы). Данные из сети — проверяем формат.
+-- Id косметики нужного вида из сети (или nil).
+local function cosmeticOf(value: any, kind: string): string?
+	local item = if type(value) == "string" then Cosmetics.byId[value] else nil
+	return if item and item.kind == kind then item.id else nil
+end
+
+-- Эффект косметики бойца в слоте (эффект ударов или финишер).
+local function effectOf(slot: number?, field: "hitEffect" | "koEffect"): Cosmetics.Item?
+	local info = if slot and battleInfo then AppState.fighterInSlot(battleInfo, slot) else nil
+	local id = if info then info[field] else nil
+	return if id then Cosmetics.byId[id] else nil
+end
+
 local function readPalette(value: any): Types.Palette?
 	if type(value) ~= "table" or not (isHex(value.primary) and isHex(value.secondary) and isHex(value.accent)) then
 		return nil
@@ -176,6 +190,10 @@ local function readSetup(payload: any): AppState.BattleInfo?
 					then string.sub(fighter.displayName, 1, 40)
 					else nil,
 				palette = readPalette(fighter.palette),
+				legendary = fighter.legendary == true,
+				hitEffect = cosmeticOf(fighter.hitEffect, "HitEffect"),
+				koEffect = cosmeticOf(fighter.koEffect, "KoEffect"),
+				vip = fighter.vip == true,
 			})
 		end
 	end
@@ -396,7 +414,34 @@ local function playEvent(event: NetEvent)
 			hitX, hitY = position.X, position.Y
 			Cinematics.hit()
 		end
-		EffectsController.hitSpark(hitX, hitY, strength, style.primary, style.secondary, direction)
+		local custom = effectOf(event.a, "hitEffect")
+		local effect = if custom then custom.effect else nil
+		if effect then
+			-- Купленный эффект ударов: свои цвета и частицы (звёзды, сердечки, конфетти…).
+			EffectsController.burst(Vector3.new(hitX, hitY, 0), {
+				count = math.floor(8 + 8 * math.clamp(strength, 0.2, 2)),
+				color = Color3.fromHex(effect.primary),
+				secondary = Color3.fromHex(effect.secondary),
+				speed = 12 + 8 * strength,
+				size = if effect.glyph then 0.6 else 0.45,
+				life = 0.4,
+				gravity = 8,
+				spread = 150,
+				direction = if direction >= 0 then 0 else 180,
+				glyph = effect.glyph,
+				palette = if effect.confetti
+					then {
+						Color3.fromRGB(255, 79, 139),
+						Color3.fromRGB(58, 168, 240),
+						Color3.fromRGB(255, 210, 63),
+						Color3.fromRGB(47, 196, 111),
+						Color3.fromRGB(180, 92, 240),
+					}
+					else nil,
+			})
+		else
+			EffectsController.hitSpark(hitX, hitY, strength, style.primary, style.secondary, direction)
+		end
 		-- Характер удара по стилю искр бойца: режущий — росчерк, энергия — кольцо, силовой — звезда.
 		local position = Vector3.new(hitX, hitY, 0)
 		local hitStyle = if attackerView then attackerView.def.cosmetics.hitSpark else "Impact"
@@ -445,6 +490,17 @@ local function playEvent(event: NetEvent)
 		EffectsController.hitSpark(x, y, 0.6, Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 240, 200), 1)
 		CameraController.shake(0.2, 0.12)
 	elseif kind == "KO" then
+		local finisher = effectOf(event.a, "koEffect")
+		if finisher and finisher.effect then
+			EffectsController.finisher(
+				finisher.id,
+				x,
+				y,
+				Color3.fromHex(finisher.effect.primary),
+				Color3.fromHex(finisher.effect.secondary),
+				finisher.effect.glyph
+			)
+		end
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.5, 0.7)
 		EffectsController.starBurst(Vector3.new(x, y + 2.5, 0), Color3.fromRGB(255, 216, 77), 4, 0.45, 12)
 		EffectsController.ring(Vector3.new(x, y + 2.5, 0), Color3.new(1, 1, 1), 5, 0.5, 6)
@@ -557,6 +613,16 @@ local function playEvent(event: NetEvent)
 				CameraController.shake(0.15, 0.1)
 			end
 		end
+	elseif kind == "Emote" then
+		-- Смайлик над бойцом (сервер уже проверил, что эмоция есть и не спам).
+		local item = if event.t then Cosmetics.byId[event.t] else nil
+		local view = views[event.s]
+		if item and item.emoji and view then
+			local position = view.anchor.CFrame.Position
+			local fighter = if lastSample then lastSample.fighters[event.s] else nil
+			local top = if fighter then fighter.y else position.Y
+			EffectsController.emote(Vector3.new(position.X, top + 7.2, 0), item.emoji)
+		end
 	elseif kind == "Combo" then
 		-- Комбо: название у стороны того, кто его сделал, и россыпь звёзд над ним.
 		local combo = if event.v then Combos.list[event.v] else nil
@@ -634,6 +700,31 @@ local function updateCosmetics(slot: number, view: FighterView.FighterView, figh
 					life = aura.life,
 					spread = 40,
 					direction = if aura.rise >= 0 then 90 else -90,
+				}
+			)
+		end
+	end
+	-- Легендарный облик: редкие искры цвета облика вокруг бойца.
+	local info = if battleInfo then AppState.fighterInSlot(battleInfo, slot) else nil
+	if info and info.legendary and aura == nil and fighter.state ~= "KO" then
+		auraCarry[slot] = (auraCarry[slot] or 0) + dt * 6
+		while (auraCarry[slot] or 0) >= 1 do
+			auraCarry[slot] -= 1
+			EffectsController.burst(
+				Vector3.new(
+					position.X + Rng.range(cosmeticRng, -1.6, 1.6),
+					fighter.y + Rng.range(cosmeticRng, 0.5, 5),
+					-0.2
+				),
+				{
+					count = 1,
+					color = Color3.fromHex(view.def.palette.accent),
+					speed = 1.5,
+					size = 0.45,
+					life = 0.7,
+					spread = 40,
+					direction = 90,
+					glyph = "✦",
 				}
 			)
 		end

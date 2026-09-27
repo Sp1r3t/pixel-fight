@@ -147,7 +147,30 @@ local function Button(scope: Scope, props: Props): Instance
 		padding = scope:New "UIPadding" {
 			PaddingLeft = UDim.new(0, if hasIcon then iconSize + 14 else 10),
 			PaddingRight = UDim.new(0, 10),
+			PaddingBottom = UDim.new(if props.Subtitle ~= nil then 0.4 else 0, 0),
 		}
+		-- Подпись под текстом обычной кнопки: нижние 40% высоты.
+		if props.Subtitle ~= nil then
+			table.insert(
+				extras,
+				scope:New "TextLabel" {
+					Name = "Subtitle",
+					AnchorPoint = Vector2.new(0.5, 1),
+					BackgroundTransparency = 1,
+					Font = Theme.Fonts.Body,
+					Position = UDim2.new(0.5, 0, 1, -4),
+					Size = UDim2.new(1, -20, 0.36, 0),
+					Text = props.Subtitle,
+					TextColor3 = WHITE,
+					TextScaled = true,
+					TextTransparency = 0.12,
+					ZIndex = zIndex + 4,
+					[Children] = scope:New "UITextSizeConstraint" {
+						MaxTextSize = 14,
+					},
+				}
+			)
+		end
 		if hasIcon then
 			table.insert(
 				extras,

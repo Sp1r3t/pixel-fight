@@ -17,6 +17,7 @@ local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local InputController = require(script.Parent.InputController)
@@ -55,6 +56,8 @@ local ERROR_TEXT: { [string]: string } = {
 	NotInMatch = "Вы не в бою",
 	ServerError = "Ошибка сервера, попробуйте ещё раз",
 	NotEnoughCoins = "Не хватает монет",
+	NotEnoughCrystals = "Не хватает кристаллов 💎",
+	TooFast = "",
 	AlreadyOwned = "Этот боец уже открыт",
 	ProfileLoading = "Сохранения ещё загружаются — секунду",
 	NotInRoom = "Вы не в комнате",
@@ -172,6 +175,42 @@ function UIController.Init()
 			game:GetService("MarketplaceService"):PromptProductPurchase(Players.LocalPlayer, productId)
 		end)
 	end
+	appState.actions.promptVip = function()
+		if Monetization.vipPass == 0 then
+			AppState.notify(appState, NOT_CONFIGURED, 4)
+			return
+		end
+		pcall(function()
+			game:GetService("MarketplaceService"):PromptGamePassPurchase(Players.LocalPlayer, Monetization.vipPass)
+		end)
+	end
+	appState.actions.buyItem = function(itemId: string)
+		request("BuyItem", { itemId = itemId })
+	end
+	appState.actions.equip = function(slot: string, itemId: string?)
+		request("Equip", { slot = slot, itemId = itemId })
+	end
+	appState.actions.claimDaily = function()
+		task.spawn(function()
+			local ok, result = Transport.invokeServer("Request", "ClaimDaily", nil)
+			if ok and type(result) == "table" then
+				local text = `🎁 День {result.day} из 7: +{result.coins} 🪙`
+				if type(result.crystals) == "number" and result.crystals > 0 then
+					text ..= ` +{result.crystals} 💎`
+				end
+				AppState.notify(appState, text, 4)
+			elseif result == "AlreadyClaimed" then
+				AppState.notify(
+					appState,
+					"Награда дня уже получена — приходи завтра!",
+					3
+				)
+			end
+		end)
+	end
+	appState.actions.emote = function(emoteId: string)
+		request("Emote", { emoteId = emoteId })
+	end
 	appState.actions.leaveMatch = function()
 		request("LeaveMatch", nil)
 	end
@@ -254,6 +293,17 @@ function UIController.Start()
 				AppState.notify(appState, `Карта «{if arena then arena.name else "?"}» открыта!`, 4)
 			elseif payload.kind == "Coins" and type(payload.amount) == "number" then
 				AppState.notify(appState, `+{payload.amount} монет`, 4)
+			elseif payload.kind == "Crystals" and type(payload.amount) == "number" then
+				AppState.notify(appState, `+{payload.amount} 💎 кристаллов`, 4)
+			elseif payload.kind == "StarterPack" then
+				AppState.notify(appState, "Набор новичка получен! 🎉", 4)
+			elseif payload.kind == "Vip" then
+				AppState.notify(appState, "Ты VIP! 👑 Больше монет и радужные удары", 5)
+			elseif payload.kind == "Item" and type(payload.itemId) == "string" then
+				local item = Cosmetics.byId[payload.itemId]
+				if item then
+					AppState.notify(appState, `{item.icon} «{item.name}» — теперь твоё!`, 4)
+				end
 			elseif payload.kind == "SkipBoss" then
 				local boss = if type(payload.bossId) == "string" then BossRegistry.get(payload.bossId) else nil
 				AppState.notify(

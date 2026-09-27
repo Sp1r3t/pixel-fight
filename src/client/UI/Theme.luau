@@ -33,6 +33,7 @@ local Theme = table.freeze({
 		Danger = Color3.fromHex("#FF4D6D"),
 		Info = Color3.fromHex("#3AA8F0"),
 		Coins = Color3.fromHex("#FFC845"),
+		Crystals = Color3.fromHex("#C99BFF"),
 	}),
 
 	Fonts = table.freeze({

@@ -18,6 +18,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 
 local peek = Fusion.peek
 
@@ -41,7 +42,11 @@ export type BattleFighter = {
 	playerName: string?,
 	maxHealth: number,
 	displayName: string?, -- своё имя (боссы)
-	palette: Types.Palette?, -- свои цвета (боссы)
+	palette: Types.Palette?, -- свои цвета (боссы, облики игроков)
+	legendary: boolean?, -- легендарный облик: искры вокруг бойца
+	hitEffect: string?, -- эффект ударов (Config/Cosmetics)
+	koEffect: string?, -- финишер
+	vip: boolean?, -- значок VIP у имени
 }
 
 export type BattleBoss = {
@@ -142,12 +147,23 @@ export type Actions = {
 	buyArena: (arenaId: string) -> (), -- премиальная карта за монеты
 	promptArenaPass: (arenaId: string) -> (), -- премиальная карта за Robux
 	promptPass: (characterId: string) -> (), -- Game Pass за Robux
-	promptProduct: (key: string) -> (), -- Developer Product (пропуск босса, монеты)
+	promptProduct: (key: string) -> (), -- Developer Product (пропуск босса, монеты, кристаллы, наборы)
+	promptVip: () -> (), -- VIP-пропуск за Robux
+	buyItem: (itemId: string) -> (), -- косметика за монеты или кристаллы
+	equip: (slot: string, itemId: string?) -> (), -- "Skin:<боец>" | "HitEffect" | "KoEffect"
+	claimDaily: () -> (),
+	emote: (emoteId: string) -> (),
 	leaveMatch: () -> (),
 	saveControls: (layout: ControlsLayout.Layout) -> (),
 	-- Сенсорное управление в бою → InputController.
 	touchPress: (bit: number) -> (),
 	touchHeld: (mask: number) -> (),
+}
+
+export type Equipped = {
+	skins: { [string]: string },
+	hitEffect: string?,
+	koEffect: string?,
 }
 
 export type AppState = {
@@ -162,6 +178,13 @@ export type AppState = {
 	ownedArenas: Fusion.Value<{ [string]: boolean }>,
 	-- Найденные комбо (Config/Combos) — из профиля.
 	combosFound: Fusion.Value<{ [string]: boolean }>,
+	-- Кристаллы, доступная косметика, что надето, ежедневная награда, VIP (из профиля).
+	crystals: Fusion.Value<number>,
+	items: Fusion.Value<{ [string]: boolean }>,
+	equipped: Fusion.Value<Equipped>,
+	daily: Fusion.Value<{ day: number, streak: number }>,
+	starterPack: Fusion.Value<boolean>,
+	vip: Fusion.Value<boolean>,
 	coins: Fusion.Value<number>,
 	-- Прогресс боссов: пройдено по порядку (открыт следующий), победы над каждым.
 	bossProgress: Fusion.Value<number>,
@@ -233,6 +256,12 @@ function AppState.new(scope: Scope): AppState
 		ownedCharacters = scope:Value(owned),
 		ownedArenas = scope:Value(arenas),
 		combosFound = scope:Value({}),
+		crystals = scope:Value(0),
+		items = scope:Value({}),
+		equipped = scope:Value({ skins = {} } :: Equipped),
+		daily = scope:Value({ day = 0, streak = 0 }),
+		starterPack = scope:Value(false),
+		vip = scope:Value(false),
 		coins = scope:Value(0),
 		bossProgress = scope:Value(0),
 		bossClears = scope:Value({}),
@@ -281,6 +310,11 @@ function AppState.new(scope: Scope): AppState
 			promptArenaPass = function(_arenaId: string) end,
 			promptPass = function(_characterId: string) end,
 			promptProduct = function(_key: string) end,
+			promptVip = noop,
+			buyItem = function(_itemId: string) end,
+			equip = function(_slot: string, _itemId: string?) end,
+			claimDaily = noop,
+			emote = function(_emoteId: string) end,
 			leaveMatch = noop,
 			saveControls = function(_layout: ControlsLayout.Layout) end,
 			touchPress = function(_bit: number) end,
@@ -345,6 +379,45 @@ function AppState.applyProfile(state: AppState, profile: unknown)
 	end
 	if raw.controls ~= nil then
 		state.controlsLayout:set(ControlsLayout.sanitize(raw.controls))
+	end
+	if type(raw.crystals) == "number" then
+		state.crystals:set(raw.crystals)
+	end
+	if type(raw.items) == "table" then
+		local items: { [string]: boolean } = {}
+		for id, value in raw.items do
+			if type(id) == "string" and value == true and Cosmetics.byId[id] then
+				items[id] = true
+			end
+		end
+		state.items:set(items)
+	end
+	if type(raw.equipped) == "table" then
+		local equipped: Equipped = { skins = {} }
+		if type(raw.equipped.skins) == "table" then
+			for characterId, skinId in raw.equipped.skins do
+				local item = if type(skinId) == "string" then Cosmetics.byId[skinId] else nil
+				if type(characterId) == "string" and item and item.character == characterId then
+					equipped.skins[characterId] = skinId
+				end
+			end
+		end
+		for _, slot in { "hitEffect", "koEffect" } do
+			local id = raw.equipped[slot]
+			if type(id) == "string" and Cosmetics.byId[id] then
+				(equipped :: any)[slot] = id
+			end
+		end
+		state.equipped:set(equipped)
+	end
+	if type(raw.daily) == "table" and type(raw.daily.day) == "number" and type(raw.daily.streak) == "number" then
+		state.daily:set({ day = raw.daily.day, streak = raw.daily.streak })
+	end
+	if type(raw.starterPack) == "boolean" then
+		state.starterPack:set(raw.starterPack)
+	end
+	if type(raw.vip) == "boolean" then
+		state.vip:set(raw.vip)
 	end
 	if type(raw.combos) == "table" then
 		local found: { [string]: boolean } = {}
@@ -547,6 +620,21 @@ function AppState.showBanner(state: AppState, text: string, seconds: number, col
 			hud.banner:set("")
 		end
 	end)
+end
+
+-- Можно ли сегодня забрать ежедневную награду (день — UTC, как на сервере).
+function AppState.dailyAvailable(daily: { day: number, streak: number }, now: number): boolean
+	return daily.day ~= math.floor(now / 86400)
+end
+
+-- Палитра бойца с надетым обликом (для портретов в меню).
+function AppState.skinPalette(state: AppState, use: Fusion.Use, characterId: string): Types.Palette?
+	local skinId = use(state.equipped).skins[characterId]
+	local item = if skinId then Cosmetics.byId[skinId] else nil
+	if item and use(state.items)[item.id] then
+		return item.palette
+	end
+	return nil
 end
 
 -- Показать название комбо на стороне команды team на несколько секунд.

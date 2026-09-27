@@ -236,6 +236,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				},
 				FighterPortrait(innerScope, {
 					Character = def,
+					Palette = AppState.skinPalette(state, use, def.id),
 					Framing = "Full",
 					Facing = -1,
 					Animated = true,
@@ -335,17 +336,60 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					Transparency = 0.3,
 				},
 			},
-			Pill(scope, {
-				Name = "Coins",
-				Icon = "🪙",
-				Text = scope:Computed(function(use)
-					return Format.number(use(state.coins))
-				end),
-				TextColor = Theme.Colors.Coins,
-				Height = 36,
+			-- Справа сверху: подарок дня, кристаллы и монеты (строка прижата к правому краю).
+			scope:New "Frame" {
+				Name = "Wallet",
 				AnchorPoint = Vector2.new(1, 0),
+				BackgroundTransparency = 1,
 				Position = UDim2.new(1, -24, 0, 22),
-			}),
+				Size = UDim2.fromOffset(320, 40),
+				[Children] = {
+					scope:New "UIListLayout" {
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Right,
+						Padding = UDim.new(0, 8),
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+					},
+					Button(scope, {
+						Name = "Daily",
+						Text = "🎁",
+						Color = Color3.fromHex("#E0457B"),
+						Badge = scope:Computed(function(use)
+							return if AppState.dailyAvailable(use(state.daily), os.time()) then "!" else ""
+						end),
+						Disabled = scope:Computed(function(use)
+							return not AppState.dailyAvailable(use(state.daily), os.time())
+						end),
+						LayoutOrder = 1,
+						Size = UDim2.fromOffset(52, 40),
+						TextSize = 22,
+						OnClick = function()
+							state.actions.claimDaily()
+						end,
+					}),
+					Pill(scope, {
+						Name = "Crystals",
+						Icon = "💎",
+						Text = scope:Computed(function(use)
+							return Format.number(use(state.crystals))
+						end),
+						TextColor = Theme.Colors.Crystals,
+						Height = 36,
+						LayoutOrder = 2,
+					}),
+					Pill(scope, {
+						Name = "Coins",
+						Icon = "🪙",
+						Text = scope:Computed(function(use)
+							return Format.number(use(state.coins))
+						end),
+						TextColor = Theme.Colors.Coins,
+						Height = 36,
+						LayoutOrder = 3,
+					}),
+				},
+			},
 			items,
 			TipBar(scope),
 			Button(scope, {

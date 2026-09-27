@@ -31,10 +31,13 @@ export type BurstOptions = {
 	spread: number?, -- угол разлёта в градусах вокруг направления
 	direction: number?, -- угол направления в градусах (0 — вправо, 90 — вверх)
 	secondary: Color3?,
+	glyph: string?, -- частицы-символы (★, ♥, ϟ) вместо квадратиков
+	palette: { Color3 }?, -- разноцветные частицы (конфетти)
 }
 
 type Particle = {
-	frame: Frame,
+	frame: GuiObject,
+	text: boolean,
 	x: number,
 	y: number,
 	vx: number,
@@ -110,15 +113,35 @@ function EffectsController.burst(position: Vector3, options: BurstOptions)
 		local angle = math.rad(direction + Rng.range(rng, -spread / 2, spread / 2))
 		local speed = options.speed * Rng.range(rng, 0.4, 1)
 		local size = options.size * Rng.range(rng, 0.6, 1.2)
-		local frame = Instance.new("Frame")
+		local palette = options.palette
+		local color = if palette
+			then palette[(index - 1) % #palette + 1]
+			elseif options.secondary and index % 2 == 0 then options.secondary
+			else options.color
+		local frame: GuiObject
+		local glyph = options.glyph
+		if glyph then
+			local label = Instance.new("TextLabel")
+			label.BackgroundTransparency = 1
+			label.Text = glyph
+			label.TextColor3 = color
+			label.TextScaled = true
+			label.Font = Enum.Font.GothamBold
+			frame = label
+		else
+			local square = Instance.new("Frame")
+			square.BorderSizePixel = 0
+			square.BackgroundColor3 = color
+			frame = square
+		end
+		local scale = if glyph then 1.6 else 1
 		frame.AnchorPoint = Vector2.new(0.5, 0.5)
-		frame.BorderSizePixel = 0
-		frame.BackgroundColor3 = if options.secondary and index % 2 == 0 then options.secondary else options.color
-		frame.Size = UDim2.fromScale(size / (extent * 2), size / (extent * 2))
+		frame.Size = UDim2.fromScale(size * scale / (extent * 2), size * scale / (extent * 2))
 		frame.Position = UDim2.fromScale(0.5, 0.5)
 		frame.Parent = gui
 		table.insert(particles, {
 			frame = frame,
+			text = glyph ~= nil,
 			x = 0,
 			y = 0,
 			vx = math.cos(angle) * speed,
@@ -411,6 +434,119 @@ local function getFlashFrame(): Frame?
 	return frame
 end
 
+-- Эмоция: пузырь со смайликом над бойцом — подпрыгивает, висит и тает (2 с).
+function EffectsController.emote(position: Vector3, emoji: string)
+	local anchor, gui = billboard(position, 3)
+	local bubble = centered(gui, Color3.new(1, 1, 1), 1, true)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(20, 16, 34)
+	stroke.Thickness = 3
+	stroke.Parent = bubble
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(0.8, 0.8)
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Position = UDim2.fromScale(0.5, 0.5)
+	label.Text = emoji
+	label.TextScaled = true
+	label.ZIndex = 2
+	label.Parent = bubble
+	addEffect(2, function(t: number)
+		-- Выскакивает с перелётом, в конце тает и чуть поднимается.
+		local pop = if t < 0.12 then t / 0.12 * 1.15 elseif t < 0.2 then 1.15 - (t - 0.12) / 0.08 * 0.15 else 1
+		bubble.Size = UDim2.fromScale(0.62 * pop, 0.62 * pop)
+		local fade = math.clamp((t - 0.8) / 0.2, 0, 1)
+		bubble.BackgroundTransparency = fade
+		stroke.Transparency = fade
+		label.TextTransparency = fade
+		bubble.Position = UDim2.fromScale(0.5, 0.5 - t * 0.12)
+	end, function()
+		anchor:Destroy()
+	end)
+end
+
+--[[
+	Финишер (Config/Cosmetics, KoEffect) в точке нокаута: звездопад, конфетти-взрыв,
+	фейерверк (три залпа) или удар молнии.
+]]
+function EffectsController.finisher(
+	itemId: string,
+	x: number,
+	y: number,
+	primary: Color3,
+	secondary: Color3,
+	glyph: string?
+)
+	if itemId == "ko_starfall" then
+		for index = 1, 3 do
+			task.delay((index - 1) * 0.18, function()
+				EffectsController.burst(Vector3.new(x + (index - 2) * 3, y + 12, 0), {
+					count = 10,
+					color = primary,
+					secondary = secondary,
+					speed = 6,
+					size = 0.7,
+					life = 1.2,
+					gravity = 10,
+					spread = 120,
+					direction = -90,
+					glyph = glyph or "★",
+				})
+			end)
+		end
+	elseif itemId == "ko_confetti" then
+		EffectsController.burst(Vector3.new(x, y + 3, 0), {
+			count = 40,
+			color = primary,
+			speed = 22,
+			size = 0.45,
+			life = 1.1,
+			gravity = 18,
+			spread = 160,
+			direction = 90,
+			palette = {
+				Color3.fromRGB(255, 79, 139),
+				Color3.fromRGB(58, 168, 240),
+				Color3.fromRGB(255, 210, 63),
+				Color3.fromRGB(47, 196, 111),
+				Color3.fromRGB(180, 92, 240),
+			},
+		})
+	elseif itemId == "ko_fireworks" then
+		for index = 1, 3 do
+			task.delay((index - 1) * 0.3, function()
+				local position = Vector3.new(x + (index - 2) * 5, y + 9 + index, 0)
+				EffectsController.ring(position, if index % 2 == 0 then secondary else primary, 3, 0.4, 4)
+				EffectsController.burst(position, {
+					count = 26,
+					color = primary,
+					secondary = secondary,
+					speed = 14,
+					size = 0.4,
+					life = 0.8,
+					gravity = 6,
+					spread = 360,
+				})
+			end)
+		end
+	elseif itemId == "ko_thunder" then
+		EffectsController.screenFlash(Color3.fromRGB(200, 230, 255), 0.35, 0.8)
+		EffectsController.slash(Vector3.new(x, y + 6, 0), primary, 12, 90, 0.35)
+		EffectsController.burst(Vector3.new(x, y + 1, 0), {
+			count = 16,
+			color = primary,
+			secondary = secondary,
+			speed = 16,
+			size = 0.8,
+			life = 0.5,
+			gravity = 4,
+			spread = 180,
+			direction = 90,
+			glyph = glyph or "ϟ",
+		})
+	end
+end
+
 function EffectsController.screenFlash(color: Color3, duration: number, strength: number?)
 	local frame = getFlashFrame()
 	if frame == nil then
@@ -622,7 +758,11 @@ local function onRenderStep(dt: number)
 				particle.x += particle.vx * dt
 				particle.y += particle.vy * dt
 				particle.frame.Position = UDim2.fromScale(0.5 + particle.x / scale, 0.5 - particle.y / scale)
-				particle.frame.BackgroundTransparency = fade
+				if particle.text then
+					(particle.frame :: TextLabel).TextTransparency = fade
+				else
+					particle.frame.BackgroundTransparency = fade
+				end
 			end
 		end
 	end

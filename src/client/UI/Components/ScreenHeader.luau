@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Шапка экрана: кнопка «Назад» слева, крупный заголовок по центру и (по желанию) монеты справа.
+	Шапка экрана: кнопка «Назад» слева, крупный заголовок по центру и (по желанию) монеты и кристаллы справа.
 	Высота шапки — 64 логических пикселя; содержимое экрана начинается ниже.
 ]]
 
@@ -20,11 +20,20 @@ export type Props = {
 	Title: string,
 	OnBack: () -> (),
 	Coins: Fusion.Value<number>?, -- показать монеты игрока справа
+	Crystals: Fusion.Value<number>?, -- и кристаллы (левее монет)
 	BackText: string?,
 }
 
 local function ScreenHeader(scope: Scope, props: Props): Instance
-	local right: { Instance } = {}
+	-- Счётчики справа: строка, выровненная по правому краю (длинные числа не наезжают друг на друга).
+	local right: { Instance } = {
+		scope:New "UIListLayout" {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+	}
 	local coins = props.Coins
 	if coins then
 		table.insert(
@@ -38,11 +47,29 @@ local function ScreenHeader(scope: Scope, props: Props): Instance
 				Color = Theme.Colors.Panel,
 				TextColor = Theme.Colors.Coins,
 				Height = 34,
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -16, 0, 14),
+				LayoutOrder = 2,
 			})
 		)
 	end
+	local crystals = props.Crystals
+	if crystals then
+		table.insert(
+			right,
+			Pill(scope, {
+				Name = "Crystals",
+				Icon = "💎",
+				Text = scope:Computed(function(use)
+					return Format.number(use(crystals))
+				end),
+				Color = Theme.Colors.Panel,
+				TextColor = Theme.Colors.Crystals,
+				Height = 34,
+				LayoutOrder = 1,
+			})
+		)
+	end
+	-- С двумя счётчиками заголовку оставляем меньше места, чтобы ничего не наезжало.
+	local titleMargin = if crystals then 560 else 380
 
 	return scope:New "Frame" {
 		Name = "Header",
@@ -63,7 +90,7 @@ local function ScreenHeader(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				Font = Theme.Fonts.Title,
 				Position = UDim2.new(0.5, 0, 0, 10),
-				Size = UDim2.new(1, -380, 0, 44),
+				Size = UDim2.new(1, -titleMargin, 0, 44),
 				Text = props.Title,
 				TextColor3 = Theme.Colors.Accent,
 				TextScaled = true,
@@ -75,7 +102,14 @@ local function ScreenHeader(scope: Scope, props: Props): Instance
 					},
 				},
 			},
-			right,
+			scope:New "Frame" {
+				Name = "Counters",
+				AnchorPoint = Vector2.new(1, 0),
+				BackgroundTransparency = 1,
+				Position = UDim2.new(1, -16, 0, 14),
+				Size = UDim2.fromOffset(titleMargin / 2 - 24, 34),
+				[Children] = right,
+			},
 		} :: { Fusion.Child },
 	}
 end

@@ -4,7 +4,8 @@
 	  • «Бойцы»: 6 платных бойцов Deluxe — Game Pass за Robux или монеты, заработанные в игре;
 	  • «Карты»: 3 премиальные карты — Game Pass или монеты; купленную карту можно выбрать
 	    в голосовании перед боем, и тогда на ней играют все;
-	  • «Монеты и боссы»: наборы монет и «Пропустить босса» (Developer Products).
+	  • «Облики», «Эффекты», «Эмоции»: косметика за монеты или кристаллы (ShopCosmetics);
+	  • «Донат»: наборы монет, «Пропустить босса», кристаллы, набор новичка и VIP.
 	Покупку подтверждает сервер; экран только открывает окно покупки Roblox и показывает профиль.
 	Платные бойцы не сильнее бесплатных — отличаются только внешним видом; карты — только фон.
 ]]
@@ -22,14 +23,18 @@ local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
+local ShopCosmetics = require(script.Parent.ShopCosmetics)
 local ArenaArt = require(script.Parent.Parent.Parent.Fight.ArenaArt)
 
 local Children, peek = Fusion.Children, Fusion.peek
 
 local TABS: { { id: string, text: string } } = {
 	{ id = "Fighters", text = "Бойцы" },
+	{ id = "Skins", text = "Облики" },
+	{ id = "Effects", text = "Эффекты" },
+	{ id = "Emotes", text = "Эмоции" },
 	{ id = "Maps", text = "Карты 👑" },
-	{ id = "Coins", text = "Монеты и боссы" },
+	{ id = "Coins", text = "Донат 💎" },
 }
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -253,8 +258,8 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Color = scope:Computed(function(use)
 					return if use(tab) == entry.id then Theme.Colors.ButtonPrimary else Theme.Colors.Button
 				end),
-				Position = UDim2.fromOffset(24 + (index - 1) * 208, 70),
-				Size = UDim2.fromOffset(200, 40),
+				Position = UDim2.fromOffset(24 + (index - 1) * 153, 70),
+				Size = UDim2.fromOffset(145, 40),
 				TextSize = 18,
 				OnClick = function()
 					if peek(tab) ~= entry.id then
@@ -323,6 +328,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 			ScreenHeader(scope, {
 				Title = "МАГАЗИН",
 				Coins = state.coins,
+				Crystals = state.crystals,
 				OnBack = function()
 					AppState.back(state)
 				end,
@@ -398,7 +404,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Name = "Products",
 				BackgroundColor3 = Theme.Colors.Panel,
 				BorderSizePixel = 0,
-				Position = UDim2.new(0.5, -150, 0, 122),
+				Position = UDim2.new(0.5, -380, 0, 122),
 				Size = UDim2.fromOffset(300, 400),
 				Visible = visibleOn("Coins"),
 				[Children] = {
@@ -408,7 +414,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 						Thickness = Theme.Outline,
 					},
 					Text(scope, {
-						Text = "Монеты",
+						Text = "🪙 Монеты",
 						Position = UDim2.fromOffset(16, 10),
 						Size = UDim2.fromOffset(268, 26),
 						Color = Theme.Colors.Accent,
@@ -446,6 +452,10 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 					}),
 				} :: { Fusion.Child },
 			},
+			ShopCosmetics.Skins(scope, state, visibleOn("Skins")),
+			ShopCosmetics.Effects(scope, state, visibleOn("Effects")),
+			ShopCosmetics.Emotes(scope, state, visibleOn("Emotes")),
+			ShopCosmetics.Premium(scope, state, visibleOn("Coins")),
 		} :: { Fusion.Child },
 	}
 end

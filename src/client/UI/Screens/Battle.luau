@@ -18,6 +18,7 @@ local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -171,6 +172,9 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 		local text = string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
 		if battle.localSlot == slot then
 			text ..= " (YOU)"
+		end
+		if fighter.vip then
+			text = "👑 " .. text
 		end
 		return text
 	end)
@@ -567,6 +571,83 @@ local function ControlsHint(scope: Scope, state: AppState.AppState, clock: Fusio
 	}
 end
 
+-- Эмоции: кнопка 😀 справа от паузы раскрывает ряд доступных смайликов (только в своём бою).
+local function EmoteBar(scope: Scope, state: AppState.AppState): Instance
+	local open = scope:Value(false)
+	local emotes = scope:Computed(function(use, innerScope: Scope): { Instance }
+		local items = use(state.items)
+		local list: { Instance } = {
+			innerScope:New "UIListLayout" {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 6),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			},
+		}
+		for index, item in Cosmetics.ofKind("Emote") do
+			if items[item.id] then
+				table.insert(
+					list,
+					Button(innerScope, {
+						Name = `Emote_{item.id}`,
+						Text = item.emoji or item.icon,
+						LayoutOrder = index,
+						Size = UDim2.fromOffset(44, 44),
+						TextSize = 24,
+						Color = Theme.Colors.PanelLight,
+						OnClick = function()
+							state.actions.emote(item.id)
+							open:set(false)
+						end,
+					})
+				)
+			end
+		end
+		return list
+	end)
+	return scope:New "Frame" {
+		Name = "Emotes",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Visible = scope:Computed(function(use)
+			local battle = use(state.battle)
+			return battle ~= nil and battle.localSlot ~= nil
+		end),
+		[Children] = {
+			Button(scope, {
+				Name = "EmoteButton",
+				Text = "😀",
+				AnchorPoint = Vector2.new(0, 0),
+				Position = UDim2.new(0.5, 4, 0, 72),
+				Size = UDim2.fromOffset(48, 40),
+				TextSize = 22,
+				OnClick = function()
+					open:set(not peek(open))
+				end,
+			}),
+			scope:New "Frame" {
+				Name = "EmoteRow",
+				AnchorPoint = Vector2.new(0.5, 0),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundColor3 = Theme.Colors.Outline,
+				BackgroundTransparency = 0.3,
+				Position = UDim2.new(0.5, 0, 0, 120),
+				Size = UDim2.fromOffset(0, 56),
+				Visible = open,
+				ZIndex = 20,
+				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
+					scope:New "UIPadding" {
+						PaddingLeft = UDim.new(0, 6),
+						PaddingRight = UDim.new(0, 6),
+						PaddingTop = UDim.new(0, 6),
+					},
+					emotes,
+				} :: { Fusion.Child },
+			},
+		},
+	}
+end
+
 local function Battle(scope: Scope, state: AppState.AppState): Instance
 	-- Часы для пульсаций и подсказок; соединение удаляется вместе со scope экрана.
 	local clock = scope:Value(os.clock())
@@ -625,14 +706,15 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				Name = "Pause",
 				Text = "II",
 				Font = Theme.Fonts.Pixel,
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 72),
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(0.5, -4, 0, 72),
 				Size = UDim2.fromOffset(48, 40),
 				TextSize = 22,
 				OnClick = function()
 					state.modal:set(if peek(state.modal) == "Pause" then "" else "Pause")
 				end,
 			}),
+			EmoteBar(scope, state),
 			ControlsHint(scope, state, clock),
 		} :: { Fusion.Child },
 	}

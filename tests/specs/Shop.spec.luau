@@ -210,3 +210,78 @@ describe("Облик и эмоции в бою", function()
 		end
 	)
 end)
+
+describe("Экран магазина и меню", function()
+	local function faceText(client, name)
+		local node = client.find(name)
+		assert(node, `нет {name}`)
+		return node:FindFirstChild("Face").Text
+	end
+
+	it("вкладка «Эффекты»: купить за монеты → сразу надето", function()
+		local game, alice, s = setup()
+		s.data.addCoins(alice.player, 1000)
+		alice.click("Магазин")
+		game.step(2)
+		alice.press("Tab_Effects")
+		game.step(2)
+		expect(faceText(alice, "Item_hit_stars")).toBe("🪙 1 000")
+		alice.press("Item_hit_stars")
+		game.step(4)
+		expect(s.data.getCoins(alice.player)).toBe(0)
+		expect(faceText(alice, "Item_hit_stars")).toBe("Надето ✓")
+		expect(game.errors()).toBeEmpty()
+	end)
+
+	it(
+		"вкладка «Облики»: купленный облик можно снять и надеть снова",
+		function()
+			local game, alice, s = setup()
+			s.data.addCoins(alice.player, 1500)
+			alice.click("Магазин")
+			game.step(2)
+			alice.press("Tab_Skins")
+			game.step(2)
+			alice.press("Item_rook_shadow")
+			game.step(4)
+			expect(faceText(alice, "Item_rook_shadow")).toBe("Надето ✓")
+			alice.press("Default_rook")
+			game.step(4)
+			expect(faceText(alice, "Item_rook_shadow")).toBe("Надеть")
+			expect(faceText(alice, "Default_rook")).toBe("Надето ✓")
+			expect(s.data.getLoadout(alice.player, "rook").skin).toBe(nil)
+		end
+	)
+
+	it("кнопка 🎁 в меню выдаёт подарок дня один раз", function()
+		local game, alice, s = setup()
+		expect(alice.find("Daily"):FindFirstChild("Badge", true).Visible).toBe(true)
+		alice.press("Daily")
+		game.step(4)
+		expect(s.data.getCoins(alice.player)).toBe(Monetization.dailyCoins[1])
+		expect(alice.find("Daily"):FindFirstChild("Badge", true).Visible).toBe(false)
+		alice.press("Daily")
+		game.step(4)
+		expect(s.data.getCoins(alice.player)).toBe(Monetization.dailyCoins[1])
+	end)
+
+	it(
+		"в бою кнопка 😀 открывает эмоции, выбор закрывает список",
+		function()
+			local game, alice = setup()
+			alice.click("Тренировка")
+			game.step(10)
+			if alice.find("GotIt") then
+				alice.press("GotIt")
+				game.step(2)
+			end
+			alice.press("EmoteButton")
+			game.step(1)
+			expect(alice.find("EmoteRow").Visible).toBe(true)
+			alice.press("Emote_emote_thumbs")
+			game.step(4)
+			expect(alice.find("EmoteRow").Visible).toBe(false)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+end)

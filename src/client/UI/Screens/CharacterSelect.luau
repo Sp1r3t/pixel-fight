@@ -333,6 +333,8 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 					},
 					FighterPortrait(scope, {
 						Character = def,
+						-- Надетый облик из магазина (панель пересобирается при смене бойца).
+						Palette = AppState.skinPalette(state, Fusion.peek, def.id),
 						Framing = "Full",
 						Showcase = true,
 						Size = UDim2.fromScale(1, 1),
