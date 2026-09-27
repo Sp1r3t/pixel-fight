@@ -25,6 +25,7 @@ local CharacterRegistry = require(script.Parent.Parent.Characters.CharacterRegis
 local Fighter = require(script.Parent.Fighter)
 local SimState = require(script.Parent.SimState)
 local Projectiles = require(script.Parent.Projectiles)
+local Stage = require(script.Parent.Stage)
 
 type Sim = SimState.Sim
 type Fighter = Fighter.Fighter
@@ -33,7 +34,6 @@ local Physics = GameConfig.Physics
 local Combat = GameConfig.Combat
 local TICK = GameConfig.TickRate
 local DT = 1 / TICK
-local WALL = Physics.ArenaHalfWidth - Physics.PushWidth / 2
 
 local ARC_GRAVITY = 150 -- навесной снаряд: крутая дуга на среднюю дистанцию
 local RISE_SPEED = 32 -- скорость взлёта апперкотов/лаунчеров
@@ -172,7 +172,8 @@ local function spawnProjectile(sim: Sim, fighter: Fighter, behaviour: Behaviour)
 	local params = behaviour.params
 	local kind = Specials.projectileKind(behaviour) :: string
 	local facing = fighter.facing
-	local x = math.clamp(fighter.x + facing * move.hitbox.x, -WALL, WALL)
+	local wall = Stage.wall(sim.stage)
+	local x = math.clamp(fighter.x + facing * move.hitbox.x, -wall, wall)
 	local y = fighter.y + move.hitbox.y
 	local speed = params.projectileSpeed or 25
 	local lifetime = math.floor((params.projectileLifetime or 2) * TICK + 0.5)
@@ -209,10 +210,11 @@ local function spawnProjectile(sim: Sim, fighter: Fighter, behaviour: Behaviour)
 			range = params.travelDistance or 16,
 		})
 	elseif kind == "Mine" then
+		-- Мина ложится на поверхность под точкой броска (пол или второй этаж).
 		Projectiles.spawn(sim, fighter, {
 			kind = kind,
 			x = x,
-			y = move.hitbox.h / 2,
+			y = Stage.floorBelow(sim.stage, x, fighter.y) + move.hitbox.h / 2,
 			vx = 0,
 			lifetime = math.floor((params.trapLifetime or 5) * TICK + 0.5),
 			move = move,
@@ -223,19 +225,20 @@ end
 
 local function teleport(sim: Sim, fighter: Fighter, distance: number)
 	local opponent = SimState.opponentOf(sim, fighter)
+	local wall = Stage.wall(sim.stage)
 	local dx = opponent.x - fighter.x
 	local side = if dx >= 0 then 1 else -1
 	local target: number
 	if math.abs(dx) <= distance then
 		-- За спину противника; если там стена — перед ним.
 		target = opponent.x + side * BEHIND_DISTANCE
-		if math.abs(target) > WALL then
+		if math.abs(target) > wall then
 			target = opponent.x - side * BEHIND_DISTANCE
 		end
 	else
 		target = fighter.x + side * distance
 	end
-	fighter.x = math.clamp(target, -WALL, WALL)
+	fighter.x = math.clamp(target, -wall, wall)
 	fighter.facing = if opponent.x >= fighter.x then 1 else -1
 	SimState.emit(sim, "Appear", fighter)
 end
@@ -297,10 +300,10 @@ function Specials.update(sim: Sim, fighter: Fighter, behaviour: Behaviour): bool
 		if frame < startup then
 			local u = (frame + 1) / startup
 			fighter.vx = facing * 2
-			fighter.vy = (height * (1 - (1 - u) * (1 - u)) - fighter.y) * TICK
+			fighter.vy = (fighter.moveBaseY + height * (1 - (1 - u) * (1 - u)) - fighter.y) * TICK
 		elseif frame < activeEnd then
 			fighter.vx = facing * speedFor(params.travelDistance or 8, move.active)
-			fighter.vy = -math.max(fighter.y, 0.2) / (activeEnd - frame) * TICK
+			fighter.vy = -math.max(fighter.y - fighter.floorY, 0.2) / (activeEnd - frame) * TICK
 		else
 			applyGravity(fighter)
 		end
@@ -311,10 +314,15 @@ function Specials.update(sim: Sim, fighter: Fighter, behaviour: Behaviour): bool
 			local u = (frame + 1) / startup
 			local height = 4 * (params.arcHeight or 5) * u * (1 - u)
 			fighter.vx = facing * speedFor(params.travelDistance or 5, startup)
-			fighter.vy = (height - fighter.y) * TICK
+			fighter.vy = (fighter.moveBaseY + height - fighter.y) * TICK
 		else
 			fighter.vx = 0
-			fighter.vy = if fighter.y > 0 then -fighter.y * TICK else 0
+			-- Приземлились с дуги; если под ногами пропасть (дыра) — падаем.
+			if fighter.y > fighter.floorY + 0.01 then
+				applyGravity(fighter)
+			else
+				fighter.vy = 0
+			end
 		end
 		return true
 	elseif kind == "Teleport" then

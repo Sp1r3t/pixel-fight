@@ -1,9 +1,11 @@
 --!strict
 --[[
 	Экран «Мультиплеер» — выбор режима.
-	  • Онлайн: быстрый бой 1 на 1 и команды 2 на 2 (эстафета) — поиск соперников в очереди;
-	  • С другом: приватная комната 1 на 1 или 2 на 2 с кодом; вход по коду друга;
-	  • Против компьютера: четыре уровня сложности (ИИ боссов).
+	  • Онлайн: быстрый бой 1 на 1 и команды 2 на 2 (два этажа) — поиск соперников в очереди;
+	    если никого нет, через несколько секунд места займут боты;
+	  • С другом: приватная комната 1 на 1 или 2 на 2 с кодом; вход по коду друга; хозяин может
+	    начать сразу — пустые места займут боты;
+	  • Против компьютера: 1 на 1 или 2 на 2 (с ботом-напарником), четыре уровня сложности.
 	Пока идёт поиск или открыта комната — поверх экрана панель статуса (таймер, код, участники, отмена).
 	Все данные — Fusion Values из AppState (статус очереди присылает сервер).
 ]]
@@ -106,9 +108,11 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 	local details = scope:Computed(function(use)
 		local queue = use(state.queue)
 		if queue.status == "Searching" then
+			local bots =
+				`Если за {GameConfig.Matchmaking.BotFillSeconds} с никого не найдём — позовём ботов.`
 			return if queue.mode == "Team"
-				then "Нужно 4 игрока. Команды формируются автоматически."
-				else "Ищем соперника на этом и других серверах."
+				then "Нужно 4 игрока. Команды формируются автоматически. " .. bots
+				else "Ищем соперника на этом и других серверах. " .. bots
 		elseif queue.status == "Room" then
 			local names: { string } = {}
 			local members: { { name: string, characterId: string } } = queue.members or {}
@@ -121,7 +125,7 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 				then " Команды: 1-й и 3-й против 2-го и 4-го."
 				else ""
 			return `Игроки {#names}/{capacity}: {table.concat(names, ", ")}. Скажите код другу — бой начнётся, `
-				.. `когда все войдут.{teamsHint}`
+				.. `когда все войдут (или нажмите «Начать с ботами»).{teamsHint}`
 		end
 		return ""
 	end)
@@ -184,12 +188,37 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 				ZIndex = 21,
 			},
 			Button(scope, {
+				Name = "RoomStart",
+				Text = "Начать с ботами",
+				Color = Theme.Colors.ButtonPrimary,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(0.5, -8, 0, 190),
+				Size = UDim2.fromOffset(240, 44),
+				Visible = scope:Computed(function(use)
+					local queue = use(state.queue)
+					return queue.status == "Room" and queue.host == true
+				end),
+				OnClick = function()
+					state.actions.roomStart()
+				end,
+			}),
+			Button(scope, {
 				Name = "CancelQueue",
 				Text = scope:Computed(function(use)
 					return if use(status) == "Room" then "Выйти из комнаты" else "Отмена"
 				end),
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 190),
+				AnchorPoint = scope:Computed(function(use)
+					local queue = use(state.queue)
+					return if queue.status == "Room" and queue.host == true
+						then Vector2.new(0, 0)
+						else Vector2.new(0.5, 0)
+				end),
+				Position = scope:Computed(function(use)
+					local queue = use(state.queue)
+					return if queue.status == "Room" and queue.host == true
+						then UDim2.new(0.5, 8, 0, 190)
+						else UDim2.new(0.5, 0, 0, 190)
+				end),
 				Size = UDim2.fromOffset(240, 44),
 				Disabled = scope:Computed(function(use)
 					local current = use(status)
@@ -217,6 +246,8 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 		end)
 	)
 	local codeText = scope:Value("")
+	-- Против компьютера: 1 на 1 или 2 на 2 (игрок с ботом-напарником против двух ботов).
+	local cpuMode = scope:Value("Versus")
 
 	local cpuButtons: { Instance } = {}
 	for index, entry in CPU_LEVELS do
@@ -225,15 +256,31 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 			Button(scope, {
 				Name = `Cpu{entry.level}`,
 				Text = entry.text,
-				Position = UDim2.fromOffset(20 + (index - 1) * 216, 44),
-				Size = UDim2.fromOffset(200, 44),
+				Position = UDim2.fromOffset(236 + (index - 1) * 170, 44),
+				Size = UDim2.fromOffset(160, 44),
 				TextSize = 18,
 				OnClick = function()
-					state.actions.startCpu(entry.level)
+					state.actions.startCpu(entry.level, peek(cpuMode))
 				end,
 			})
 		)
 	end
+	table.insert(
+		cpuButtons,
+		Button(scope, {
+			Name = "CpuMode",
+			Text = scope:Computed(function(use)
+				return if use(cpuMode) == "Team" then "Режим: 2 на 2" else "Режим: 1 на 1"
+			end),
+			Color = Theme.Colors.ButtonPrimary,
+			Position = UDim2.fromOffset(20, 44),
+			Size = UDim2.fromOffset(200, 44),
+			TextSize = 18,
+			OnClick = function()
+				cpuMode:set(if peek(cpuMode) == "Team" then "Versus" else "Team")
+			end,
+		})
+	)
 
 	local fighterName = scope:Computed(function(use)
 		local def = CharacterRegistry.get(use(state.selectedCharacterId))
@@ -304,8 +351,9 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				}),
 				Hint(
 					scope,
-					`До {GameConfig.RoundsToWin.Versus} побед в раундах. 2 на 2 — эстафета: на арене всегда один `
-						.. "на один; выбывшего сменяет напарник, победитель дуэли остаётся с текущим здоровьем. "
+					`До {GameConfig.RoundsToWin.Versus} побед в раундах. 2 на 2 — все четверо на арене с двумя `
+						.. "этажами: нижние бьются внизу, верхние — наверху; через дыру в центре можно "
+						.. "запрыгнуть наверх (двойной прыжок) или спрыгнуть вниз. "
 						.. `Победа в онлайн-бою: +{GameConfig.Matchmaking.WinReward} монет.`,
 					UDim2.fromOffset(20, 170),
 					100

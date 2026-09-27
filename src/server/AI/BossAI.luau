@@ -15,7 +15,9 @@
 	  Attack   — выполнение плана комбо: отмены по попаданию, проверка попадания (hit-confirm);
 	  AntiAir  — ожидание момента и удар по прыгнувшему противнику;
 	  JumpIn   — прыжок с атакой сверху и продолжение после приземления;
-	  Recover  — оглушение/нокдаун: защита при вставании, контр-супер.
+	  Recover  — оглушение/нокдаун: защита при вставании, контр-супер;
+	  Travel   — 2 на 2: переход на этаж цели (к дыре, прыжок с двойным прыжком или спрыгнуть вниз).
+	Цель — противник, которого выбрала симуляция (ближайший, предпочтительно на своём этаже).
 
 	Сложность — только параметры профиля (Types.AiProfile): реакция, частота блока, чтение
 	стойки, наказания, анти-эйр, качество комбо, использование супера, чтение привычек, ошибки.
@@ -32,6 +34,7 @@ local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
 local Hitbox = require(ReplicatedStorage.Shared.Combat.Hitbox)
 local Simulation = require(ReplicatedStorage.Shared.Combat.Simulation)
 local Specials = require(ReplicatedStorage.Shared.Combat.Specials)
+local Stage = require(ReplicatedStorage.Shared.Combat.Stage)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 
 local StateMachine = require(script.Parent.StateMachine)
@@ -53,6 +56,8 @@ export type Observation = {
 	frame: number,
 	x: number,
 	y: number,
+	floorY: number,
+	standY: number, -- этаж, где противник стоял последний раз
 	vx: number,
 	vy: number,
 	state: Fighter.StateName,
@@ -116,6 +121,11 @@ export type Brain = {
 	cautious: boolean, -- не входит в дальность ударов противника без нужды
 	approachHandled: boolean, -- по этому сближению противника уже решили
 	lastProjectile: number, -- по какому снаряду уже решили
+	targetSlot: number, -- за кем сейчас следим (смена цели сбрасывает восприятие)
+	upHeldLastFrame: boolean, -- для двойного прыжка: кнопку «вверх» надо отпустить и нажать снова
+	crossing: number, -- 2 на 2: перелёт через дыру на другую платформу (направление; 0 — нет)
+	crossFrames: number,
+	crossLanding: number, -- куда приземлиться (X) после перелёта
 	punishWindow: number, -- на сколько кадров противник откроется после нашего блокстана
 	wasBlocked: boolean, -- последний удар плана заблокирован
 	anticipateJump: boolean, -- «прочитал» прыжок: реагирует без задержки
@@ -146,6 +156,8 @@ local function newObservation(): Observation
 		frame = 0,
 		x = 0,
 		y = 0,
+		floorY = 0,
+		standY = 0,
 		vx = 0,
 		vy = 0,
 		state = "Idle",
@@ -167,6 +179,8 @@ local function record(brain: Brain, fighter: Fighter, frame: number)
 	obs.frame = frame
 	obs.x = fighter.x
 	obs.y = fighter.y
+	obs.floorY = fighter.floorY
+	obs.standY = fighter.standY
 	obs.vx = fighter.vx + fighter.push
 	obs.vy = fighter.vy
 	obs.state = fighter.state
@@ -330,8 +344,8 @@ local function predict(brain: Brain, frames: number): (number, number, Hitbox.Hu
 	local y = seen.y
 	if seen.airborne and (seen.state == "Air" or seen.state == "Attack" or seen.state == "Juggle") then
 		y = seen.y + seen.vy * t - 0.5 * Physics.Gravity * t * t
-		if y <= 0 then
-			y = 0
+		if y <= seen.floorY then
+			y = seen.floorY
 			kind = (if seen.state == "Juggle" then "None" else "Stand") :: Hitbox.HurtKind
 		end
 	end
@@ -822,6 +836,182 @@ local function decide(brain: Brain): string?
 	return nil
 end
 
+-- 2 на 2: этаж бойца и цели (0 — пол, 1 — второй этаж); nil — сцена без этажей.
+local function levels(brain: Brain): (number?, number?)
+	local layout = brain.sim.stage
+	if #layout.platforms == 0 then
+		return nil, nil
+	end
+	return Stage.levelOf(layout, brain.me.standY), Stage.levelOf(layout, brain.seen.standY)
+end
+
+-- Нужно ли идти на этаж цели: цель стоит на другом этаже.
+local function needsTravel(brain: Brain): boolean
+	local mine, theirs = levels(brain)
+	return mine ~= nil and theirs ~= nil and mine ~= theirs and not brain.seen.airborne and canAct(brain.me)
+end
+
+states.Travel = {
+	update = function(brain: Brain): string?
+		local me = brain.me
+		local layout = brain.sim.stage
+		local hole = Stage.holeCenter(layout)
+		local mine, theirs = levels(brain)
+		if DISABLED[me.state] then
+			return "Recover"
+		end
+		if hole == nil or mine == nil or theirs == nil or brain.machine.frames > 300 then
+			return "Neutral"
+		end
+		if mine == theirs and not Fighter.isAirborne(me) then
+			return "Neutral"
+		end
+		-- Атакуют рядом — сначала защититься.
+		local threat = reactToThreat(brain)
+		if threat then
+			return threat
+		end
+		local toHole = hole - me.x
+		local toTarget = if brain.seen.x >= hole then 1 else -1
+		if mine == 0 and theirs == 1 then
+			-- Наверх: к дыре, прыжок, у вершины — двойной прыжок, затем в сторону цели на платформу.
+			if not Fighter.isAirborne(me) then
+				if math.abs(toHole) > 1 then
+					hold(brain, if toHole > 0 then InputBits.Right else InputBits.Left)
+				elseif canAct(me) then
+					hold(brain, InputBits.Up)
+				end
+			else
+				local platformTop = 0
+				for _, platform in layout.platforms do
+					platformTop = math.max(platformTop, platform.top)
+				end
+				local above = me.y > platformTop + 0.3
+				if not above and me.vy < 10 and me.airJumps > 0 then
+					-- «Вверх» нужно нажать заново: если держали — отпускаем на кадр.
+					if not brain.upHeldLastFrame then
+						hold(brain, InputBits.Up)
+					end
+				end
+				if above then
+					hold(brain, if toTarget > 0 then InputBits.Right else InputBits.Left)
+				elseif math.abs(toHole) > 0.5 then
+					hold(brain, if toHole > 0 then InputBits.Right else InputBits.Left)
+				end
+			end
+		elseif mine == 1 and theirs == 0 then
+			-- Вниз: идём к дыре и спрыгиваем.
+			hold(brain, if toHole > 0 then InputBits.Right else InputBits.Left)
+		end
+		return nil
+	end,
+}
+
+-- Внутренний край платформы под бойцом (у дыры) и направление к дыре; nil — боец не на платформе.
+local function innerEdge(layout: Stage.Layout, x: number): (number?, number)
+	for _, platform in layout.platforms do
+		if x >= platform.left and x <= platform.right then
+			if math.abs(platform.right) < math.abs(platform.left) then
+				return platform.right, 1
+			end
+			return platform.left, -1
+		end
+	end
+	return nil, 0
+end
+
+local EDGE_MARGIN = 0.9 -- с какого расстояния до края начинать прыжок через дыру
+local HORIZONTAL = bit32.bor(InputBits.Left, InputBits.Right)
+
+--[[
+	2 на 2: поведение у края второго этажа (поверх решения автомата).
+	  • цель на этом же этаже, но на другой платформе — перепрыгиваем дыру (прыжок, у вершины двойной);
+	  • цель внизу — спрыгнуть можно (этим пользуется Travel);
+	  • иначе к краю не подходим и не делаем туда рывок, чтобы не свалиться случайно.
+]]
+local function guardLedge(brain: Brain)
+	local me = brain.me
+	local layout = brain.sim.stage
+	if #layout.platforms == 0 then
+		return
+	end
+	if brain.crossing ~= 0 then
+		brain.crossFrames += 1
+		local airborne = Fighter.isAirborne(me) or me.state == "PreJump"
+		if (not airborne and brain.crossFrames > 6) or brain.crossFrames > 150 or DISABLED[me.state] then
+			brain.crossing = 0
+		else
+			local direction = brain.crossing
+			local held = bit32.band(brain.held, bit32.bnot(bit32.bor(HORIZONTAL, InputBits.Up, InputBits.Down)))
+			held = bit32.bor(held, if direction > 0 then InputBits.Right else InputBits.Left)
+			-- Прыжок, а у вершины — двойной прыжок, пока не долетели до платформы.
+			local doubleJump = me.state == "Air"
+				and me.vy <= 2
+				and me.airJumps > 0
+				and not brain.upHeldLastFrame
+				and (brain.crossLanding - me.x) * direction > 0
+			if brain.crossFrames <= 4 or doubleJump then
+				held = bit32.bor(held, InputBits.Up)
+			end
+			brain.held = held
+			return
+		end
+	end
+	local _, theirs = levels(brain)
+	local hole = Stage.holeCenter(layout)
+	if me.state == "Air" and theirs == 1 and hole ~= nil then
+		-- Падаем в дыру, а цель наверху (прыжок-атака не долетел, отбросило ударом) — «спасение»:
+		-- двойной прыжок и тянемся к платформе цели.
+		local halfHole = 0
+		for _, platform in layout.platforms do
+			if platform.left >= hole then
+				halfHole = platform.left - hole
+			end
+		end
+		if math.abs(me.x - hole) <= halfHole + 0.5 and me.y >= 4 and me.vy <= 0 then
+			local side = if brain.seen.x >= hole then 1 else -1
+			local held = bit32.band(brain.held, bit32.bnot(bit32.bor(HORIZONTAL, InputBits.Down, InputBits.Up)))
+			held = bit32.bor(held, if side > 0 then InputBits.Right else InputBits.Left)
+			if me.airJumps > 0 and not brain.upHeldLastFrame and me.y < 11 then
+				held = bit32.bor(held, InputBits.Up)
+			end
+			brain.held = held
+			return
+		end
+	end
+	if Fighter.isAirborne(me) or not canAct(me) or Stage.levelOf(layout, me.floorY) == 0 then
+		return
+	end
+	local edge, toward = innerEdge(layout, me.x)
+	if edge == nil then
+		return
+	end
+	local dashing = InputBits.has(brain.pressed, InputBits.Dash) and me.facing == toward
+	if InputBits.horizontal(brain.held) ~= toward and not dashing then
+		return
+	end
+	local distance = math.abs(edge - me.x)
+	if distance > (if dashing then Physics.DashDistance + EDGE_MARGIN else EDGE_MARGIN) then
+		return
+	end
+	if theirs == 0 then
+		return -- цель внизу: спрыгиваем в дыру
+	end
+	brain.pressed = bit32.band(brain.pressed, bit32.bnot(InputBits.Dash))
+	if theirs == 1 and hole ~= nil and (brain.seen.x - edge) * toward > 0 and distance <= EDGE_MARGIN then
+		brain.crossing = toward
+		brain.crossFrames = 0
+		brain.crossLanding = 2 * hole - edge + toward
+		brain.held = bit32.bor(
+			bit32.band(brain.held, bit32.bnot(HORIZONTAL)),
+			InputBits.Up,
+			if toward > 0 then InputBits.Right else InputBits.Left
+		)
+	else
+		brain.held = bit32.band(brain.held, bit32.bnot(HORIZONTAL))
+	end
+end
+
 states.Neutral = {
 	enter = function(brain: Brain)
 		brain.decisionTimer = 0
@@ -829,6 +1019,9 @@ states.Neutral = {
 	end,
 	update = function(brain: Brain): string?
 		local profile = brain.profile
+		if needsTravel(brain) then
+			return "Travel"
+		end
 		local reaction = reactToThreat(brain)
 			or reactToProjectile(brain)
 			or reactToWhiff(brain)
@@ -1118,6 +1311,18 @@ states.AntiAir = {
 	end,
 }
 
+-- 2 на 2: прыжок вперёд со второго этажа не должен кончиться падением в дыру.
+local function jumpLandsSafely(brain: Brain, direction: number): boolean
+	local me = brain.me
+	local layout = brain.sim.stage
+	if #layout.platforms == 0 or Stage.levelOf(layout, me.standY) == 0 then
+		return true
+	end
+	local airTime = 2 * Physics.JumpVelocity / Physics.Gravity
+	local landX = me.x + direction * me.stats.walkSpeed * Physics.JumpForwardSpeedFactor * airTime
+	return Stage.floorBelow(layout, landX, me.standY) >= me.standY - 0.01
+end
+
 states.JumpIn = {
 	enter = function(brain: Brain)
 		brain.jumpPressed = false
@@ -1127,6 +1332,9 @@ states.JumpIn = {
 		local machine = brain.machine
 		if DISABLED[me.state] then
 			return "Recover"
+		end
+		if machine.frames == 0 and not jumpLandsSafely(brain, brain.dir) then
+			return "Neutral"
 		end
 		if machine.frames < 4 then
 			if canAct(me) or me.state == "PreJump" then
@@ -1239,6 +1447,11 @@ function BossAI.new(profile: AiProfile, seed: number): Brain
 		cautious = false,
 		approachHandled = false,
 		lastProjectile = -1,
+		targetSlot = 0,
+		upHeldLastFrame = false,
+		crossing = 0,
+		crossFrames = 0,
+		crossLanding = 0,
 		punishWindow = 0,
 		wasBlocked = false,
 		anticipateJump = false,
@@ -1267,10 +1480,18 @@ end
 -- Ввод ИИ на этот кадр.
 function BossAI.think(brain: Brain, sim: Sim, slot: number): FrameInput
 	local me = sim.fighters[slot]
-	local opponent = sim.fighters[3 - slot]
+	local opponent = Simulation.opponentOf(sim, me)
 	brain.slot = slot
 	brain.sim = sim
 	brain.me = me
+	if opponent == me then
+		return InputBits.empty() -- противников нет
+	end
+	if opponent.slot ~= brain.targetSlot then
+		-- Новая цель (2 на 2): наблюдения за прежней не годятся.
+		brain.targetSlot = opponent.slot
+		brain.recorded = 0
+	end
 
 	if not sim.inputEnabled then
 		-- Заставка раунда: забыть позиции прошлого раунда (привычки помним).
@@ -1296,6 +1517,8 @@ function BossAI.think(brain: Brain, sim: Sim, slot: number): FrameInput
 		StateMachine.transition(brain.machine, "Recover")
 	end
 	StateMachine.step(brain.machine)
+	guardLedge(brain)
+	brain.upHeldLastFrame = InputBits.has(brain.held, InputBits.Up)
 	return { held = brain.held, pressed = brain.pressed }
 end
 

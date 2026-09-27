@@ -7,6 +7,7 @@
 
 local Types = require(script.Parent.Parent.Types)
 local Fighter = require(script.Parent.Fighter)
+local Stage = require(script.Parent.Stage)
 
 type Fighter = Fighter.Fighter
 
@@ -18,6 +19,7 @@ export type SimEvent = {
 	value: number?, -- урон, длительность и т.п.
 	attacker: number?, -- кто ударил
 	tag: string?, -- уточнение: "Counter", "Heavy", id сценария супера, вид снаряда, ...
+	target: number?, -- второй участник (ролик супера: кого бьют)
 }
 
 export type Cinematic = {
@@ -65,6 +67,7 @@ export type Sim = {
 	cinematic: Cinematic?,
 	projectiles: { Projectile },
 	nextProjectileId: number,
+	stage: Stage.Layout, -- геометрия сцены (1 на 1 или два этажа)
 }
 
 local SimState = {}
@@ -94,8 +97,25 @@ function SimState.emit(sim: Sim, kind: string, fighter: Fighter, value: number?,
 	SimState.emitAt(sim, kind, fighter, fighter.x, fighter.y, value, attacker, tag)
 end
 
+--[[
+	Текущий противник бойца (его цель). В 1 на 1 — единственный противник; в 2 на 2 — ближайший,
+	предпочтительно на своём этаже (выбирает Simulation при каждом шаге).
+]]
 function SimState.opponentOf(sim: Sim, fighter: Fighter): Fighter
-	return sim.fighters[3 - fighter.slot]
+	local target = sim.fighters[fighter.target]
+	if target and target.team ~= fighter.team then
+		return target
+	end
+	for _, other in sim.fighters do
+		if other.team ~= fighter.team then
+			return other
+		end
+	end
+	return fighter -- противников нет (не бывает в настоящем бою)
+end
+
+function SimState.isEnemy(a: Fighter, b: Fighter): boolean
+	return a.team ~= b.team
 end
 
 return SimState

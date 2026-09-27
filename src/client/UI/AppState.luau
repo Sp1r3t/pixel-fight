@@ -32,17 +32,12 @@ export type ScreenName =
 
 export type BattleFighter = {
 	slot: number,
+	team: number, -- 1 или 2
 	characterId: string,
 	playerName: string?,
 	maxHealth: number,
 	displayName: string?, -- своё имя (боссы)
 	palette: Types.Palette?, -- свои цвета (боссы)
-}
-
--- Участник команды в эстафете 2 на 2.
-export type BattleMember = {
-	characterId: string,
-	playerName: string?,
 }
 
 export type BattleBoss = {
@@ -57,12 +52,11 @@ export type BattleInfo = {
 	mode: string,
 	arenaId: string,
 	localSlot: number?,
-	fighters: { BattleFighter },
+	localTeam: number?,
+	fighters: { BattleFighter }, -- по слотам: 2 (1 на 1) или 4 (2 на 2)
+	stage: string, -- геометрия сцены (Combat/Stage): "Duel" | "TwoFloors"
 	roundsToWin: number, -- 0 — без раундов (тренировка)
 	boss: BattleBoss?,
-	-- Эстафета 2 на 2: составы команд (слот = команда) и номер игрока в своей команде.
-	teams: { { BattleMember } }?,
-	localMember: number?,
 }
 
 -- Состояние поиска матча / приватной комнаты (присылает MatchmakingService).
@@ -86,7 +80,7 @@ export type HudFighter = {
 }
 
 export type Hud = {
-	fighters: { HudFighter },
+	fighters: { HudFighter }, -- по слотам (4 записи; в 1 на 1 используются первые две)
 	timer: Fusion.Value<number>, -- секунды; -1 — без ограничения
 	round: Fusion.Value<number>,
 	wins: Fusion.Value<{ number }>,
@@ -94,11 +88,6 @@ export type Hud = {
 	banner: Fusion.Value<string>,
 	bannerColor: Fusion.Value<Color3>,
 	bannerSerial: Fusion.Value<number>,
-	-- Эстафета: активный участник каждой команды и выбывшие в этом раунде (номера участников).
-	members: Fusion.Value<{ number }>,
-	eliminated: Fusion.Value<{ { [number]: boolean } }>,
-	-- Управляет ли игрок бойцом прямо сейчас (в эстафете ждёт своей очереди).
-	controlling: Fusion.Value<boolean>,
 }
 
 -- Действия, которые UI может попросить выполнить (реализует UIController).
@@ -111,7 +100,8 @@ export type Actions = {
 	createRoom: (mode: string) -> (),
 	joinRoom: (code: string) -> (),
 	leaveRoom: () -> (),
-	startCpu: (level: number) -> (),
+	startCpu: (level: number, mode: string) -> (), -- mode: "Versus" (1 на 1) | "Team" (2 на 2 с ботами)
+	roomStart: () -> (), -- хозяин комнаты начинает сразу, пустые места займут боты
 	-- Покупки.
 	buyCharacter: (characterId: string) -> (), -- за монеты
 	promptPass: (characterId: string) -> (), -- Game Pass за Robux
@@ -156,6 +146,8 @@ export type AppState = {
 
 local AppState = {}
 
+AppState.MAX_FIGHTERS = 4
+
 local function noop() end
 
 function AppState.new(scope: Scope): AppState
@@ -170,7 +162,7 @@ function AppState.new(scope: Scope): AppState
 	local noBattle: BattleInfo? = nil
 
 	local hudFighters: { HudFighter } = {}
-	for _ = 1, 2 do
+	for _ = 1, AppState.MAX_FIGHTERS do
 		table.insert(hudFighters, {
 			health = scope:Value(1000),
 			maxHealth = scope:Value(1000),
@@ -201,9 +193,6 @@ function AppState.new(scope: Scope): AppState
 			banner = scope:Value(""),
 			bannerColor = scope:Value(Color3.new(1, 1, 1)),
 			bannerSerial = scope:Value(0),
-			members = scope:Value({ 1, 1 }),
-			eliminated = scope:Value({ {}, {} } :: { { [number]: boolean } }),
-			controlling = scope:Value(true),
 		},
 		platform = scope:Value("Keyboard"),
 		controlsLayout = scope:Value(ControlsLayout.default()),
@@ -218,7 +207,8 @@ function AppState.new(scope: Scope): AppState
 			createRoom = function(_mode: string) end,
 			joinRoom = function(_code: string) end,
 			leaveRoom = noop,
-			startCpu = function(_level: number) end,
+			startCpu = function(_level: number, _mode: string) end,
+			roomStart = noop,
 			buyCharacter = function(_characterId: string) end,
 			promptPass = function(_characterId: string) end,
 			promptProduct = function(_key: string) end,
@@ -309,7 +299,7 @@ end
 function AppState.resetHud(state: AppState, info: BattleInfo)
 	local hud = state.hud
 	for slot, fighter in hud.fighters do
-		local setup = info.fighters[slot]
+		local setup = AppState.fighterInSlot(info, slot)
 		local maxHealth = if setup then setup.maxHealth else 1000
 		fighter.maxHealth:set(maxHealth)
 		fighter.health:set(maxHealth)
@@ -321,9 +311,16 @@ function AppState.resetHud(state: AppState, info: BattleInfo)
 	hud.wins:set({ 0, 0 })
 	hud.roundsToWin:set(info.roundsToWin)
 	hud.banner:set("")
-	hud.members:set({ 1, 1 })
-	hud.eliminated:set({ {}, {} })
-	hud.controlling:set(info.localSlot ~= nil and (info.teams == nil or info.localMember == 1))
+end
+
+-- Боец в слоте (nil — такого слота в бою нет).
+function AppState.fighterInSlot(info: BattleInfo, slot: number): BattleFighter?
+	for _, fighter in info.fighters do
+		if fighter.slot == slot then
+			return fighter
+		end
+	end
+	return nil
 end
 
 -- Статус очереди/комнаты с сервера (данные из сети — проверяются).

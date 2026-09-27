@@ -58,27 +58,6 @@ function MatchService.getMatches(): { [number]: Match }
 	return matches
 end
 
--- Состав команд эстафеты для клиента.
-local function teamsPayload(match: Match): { { { characterId: string, playerName: string? } } }?
-	local teams = match.teams
-	if teams == nil then
-		return nil
-	end
-	local result = {}
-	for slot, team in teams do
-		local members = {}
-		for _, member in team do
-			local player = member.controller.player
-			table.insert(members, {
-				characterId = member.characterId,
-				playerName = if player then player.DisplayName else nil,
-			})
-		end
-		result[slot] = members
-	end
-	return result
-end
-
 local function sendSetup(match: Match, player: Player)
 	local fighters = {}
 	for slot, characterId in match.characters do
@@ -86,6 +65,7 @@ local function sendSetup(match: Match, player: Player)
 		local look = match.presentation[slot]
 		table.insert(fighters, {
 			slot = slot,
+			team = match.sim.fighters[slot].team,
 			characterId = characterId,
 			playerName = if controller.player then controller.player.DisplayName else nil,
 			maxHealth = match.sim.fighters[slot].maxHealth,
@@ -97,13 +77,13 @@ local function sendSetup(match: Match, player: Player)
 		matchId = match.id,
 		mode = match.mode,
 		arenaId = match.arenaId,
-		localSlot = Match.teamOf(match, player),
-		localMember = Match.memberOf(match, player),
+		localSlot = Match.slotOf(match, player),
+		localTeam = Match.teamOf(match, player),
 		fighters = fighters,
+		stage = match.stage,
 		tickRate = GameConfig.TickRate,
 		roundsToWin = if match.flow then match.flow.roundsToWin else 0,
 		boss = match.boss,
-		teams = teamsPayload(match),
 	})
 end
 
@@ -126,7 +106,7 @@ function MatchService.create(config: Match.MatchConfig): Match
 end
 
 --[[
-	Завершить матч. winner — слот победителя (0 — нет): при выходе игрока победа присуждается сопернику.
+	Завершить матч. winner — команда-победитель (0 — нет): при выходе игрока победа присуждается соперникам.
 ]]
 function MatchService.finish(match: Match, reason: string, winner: number?)
 	if match.ended then
@@ -148,7 +128,8 @@ function MatchService.finish(match: Match, reason: string, winner: number?)
 				matchId = match.id,
 				reason = reason,
 				winner = result.winner,
-				localSlot = Match.teamOf(match, player),
+				localSlot = Match.slotOf(match, player),
+				localTeam = Match.teamOf(match, player),
 				wins = result.wins,
 			})
 		end
@@ -165,10 +146,10 @@ function MatchService.finish(match: Match, reason: string, winner: number?)
 	end
 end
 
--- Слот (команда) соперника игрока в матче — для присуждения победы при выходе.
-local function opponentSlotOf(match: Match, player: Player): number
-	local slot = Match.teamOf(match, player)
-	return if slot then 3 - slot else 0
+-- Команда соперников игрока — для присуждения победы при выходе.
+local function opponentTeamOf(match: Match, player: Player): number
+	local team = Match.teamOf(match, player)
+	return if team then 3 - team else 0
 end
 
 -- Отправить событие боя всем участникам вместе с ближайшим снапшотом.
@@ -237,6 +218,7 @@ function MatchService.stepMatch(match: Match, now: number)
 			v = event.value,
 			a = event.attacker,
 			t = event.tag,
+			d = event.target,
 		})
 	end
 	for _, hook in stepHooks do
@@ -248,22 +230,15 @@ function MatchService.stepMatch(match: Match, now: number)
 	local flow = match.flow
 	if flow and not match.ended then
 		MatchFlow.step(flow, match.sim)
-		if match.teams and #flow.events > 0 then
-			-- Эстафета: управление переходит к вышедшему напарнику.
-			for _, player in Match.syncControllers(match) do
-				InputService.clearPending(player)
-			end
-		end
 		for _, event in flow.events do
 			table.insert(match.pendingEvents, {
 				k = event.kind,
-				s = event.slot or event.winner,
+				s = event.winner,
 				f = match.sim.frame,
 				t = event.result,
 				r = event.round,
 				w = event.wins,
 				fin = event.final,
-				ms = event.members,
 			})
 		end
 		if flow.finished then
@@ -342,14 +317,14 @@ function MatchService.Init()
 		if match == nil then
 			return false, "NotInMatch"
 		end
-		MatchService.finish(match, "Left", opponentSlotOf(match, player))
+		MatchService.finish(match, "Left", opponentTeamOf(match, player))
 		return true, nil
 	end)
 
 	Players.PlayerRemoving:Connect(function(player: Player)
 		local match = matchOfPlayer[player]
 		if match then
-			MatchService.finish(match, "PlayerLeft", opponentSlotOf(match, player))
+			MatchService.finish(match, "PlayerLeft", opponentTeamOf(match, player))
 		end
 	end)
 end

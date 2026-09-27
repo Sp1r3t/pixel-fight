@@ -54,6 +54,8 @@ local ERROR_TEXT: { [string]: string } = {
 	NotEnoughCoins = "Не хватает монет",
 	AlreadyOwned = "Этот боец уже открыт",
 	ProfileLoading = "Сохранения ещё загружаются — секунду",
+	NotInRoom = "Вы не в комнате",
+	NotHost = "Начать бой может только хозяин комнаты",
 }
 
 local scope: Fusion.Scope<typeof(Fusion)>? = nil
@@ -98,8 +100,11 @@ function UIController.Init()
 	appState.actions.leaveRoom = function()
 		request("RoomLeave", nil)
 	end
-	appState.actions.startCpu = function(level: number)
-		request("StartCpu", { level = level, characterId = characterId() })
+	appState.actions.startCpu = function(level: number, mode: string)
+		request("StartCpu", { level = level, mode = mode, characterId = characterId() })
+	end
+	appState.actions.roomStart = function()
+		request("RoomStart", nil)
 	end
 	appState.actions.buyCharacter = function(id: string)
 		request("BuyCharacter", { characterId = id })

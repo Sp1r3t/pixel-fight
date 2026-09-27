@@ -1,10 +1,13 @@
 --!strict
 --[[
 	HUD боя (поверх 3D-арены):
-	  • сверху: портреты, имена, полосы HP с задержанной белой полосой урона, победы в раундах, таймер;
-	  • снизу: шкалы супера (пульсируют, когда полные);
-	  • счётчик комбо у атакующего, крупные надписи раундов по центру;
-	  • кнопка выхода из боя.
+	  • 1 на 1 — сверху портреты, имена, полосы HP с задержанной белой полосой урона, победы в раундах,
+	    таймер; снизу шкалы супера (пульсируют, когда полные);
+	  • 2 на 2 — две компактные строки на команду (слева синие, справа красные): портрет, имя, HP и
+	    тонкая шкала супера; выбитый боец помечен «K.O.»; большая шкала супера — только своя;
+	  • счётчик комбо у атакующей стороны, крупные надписи раундов по центру, кнопка выхода.
+	Ничего не перекрывается: верхняя полоса HUD — до y = 110, комбо — ниже, шкалы супера — у нижнего края
+	вне зоны сенсорных кнопок.
 	Все данные — Fusion Values из AppState.hud, их обновляет FightController.
 ]]
 
@@ -27,11 +30,17 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local HINTS: { [string]: string } = {
-	Keyboard = "A/D — движение · W — прыжок · S — присед · Shift — рывок · назад — блок · "
+	Keyboard = "A/D — движение · W/Пробел — прыжок · S — присед · Shift — рывок · Q — блок · "
 		.. "J — рука · K — нога · L — особый · I — супер",
-	Gamepad = "Стик — движение · A — прыжок · LB — рывок · назад — блок · "
+	Gamepad = "Стик — движение · A — прыжок · LB — рывок · LT — блок · "
 		.. "X — рука · Y — нога · B — особый · RB — супер",
 }
+
+local TEAM_COLORS: { Color3 } = { Color3.fromHex("#4DB8FF"), Color3.fromHex("#FF5A6E") }
+-- 2 на 2: строки команды (слоты сверху вниз). Нижний этаж (1, 2) — первая строка.
+local TEAM_SLOTS: { { number } } = { { 1, 3 }, { 2, 4 } }
+local ROW_HEIGHT = 48
+local ROW_BAR_WIDTH = 250
 
 local SCREEN_WIDTH = Theme.ReferenceSize.X
 local HP_WIDTH = 340
@@ -89,8 +98,7 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 		local def = CharacterRegistry.get(fighter.characterId)
 		local text = string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
 		if battle.localSlot == slot then
-			-- В эстафете, пока бьётся напарник, это «союзник», а не вы.
-			text ..= if battle.teams and not use(state.hud.controlling) then " (ALLY)" else " (YOU)"
+			text ..= " (YOU)"
 		end
 		return text
 	end)
@@ -140,9 +148,9 @@ local function SuperPanel(
 	scope: Scope,
 	state: AppState.AppState,
 	slot: number,
-	clock: Fusion.Value<number>
+	clock: Fusion.Value<number>,
+	isLeft: boolean
 ): Fusion.Child
-	local isLeft = slot == 1
 	local color = scope:Computed(function(use)
 		local battle = use(state.battle)
 		if battle then
@@ -170,97 +178,182 @@ local function SuperPanel(
 	end)
 end
 
--- Эстафета: мини-портреты участников команды (активный — в рамке, выбывшие — затемнены).
-local function TeamRoster(scope: Scope, state: AppState.AppState, slot: number): Instance
-	local isLeft = slot == 1
-	local barX = if isLeft then 16 + PORTRAIT + 8 else SCREEN_WIDTH - 16 - PORTRAIT - 8
+-- 2 на 2: строка бойца в панели команды — портрет, имя, HP, тонкая шкала супера, отметка K.O.
+local function TeamRow(
+	scope: Scope,
+	state: AppState.AppState,
+	slot: number,
+	team: number,
+	row: number,
+	clock: Fusion.Value<number>
+): Instance
+	local isLeft = team == 1
+	local hudFighter = state.hud.fighters[slot]
+	local info = scope:Computed(function(use): AppState.BattleFighter?
+		local battle = use(state.battle)
+		return if battle then AppState.fighterInSlot(battle, slot) else nil
+	end)
+	local knockedOut = scope:Computed(function(use)
+		return use(hudFighter.health) <= 0
+	end)
+	local portraitSize = 40
+	local barX = portraitSize + 8
+	local y = 6 + (row - 1) * ROW_HEIGHT
+
+	local portrait = scope:Computed(function(use, innerScope: Scope): Instance?
+		local fighter = use(info)
+		local def = if fighter then CharacterRegistry.get(fighter.characterId) else nil
+		if fighter == nil or def == nil then
+			return nil
+		end
+		return PixelFigure(innerScope, { Palette = fighter.palette or def.palette })
+	end)
+
+	local name = scope:Computed(function(use)
+		local fighter = use(info)
+		local battle = use(state.battle)
+		if fighter == nil or battle == nil then
+			return ""
+		end
+		local def = CharacterRegistry.get(fighter.characterId)
+		local text = fighter.playerName or fighter.displayName or (if def then def.displayName else fighter.characterId)
+		if battle.localSlot == slot then
+			text = "ВЫ · " .. (if def then def.displayName else text)
+		end
+		return text
+	end)
+
+	local superColor = scope:Computed(function(use)
+		local fighter = use(info)
+		local def = if fighter then CharacterRegistry.get(fighter.characterId) else nil
+		return if def then Color3.fromHex(def.cosmetics.superFlash) else Theme.Colors.Accent
+	end)
+
+	local rowWidth = barX + ROW_BAR_WIDTH
 	return scope:New "Frame" {
-		Name = `TeamRoster{slot}`,
+		Name = `TeamRow{slot}`,
 		AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(barX, 80),
-		Size = UDim2.fromOffset(120, 30),
-		[Children] = scope:Computed(function(use, innerScope: Scope): { Instance }
-			local battle = use(state.battle)
-			local teams = if battle then battle.teams else nil
-			local team = if teams then teams[slot] else nil
-			local items: { Instance } = {}
-			if team == nil then
-				return items
-			end
-			local active = use(state.hud.members)[slot]
-			local out = use(state.hud.eliminated)[slot] or {}
-			for index, member in team do
-				local def = CharacterRegistry.get(member.characterId)
-				if def then
-					local isOut = out[index] == true
-					table.insert(
-						items,
-						innerScope:New "Frame" {
-							Name = `Member{index}`,
-							BackgroundColor3 = Theme.Colors.Panel,
-							BackgroundTransparency = if isOut then 0.6 else 0,
-							BorderSizePixel = 0,
-							LayoutOrder = index,
-							Size = UDim2.fromOffset(28, 28),
-							[Children] = {
-								innerScope:New "UIStroke" {
-									ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-									Color = if index == active then Theme.Colors.Accent else Theme.Colors.Outline,
-									Thickness = if index == active then 2 else 1,
-								},
-								PixelFigure(innerScope, { Palette = def.palette }),
-								innerScope:New "TextLabel" {
-									Name = "Out",
-									BackgroundTransparency = 1,
-									Font = Theme.Fonts.Pixel,
-									Size = UDim2.fromScale(1, 1),
-									Text = "X",
-									TextColor3 = Color3.fromHex("#FF4D6D"),
-									TextSize = 24,
-									Visible = isOut,
-								},
-							} :: { Fusion.Child },
-						}
-					)
-				end
-			end
-			table.insert(
-				items,
-				innerScope:New "UIListLayout" {
-					FillDirection = Enum.FillDirection.Horizontal,
-					HorizontalAlignment = if isLeft
-						then Enum.HorizontalAlignment.Left
-						else Enum.HorizontalAlignment.Right,
-					Padding = UDim.new(0, 4),
-					SortOrder = Enum.SortOrder.LayoutOrder,
-				}
-			)
-			return items
-		end),
+		Position = if isLeft then UDim2.fromOffset(12, y) else UDim2.new(1, -12, 0, y),
+		Size = UDim2.fromOffset(rowWidth, ROW_HEIGHT - 4),
+		[Children] = {
+			scope:New "Frame" {
+				Name = "Portrait",
+				AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+				BackgroundColor3 = Theme.Colors.Panel,
+				BorderSizePixel = 0,
+				Position = UDim2.fromScale(if isLeft then 0 else 1, 0),
+				Size = UDim2.fromOffset(portraitSize, portraitSize),
+				[Children] = {
+					scope:New "UIStroke" {
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = TEAM_COLORS[team],
+						Thickness = 3,
+					},
+					portrait,
+					scope:New "TextLabel" {
+						Name = "KO",
+						BackgroundColor3 = Color3.new(0, 0, 0),
+						BackgroundTransparency = 0.35,
+						Font = Theme.Fonts.Pixel,
+						Size = UDim2.fromScale(1, 1),
+						Text = "K.O.",
+						TextColor3 = Color3.fromHex("#FF4D6D"),
+						TextSize = 18,
+						Visible = knockedOut,
+						ZIndex = 3,
+					},
+				} :: { Fusion.Child },
+			},
+			scope:New "TextLabel" {
+				Name = "Name",
+				AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+				BackgroundTransparency = 1,
+				Font = Theme.Fonts.Body,
+				Position = if isLeft then UDim2.fromOffset(barX, -1) else UDim2.new(1, -barX, 0, -1),
+				Size = UDim2.fromOffset(ROW_BAR_WIDTH, 17),
+				Text = name,
+				TextColor3 = Theme.Colors.Text,
+				TextSize = 15,
+				TextStrokeTransparency = 0.3,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextXAlignment = if isLeft then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right,
+			},
+			HealthBar(scope, {
+				Health = hudFighter.health,
+				MaxHealth = hudFighter.maxHealth,
+				Side = if isLeft then "Left" else "Right",
+				AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+				Position = if isLeft then UDim2.fromOffset(barX, 18) else UDim2.new(1, -barX, 0, 18),
+				Size = UDim2.fromOffset(ROW_BAR_WIDTH, 14),
+			}),
+			scope:Computed(function(use, innerScope: Scope): Instance
+				return SuperMeter(innerScope, {
+					Meter = hudFighter.meter,
+					Side = if isLeft then "Left" else "Right",
+					Color = use(superColor),
+					Clock = clock,
+					AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+					Position = if isLeft then UDim2.fromOffset(barX, 35) else UDim2.new(1, -barX, 0, 35),
+					Size = UDim2.fromOffset(ROW_BAR_WIDTH * 0.7, 6),
+				})
+			end),
+		} :: { Fusion.Child },
 	}
 end
 
--- «N HITS» у атакующего, пока противник в комбо.
-local function ComboCounter(scope: Scope, state: AppState.AppState, attackerSlot: number): Instance
-	local victim = state.hud.fighters[3 - attackerSlot]
-	local isLeft = attackerSlot == 1
+-- 2 на 2: победы команд в раундах — по бокам от таймера.
+local function TeamPips(scope: Scope, state: AppState.AppState, team: number): Instance
+	local isLeft = team == 1
+	return RoundPips(scope, {
+		Wins = state.hud.wins,
+		RoundsToWin = state.hud.roundsToWin,
+		Slot = team,
+		Side = if isLeft then "Left" else "Right",
+		AnchorPoint = Vector2.new(if isLeft then 1 else 0, 0),
+		Position = if isLeft then UDim2.new(0.5, -52, 0, 26) else UDim2.new(0.5, 52, 0, 26),
+	})
+end
+
+-- Самая длинная серия, которую сейчас получает кто-то из бойцов команды team.
+local function teamCombo(use: Fusion.Use, state: AppState.AppState, battle: AppState.BattleInfo?, team: number): number
+	local best = 0
+	if battle == nil then
+		return best
+	end
+	for _, fighter in battle.fighters do
+		if fighter.team == team then
+			local hudFighter = state.hud.fighters[fighter.slot]
+			if hudFighter then
+				best = math.max(best, use(hudFighter.combo))
+			end
+		end
+	end
+	return best
+end
+
+-- «N HITS» у атакующей стороны, пока кто-то из противников в комбо.
+local function ComboCounter(scope: Scope, state: AppState.AppState, attackerTeam: number): Instance
+	local combo = scope:Computed(function(use)
+		return teamCombo(use, state, use(state.battle), 3 - attackerTeam)
+	end)
+	local isLeft = attackerTeam == 1
 	return scope:New "TextLabel" {
-		Name = `Combo{attackerSlot}`,
+		Name = `Combo{attackerTeam}`,
 		AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
 		BackgroundTransparency = 1,
 		Font = Theme.Fonts.Pixel,
 		Position = if isLeft then UDim2.fromOffset(24, 150) else UDim2.new(1, -24, 0, 150),
 		Size = UDim2.fromOffset(260, 48),
 		Text = scope:Computed(function(use)
-			return `{use(victim.combo)} HITS`
+			return `{use(combo)} HITS`
 		end),
 		TextColor3 = Theme.Colors.Accent,
 		TextSize = 44,
 		TextStrokeTransparency = 0,
 		TextXAlignment = if isLeft then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right,
 		Visible = scope:Computed(function(use)
-			return use(victim.combo) >= 2
+			return use(combo) >= 2
 		end),
 	}
 end
@@ -302,18 +395,44 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 		end)
 	)
 
+	-- Раскладка HUD зависит от числа бойцов (пересобирается, только когда начинается новый бой).
+	local teamMode = scope:Computed(function(use)
+		local battle = use(state.battle)
+		return battle ~= nil and #battle.fighters > 2
+	end)
+	local panels = scope:Computed(function(use, innerScope: Scope): { Instance }
+		if not use(teamMode) then
+			return {
+				FighterPanel(innerScope, state, 1),
+				FighterPanel(innerScope, state, 2),
+				SuperPanel(innerScope, state, 1, clock, true) :: any,
+				SuperPanel(innerScope, state, 2, clock, false) :: any,
+			}
+		end
+		local items: { Instance } = {}
+		for team, slots in TEAM_SLOTS do
+			for row, slot in slots do
+				table.insert(items, TeamRow(innerScope, state, slot, team, row, clock))
+			end
+			table.insert(items, TeamPips(innerScope, state, team))
+		end
+		-- Большая шкала супера — только своя (на стороне своей команды).
+		local battle = use(state.battle)
+		local localSlot = if battle then battle.localSlot else nil
+		local localTeam = if battle then battle.localTeam else nil
+		if localSlot then
+			table.insert(items, SuperPanel(innerScope, state, localSlot, clock, localTeam ~= 2) :: any)
+		end
+		return items
+	end)
+
 	return scope:New "Frame" {
 		Name = "Battle",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
 		[Children] = {
-			FighterPanel(scope, state, 1),
-			FighterPanel(scope, state, 2),
-			TeamRoster(scope, state, 1),
-			TeamRoster(scope, state, 2),
+			panels,
 			Timer(scope, state),
-			SuperPanel(scope, state, 1, clock),
-			SuperPanel(scope, state, 2, clock),
 			ComboCounter(scope, state, 1),
 			ComboCounter(scope, state, 2),
 			Banner(scope, {
@@ -339,10 +458,6 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 				Position = UDim2.new(0.5, 0, 1, -6),
 				Size = UDim2.fromOffset(440, 30),
 				Text = scope:Computed(function(use)
-					local battle = use(state.battle)
-					if battle and battle.teams and battle.localSlot and not use(state.hud.controlling) then
-						return "Сейчас бьётся напарник. Если он выбудет — на арену выйдете вы."
-					end
 					return HINTS[use(state.platform)] or ""
 				end),
 				TextColor3 = Theme.Colors.Text,

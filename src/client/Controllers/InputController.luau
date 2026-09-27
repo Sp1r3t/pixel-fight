@@ -2,11 +2,11 @@
 --[[
 	InputController — ввод игрока.
 
-	  • ПК: A/D (←/→) — движение, W/Space (↑) — прыжок, S (↓) — присед,
+	  • ПК: A/D (←/→) — движение, W/Space (↑) — прыжок (в 2 на 2 — ещё и двойной), S (↓) — присед,
 	    J — «Рука» (лёгкий), K — «Нога» (тяжёлый), L — особый приём, I — супер,
-	    Shift или двойное нажатие направления — рывок. Блок — движение назад от противника.
+	    Shift или двойное нажатие направления — рывок, Q — блок (или движение назад от противника).
 	  • Геймпад: левый стик/крестовина, A — прыжок, X — лёгкий, Y — тяжёлый, B — особый,
-	    RB/RT — супер, LB/LT — рывок.
+	    RB/RT — супер, LB — рывок, LT — блок.
 	  • Телефон (этап 5): виртуальный джойстик и кнопки через setVirtualHeld / pressVirtual.
 
 	На сервер уходит только маска удерживаемых кнопок и счётчики нажатий (см. Combat/InputBits),
@@ -36,6 +36,7 @@ local KEY_DIRECTIONS: { [Enum.KeyCode]: number } = {
 	[Enum.KeyCode.Space] = InputBits.Up,
 	[Enum.KeyCode.S] = InputBits.Down,
 	[Enum.KeyCode.Down] = InputBits.Down,
+	[Enum.KeyCode.Q] = InputBits.Block,
 }
 
 local GAMEPAD_DIRECTIONS: { [Enum.KeyCode]: number } = {
@@ -44,6 +45,7 @@ local GAMEPAD_DIRECTIONS: { [Enum.KeyCode]: number } = {
 	[Enum.KeyCode.DPadUp] = InputBits.Up,
 	[Enum.KeyCode.DPadDown] = InputBits.Down,
 	[Enum.KeyCode.ButtonA] = InputBits.Up,
+	[Enum.KeyCode.ButtonL2] = InputBits.Block,
 }
 
 local ACTION_KEYS: { [Enum.KeyCode]: number } = {
@@ -59,7 +61,6 @@ local ACTION_KEYS: { [Enum.KeyCode]: number } = {
 	[Enum.KeyCode.ButtonR1] = InputBits.Super,
 	[Enum.KeyCode.ButtonR2] = InputBits.Super,
 	[Enum.KeyCode.ButtonL1] = InputBits.Dash,
-	[Enum.KeyCode.ButtonL2] = InputBits.Dash,
 }
 
 export type Platform = "Keyboard" | "Touch" | "Gamepad"

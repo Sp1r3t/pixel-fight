@@ -3,8 +3,8 @@
 	CameraController — боковая 2D-камера.
 
 	  • Scriptable-камера смотрит строго вдоль −Z, узкий FOV → почти ортографическая картинка;
-	  • в кадре всегда оба бойца: камера следит за центром между ними и плавно отъезжает,
-	    когда они расходятся; не выходит за края арены;
+	  • в кадре всегда все бойцы: камера следит за центром между ними и плавно отъезжает,
+	    когда они расходятся (в 2 на 2 — как в Brawlhalla, до всей сцены); не выходит за края арены;
 	  • пол всегда в нижней части кадра, при высоких прыжках камера приподнимается;
 	  • тряска (shake) — затухающее смещение; её вызывает EffectsController при ударах.
 ]]
@@ -13,16 +13,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local Stage = require(ReplicatedStorage.Shared.Combat.Stage)
 
 local FOV = 30 -- вертикальный угол обзора
 local MIN_VIEW_WIDTH = 20 -- студов по горизонтали
-local MAX_VIEW_WIDTH = 34
 local VIEW_MARGIN = 12 -- запас по краям вокруг бойцов
-local MIN_VIEW_HEIGHT = 15
 local FLOOR_FRACTION = 0.18 -- пол на такой доле высоты кадра снизу
 local FOLLOW_SPEED = 7
-local ARENA_EDGE = GameConfig.Physics.ArenaHalfWidth + 1.5
+local EDGE_MARGIN = 1.5
 
 type Shake = { amplitude: number, duration: number, age: number, seed: number }
 
@@ -38,6 +36,10 @@ local shakes: { Shake } = {}
 local shakeSeed = 0
 -- Постановка ролика супера: камера наезжает на точку (x, y) с шириной кадра width.
 local override: { x: number, y: number, width: number }? = nil
+-- Параметры сцены текущего боя.
+local maxViewWidth = Stage.get("Duel").cameraMaxWidth
+local minViewHeight = Stage.get("Duel").cameraMinHeight
+local arenaEdge = Stage.get("Duel").halfWidth + EDGE_MARGIN
 
 local function getCamera(): Camera?
 	return Workspace.CurrentCamera
@@ -50,7 +52,11 @@ local function viewTangents(camera: Camera): (number, number)
 	return tanV, tanV * aspect
 end
 
-function CameraController.enterFight()
+function CameraController.enterFight(stageId: string?)
+	local layout = Stage.get(stageId)
+	maxViewWidth = layout.cameraMaxWidth
+	minViewHeight = layout.cameraMinHeight
+	arenaEdge = layout.halfWidth + EDGE_MARGIN
 	inFight = true
 	snapNext = true
 	table.clear(shakes)
@@ -87,13 +93,13 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 		target.x, target.y, target.distance = focus.x, focus.y, distance
 		return
 	end
-	local width = math.clamp(maxX - minX + VIEW_MARGIN, MIN_VIEW_WIDTH, MAX_VIEW_WIDTH)
-	local distance = math.max(width / (2 * tanH), MIN_VIEW_HEIGHT / (2 * tanV))
+	local width = math.clamp(maxX - minX + VIEW_MARGIN, MIN_VIEW_WIDTH, maxViewWidth)
+	local distance = math.max(width / (2 * tanH), minViewHeight / (2 * tanV))
 	local halfWidth = distance * tanH
 	local halfHeight = distance * tanV
 
 	local centerX = (minX + maxX) / 2
-	local limit = ARENA_EDGE - halfWidth
+	local limit = arenaEdge - halfWidth
 	centerX = if limit > 0 then math.clamp(centerX, -limit, limit) else 0
 
 	-- Пол на FLOOR_FRACTION от низа кадра; если кто-то высоко прыгнул — поднимаемся.

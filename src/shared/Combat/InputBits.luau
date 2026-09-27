@@ -19,8 +19,9 @@ InputBits.Heavy = 32 -- «Нога»
 InputBits.Special = 64
 InputBits.Super = 128
 InputBits.Dash = 256
+InputBits.Block = 512 -- кнопка блока (удобнее детям, чем «назад»): блок в любую сторону
 
-InputBits.ALL = 511
+InputBits.ALL = 1023
 
 -- Кнопки действий со счётчиками нажатий (порядок важен для упаковки).
 InputBits.ACTIONS = table.freeze({

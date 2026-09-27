@@ -1,7 +1,8 @@
 --!strict
 --[[
 	FighterView — визуальное представление бойца на арене.
-	BillboardGui (квадрат SPRITE_SIZE × SPRITE_SIZE студов) в плоскости Z = 0 + аниматор + тень на полу.
+	BillboardGui (квадрат SPRITE_SIZE × SPRITE_SIZE студов) в плоскости Z = 0 + аниматор + тень на опоре
+	(пол или платформа второго этажа) + табличка с именем над головой (2 на 2: цвет команды).
 	Сам ничего не решает: каждый кадр получает состояние из снапшота и показывает его.
 ]]
 
@@ -9,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Types = require(ReplicatedStorage.Shared.Types)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
+local Stage = require(ReplicatedStorage.Shared.Combat.Stage)
 local SpriteAnimator = require(script.Parent.Parent.Sprites.SpriteAnimator)
 local AnimationSelect = require(script.Parent.AnimationSelect)
 
@@ -22,16 +24,20 @@ export type FighterView = {
 	setOffset: (dx: number, dy: number) -> (),
 	-- Скрыть бойца (телепорт: исчез — появился).
 	setVisible: (visible: boolean) -> (),
+	-- Табличка над головой (nil — убрать).
+	setNameplate: (text: string?, color: Color3?) -> (),
 	destroy: () -> (),
 }
 
 local SPRITE_SIZE = 8 -- студов: клетка спрайта
 local FEET_IN_CELL = 0.96 -- где в клетке стоят ноги (доля высоты сверху)
 local CENTER_OFFSET = SPRITE_SIZE * (FEET_IN_CELL - 0.5)
+local NAMEPLATE_HEIGHT = 6.4 -- над ногами, студов
 
 local FighterView = {}
 
-function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number): FighterView
+function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number, stageId: string?): FighterView
+	local layout = Stage.get(stageId)
 	local anchor = Instance.new("Part")
 	anchor.Name = `Fighter{slot}`
 	anchor.Anchored = true
@@ -73,6 +79,8 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 
 	local flashAmount = 0
 	local offsetX, offsetY = 0, 0
+	local nameplate: BillboardGui? = nil
+	local visible = true
 
 	local view = {} :: FighterView
 	view.slot = slot
@@ -81,13 +89,15 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 
 	function view.update(fighter: Snapshot.FighterSnapshot, dt: number)
 		-- Атакующий боец чуть ближе к камере, чтобы его удар рисовался поверх противника.
-		local z = if fighter.state == "Attack" then 0.3 else 0.1 * slot
+		local z = 0.06 * slot + (if fighter.state == "Attack" then 0.4 else 0)
 		anchor.CFrame = CFrame.new(fighter.x + offsetX, fighter.y + offsetY + CENTER_OFFSET, z)
 
-		local shadowScale = math.clamp(1 - fighter.y / 12, 0.4, 1)
+		-- Тень на ближайшей опоре под бойцом (пол или платформа).
+		local floorY = Stage.floorBelow(layout, fighter.x, fighter.y)
+		local shadowScale = math.clamp(1 - (fighter.y - floorY) / 12, 0.4, 1)
 		shadow.Size = Vector3.new(0.05, 3 * shadowScale, 2 * shadowScale)
 		-- Цилиндр лежит на боку: ось X вверх.
-		shadow.CFrame = CFrame.new(fighter.x, 0.03, 0) * CFrame.Angles(0, 0, math.rad(90))
+		shadow.CFrame = CFrame.new(fighter.x, floorY + 0.03, 0) * CFrame.Angles(0, 0, math.rad(90))
 
 		local choice = AnimationSelect.choose(fighter, def.id)
 		animator.setFacing(fighter.facing)
@@ -107,9 +117,51 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 		offsetX, offsetY = dx, dy
 	end
 
-	function view.setVisible(visible: boolean)
-		gui.Enabled = visible
-		shadow.Transparency = if visible then 0.55 else 1
+	function view.setVisible(isVisible: boolean)
+		visible = isVisible
+		gui.Enabled = isVisible
+		shadow.Transparency = if isVisible then 0.55 else 1
+		if nameplate then
+			nameplate.Enabled = isVisible
+		end
+	end
+
+	function view.setNameplate(text: string?, color: Color3?)
+		if text == nil then
+			if nameplate then
+				nameplate:Destroy()
+				nameplate = nil
+			end
+			return
+		end
+		local plate = nameplate
+		if plate == nil then
+			local created = Instance.new("BillboardGui")
+			created.Name = "Nameplate"
+			created.Adornee = anchor
+			-- Размер в пикселях экрана: табличка читается при любом отдалении камеры.
+			created.Size = UDim2.fromOffset(140, 22)
+			created.StudsOffsetWorldSpace = Vector3.new(0, NAMEPLATE_HEIGHT - CENTER_OFFSET, 0)
+			created.LightInfluence = 0
+			created.AlwaysOnTop = true
+			created.Parent = anchor
+			local label = Instance.new("TextLabel")
+			label.Name = "Label"
+			label.BackgroundTransparency = 1
+			label.Font = Enum.Font.GothamBlack
+			label.Size = UDim2.fromScale(1, 1)
+			label.TextScaled = true
+			label.TextStrokeTransparency = 0.1
+			label.Parent = created
+			nameplate = created
+			plate = created
+		end
+		local label = (plate :: BillboardGui):FindFirstChild("Label") :: TextLabel?
+		if label then
+			label.Text = text
+			label.TextColor3 = color or Color3.new(1, 1, 1)
+		end
+		(plate :: BillboardGui).Enabled = visible
 	end
 
 	function view.destroy()

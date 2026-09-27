@@ -68,12 +68,17 @@ export type Modifiers = {
 
 export type Fighter = {
 	slot: number,
+	team: number, -- 1 или 2 (в 1 на 1 — номер слота)
+	-- Слот текущего противника (ближайший, предпочтительно на своём этаже; 0 — нет).
+	target: number,
 	characterId: string,
 	stats: Types.DerivedStats,
 	hpMultiplier: number, -- умеренный бонус HP боссов (1 у игроков)
 
 	x: number,
-	y: number, -- высота ног над полом
+	y: number, -- высота ног
+	floorY: number, -- высота поверхности под бойцом (пол 0 или второй этаж)
+	standY: number, -- на какой высоте боец стоял последний раз («свой» этаж, пока он в прыжке)
 	vx: number, -- студ/с
 	vy: number,
 	facing: number, -- 1 — смотрит вправо, -1 — влево
@@ -106,7 +111,10 @@ export type Fighter = {
 	moveFrame: number, -- кадр внутри приёма (с 0)
 	moveConnected: boolean, -- попал или был заблокирован (открывает отмены в следующий удар)
 	moveHits: number, -- сколько ударов приёма уже засчитано (для многоударных)
+	moveBaseY: number, -- высота опоры в начале приёма (дуги прыжковых приёмов считаются от неё)
 	airAttackUsed: boolean,
+	airJumps: number, -- оставшиеся прыжки в воздухе (двойной прыжок в 2 на 2)
+	targetHits: { [number]: number }, -- сколько раз текущий приём попал по каждому противнику (по слотам)
 	specialCooldown: number,
 	armor: number, -- сколько ударов ещё «впитает» броня (особые приёмы)
 
@@ -119,6 +127,7 @@ export type Fighter = {
 	juggleHits: number, -- ударов в воздухе за одно подбрасывание
 	knockdownOnLand: boolean,
 	ko: boolean,
+	lastHitBy: number, -- слот того, кто последним попал (0 — никто)
 
 	-- Компенсация пинга: на сколько кадров назад можно «отмотать» противника для атак этого бойца.
 	lagFrames: number,
@@ -151,7 +160,7 @@ function Fighter.neutralModifiers(): Modifiers
 	return { damageDealt = 1, damageTaken = 1, firstHitTaken = 1, lifesteal = 0, meterGain = 1 }
 end
 
-function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): Fighter
+function Fighter.new(slot: number, characterId: string, hpMultiplier: number?, team: number?): Fighter
 	local def = CharacterRegistry.get(characterId)
 	assert(def, `Неизвестный персонаж: {characterId}`)
 	local stats = CharacterRegistry.getDerivedStats(def)
@@ -159,11 +168,15 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): 
 	local maxHealth = math.floor(stats.maxHealth * multiplier + 0.5)
 	return {
 		slot = slot,
+		team = team or slot,
+		target = 0,
 		characterId = characterId,
 		stats = stats,
 		hpMultiplier = multiplier,
 		x = 0,
 		y = 0,
+		floorY = 0,
+		standY = 0,
 		vx = 0,
 		vy = 0,
 		facing = if slot == 1 then 1 else -1,
@@ -187,7 +200,10 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): 
 		moveFrame = 0,
 		moveConnected = false,
 		moveHits = 0,
+		moveBaseY = 0,
 		airAttackUsed = false,
+		airJumps = 0,
+		targetHits = {},
 		specialCooldown = 0,
 		armor = 0,
 		stun = 0,
@@ -198,6 +214,7 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?): 
 		juggleHits = 0,
 		knockdownOnLand = false,
 		ko = false,
+		lastHitBy = 0,
 		lagFrames = 0,
 		history = {},
 		modifiers = Fighter.neutralModifiers(),
@@ -210,7 +227,7 @@ function Fighter.setState(fighter: Fighter, state: StateName)
 end
 
 function Fighter.isAirborne(fighter: Fighter): boolean
-	return fighter.state == "Air" or fighter.state == "Juggle" or fighter.y > 0
+	return fighter.state == "Air" or fighter.state == "Juggle" or fighter.y > fighter.floorY + 0.01
 end
 
 local InputDown = 8 -- InputBits.Down (без require, чтобы избежать цикла зависимостей)

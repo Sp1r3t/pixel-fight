@@ -4,8 +4,8 @@
 
 	  • слева — джойстик: движение, вверх — прыжок, вниз — присед; «назад» от противника — блок.
 	    Точка первого касания становится «нулём» (удобно: не нужно попадать в центр);
-	  • справа — крупные полупрозрачные кнопки «Рука», «Нога», «Особый», «Супер» (светится, когда
-	    шкала полная) и маленький «Рывок»;
+	  • справа — крупные полупрозрачные кнопки «Рука», «Нога», «Прыжок», «Блок» (держите — блок в любую
+	    сторону), «Особый», «Супер» (светится, когда шкала полная) и «Рывок»;
 	  • нажатие засчитывается В МОМЕНТ КАСАНИЯ (не при отпускании) — важно для файтинга;
 	  • несколько касаний одновременно (джойстик + кнопка) работают независимо.
 
@@ -47,6 +47,8 @@ local BUTTONS: { { id: string, label: string, bit: number, color: Color3 } } = {
 	{ id = "Special", label = "Особый", bit = InputBits.Special, color = Color3.fromHex("#C77DFF") },
 	{ id = "Super", label = "Супер", bit = InputBits.Super, color = Color3.fromHex("#FFC845") },
 	{ id = "Dash", label = "Рывок", bit = InputBits.Dash, color = Color3.fromHex("#5BD17A") },
+	{ id = "Jump", label = "Прыжок", bit = InputBits.Up, color = Color3.fromHex("#7FE3C4") },
+	{ id = "Block", label = "Блок", bit = InputBits.Block, color = Color3.fromHex("#9AA7C7") },
 }
 
 local function isPointer(input: InputObject): boolean

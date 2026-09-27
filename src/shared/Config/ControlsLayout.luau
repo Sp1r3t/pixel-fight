@@ -11,7 +11,7 @@
 
 local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 
-export type ControlId = "Joystick" | "Light" | "Heavy" | "Special" | "Super" | "Dash"
+export type ControlId = "Joystick" | "Light" | "Heavy" | "Special" | "Super" | "Dash" | "Jump" | "Block"
 export type ShowMode = "Auto" | "Always" | "Never"
 
 export type Placement = {
@@ -28,16 +28,18 @@ export type Layout = {
 	controls: { [string]: Placement },
 }
 
-local CONTROL_IDS: { string } = { "Joystick", "Light", "Heavy", "Special", "Super", "Dash" }
+local CONTROL_IDS: { string } = { "Joystick", "Light", "Heavy", "Special", "Super", "Dash", "Jump", "Block" }
 
 -- Базовый диаметр (логические пиксели) при size = 1.
 local BASE_SIZE: { [string]: number } = {
 	Joystick = 170,
-	Light = 104,
-	Heavy = 104,
-	Special = 86,
-	Super = 86,
-	Dash = 64,
+	Light = 112,
+	Heavy = 112,
+	Special = 88,
+	Super = 88,
+	Dash = 66,
+	Jump = 84,
+	Block = 84,
 }
 
 -- Какому краю экрана принадлежит элемент.
@@ -48,20 +50,26 @@ local SIDE: { [string]: "Left" | "Right" } = {
 	Special = "Right",
 	Super = "Right",
 	Dash = "Right",
+	Jump = "Right",
+	Block = "Right",
 }
 
+-- Кнопки не перекрываются: большие «Рука»/«Нога» под большим пальцем, «Прыжок» и «Блок» рядом,
+-- «Особый»/«Супер» выше, «Рывок» — сверху. Проверяется тестом (ControlsLayout.overlaps).
 local DEFAULT: Layout = {
-	version = 1,
+	version = 2,
 	mode = "Auto",
 	opacity = 0.55,
 	dashButton = true,
 	controls = {
 		Joystick = { x = 140, y = 140, size = 1 },
-		Light = { x = 190, y = 90, size = 1 },
-		Heavy = { x = 80, y = 150, size = 1 },
-		Special = { x = 250, y = 200, size = 1 },
-		Super = { x = 130, y = 270, size = 1 },
-		Dash = { x = 300, y = 80, size = 1 },
+		Light = { x = 205, y = 95, size = 1 },
+		Heavy = { x = 85, y = 165, size = 1 },
+		Jump = { x = 330, y = 80, size = 1 },
+		Block = { x = 215, y = 225, size = 1 },
+		Special = { x = 95, y = 290, size = 1 },
+		Super = { x = 330, y = 200, size = 1 },
+		Dash = { x = 215, y = 335, size = 1 },
 	},
 }
 
@@ -122,6 +130,13 @@ function ControlsLayout.sanitize(data: unknown): Layout
 		return result
 	end
 	local raw = data :: { [any]: any }
+	if type(raw.version) == "number" and raw.version < DEFAULT.version then
+		-- Старая раскладка (до кнопок «Прыжок» и «Блок») — берём новую по умолчанию, режим сохраняем.
+		if raw.mode == "Auto" or raw.mode == "Always" or raw.mode == "Never" then
+			result.mode = raw.mode
+		end
+		return result
+	end
 	if raw.mode == "Auto" or raw.mode == "Always" or raw.mode == "Never" then
 		result.mode = raw.mode
 	end
@@ -154,6 +169,24 @@ function ControlsLayout.diameter(layout: Layout, id: string): number
 	return BASE_SIZE[id] * (if placement then placement.size else 1)
 end
 
+-- Пары элементов одной стороны экрана, которые перекрываются (для проверки раскладки).
+function ControlsLayout.overlaps(layout: Layout): { { string } }
+	local result: { { string } } = {}
+	for i, a in CONTROL_IDS do
+		for j = i + 1, #CONTROL_IDS do
+			local b = CONTROL_IDS[j]
+			local pa, pb = layout.controls[a], layout.controls[b]
+			if pa and pb and SIDE[a] == SIDE[b] then
+				local distance = math.sqrt((pa.x - pb.x) ^ 2 + (pa.y - pb.y) ^ 2)
+				if distance < (ControlsLayout.diameter(layout, a) + ControlsLayout.diameter(layout, b)) / 2 then
+					table.insert(result, { a, b })
+				end
+			end
+		end
+	end
+	return result
+end
+
 return deepFreeze({
 	IDS = ControlsLayout.IDS,
 	BASE_SIZE = ControlsLayout.BASE_SIZE,
@@ -163,4 +196,5 @@ return deepFreeze({
 	copy = ControlsLayout.copy,
 	sanitize = ControlsLayout.sanitize,
 	diameter = ControlsLayout.diameter,
+	overlaps = ControlsLayout.overlaps,
 })

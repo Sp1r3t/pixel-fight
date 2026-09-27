@@ -1,6 +1,7 @@
 --!strict
 --[[
-	Детерминированная симуляция поединка 1 на 1 с фиксированным шагом (GameConfig.TickRate).
+	Детерминированная симуляция боя с фиксированным шагом (GameConfig.TickRate): 1 на 1 или
+	2 на 2 (четыре бойца в двух командах одновременно, сцена с двумя этажами — см. Stage).
 	Чистый Luau без Roblox API: одна и та же симуляция работает на сервере (авторитетно)
 	и в тестах. Сервер вызывает Simulation.step() 60 раз в секунду, подавая ввод игроков/ИИ.
 
@@ -8,10 +9,10 @@
 	  1. ввод (буфер нажатий, двойное нажатие для рывка);
 	  2. вспышка супера или кинематографичная серия — если идут, всё остальное стоит;
 	  3. логика состояний: движение, атаки и отмены, оглушение, нокдаун (кроме бойцов в хитстопе);
-	  4. интеграция позиций, отбрасывание, приземление;
-	  5. раздвигание бойцов, границы арены (у стены отбрасывает атакующего), максимальная дистанция;
-	  6. поворот к противнику;
-	  7. попадания: хитбоксы против хартбоксов (с компенсацией пинга), блок, урон, реакция.
+	  4. интеграция позиций: отбрасывание, этажи (приземление, потолок, падение с края);
+	  5. раздвигание противников (1 на 1), границы арены, максимальная дистанция (1 на 1);
+	  6. выбор цели (ближайший противник, предпочтительно на своём этаже) и поворот к ней;
+	  7. попадания: хитбоксы против хартбоксов (с компенсацией пинга), блок, урон, реакция; снаряды.
 ]]
 
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
@@ -24,6 +25,7 @@ local Hitbox = require(script.Parent.Hitbox)
 local SimState = require(script.Parent.SimState)
 local Projectiles = require(script.Parent.Projectiles)
 local Specials = require(script.Parent.Specials)
+local Stage = require(script.Parent.Stage)
 
 type Fighter = Fighter.Fighter
 type FrameInput = InputBits.FrameInput
@@ -42,8 +44,10 @@ export type Cinematic = SimState.Cinematic
 export type Sim = SimState.Sim
 
 export type SimOptions = {
-	characters: { string }, -- два id персонажей
+	characters: { string }, -- id персонажей по слотам (2 — 1 на 1, 4 — 2 на 2)
+	teams: { number }?, -- команда каждого слота (по умолчанию слот 1 — команда 1, слот 2 — команда 2)
 	hpMultipliers: { number }?,
+	stage: string?, -- "Duel" (по умолчанию) или "TwoFloors"
 }
 
 local Simulation = {}
@@ -52,14 +56,22 @@ local emitAt = SimState.emitAt
 local emit = SimState.emit
 
 function Simulation.new(options: SimOptions): Sim
-	assert(#options.characters == 2, "Симуляция рассчитана на двух бойцов")
-	local multipliers = options.hpMultipliers or { 1, 1 }
+	local count = #options.characters
+	local layout = Stage.get(options.stage)
+	assert(
+		count >= 2 and count <= #layout.spawns,
+		`Сцена {layout.id} рассчитана на 2..{#layout.spawns} бойцов`
+	)
+	local multipliers = options.hpMultipliers or {}
+	local teams = options.teams or {}
+	local fighters: { Fighter } = {}
+	for slot, characterId in options.characters do
+		local team = teams[slot] or (if slot % 2 == 1 then 1 else 2)
+		fighters[slot] = Fighter.new(slot, characterId, multipliers[slot] or 1, team)
+	end
 	local sim: Sim = {
 		frame = 0,
-		fighters = {
-			Fighter.new(1, options.characters[1], multipliers[1]),
-			Fighter.new(2, options.characters[2], multipliers[2]),
-		},
+		fighters = fighters,
 		inputEnabled = true,
 		events = {},
 		freeze = 0,
@@ -67,6 +79,7 @@ function Simulation.new(options: SimOptions): Sim
 		cinematic = nil,
 		projectiles = {},
 		nextProjectileId = 0,
+		stage = layout,
 	}
 	Simulation.resetPositions(sim)
 	return sim
@@ -78,6 +91,7 @@ local function resetCombatState(fighter: Fighter)
 	fighter.moveFrame = 0
 	fighter.moveConnected = false
 	fighter.moveHits = 0
+	table.clear(fighter.targetHits)
 	fighter.airAttackUsed = false
 	fighter.specialCooldown = 0
 	fighter.armor = 0
@@ -89,21 +103,28 @@ local function resetCombatState(fighter: Fighter)
 	fighter.juggleHits = 0
 	fighter.knockdownOnLand = false
 	fighter.ko = false
+	fighter.lastHitBy = 0
 	table.clear(fighter.history)
 end
 
+local updateTargets: (sim: Sim) -> ()
+
 -- Расставить бойцов на стартовые позиции (начало раунда). HP и шкалу не трогает.
 function Simulation.resetPositions(sim: Sim)
-	local half = Physics.StartDistance / 2
 	sim.freeze = 0
 	sim.cinematic = nil
 	table.clear(sim.projectiles)
 	for _, fighter in sim.fighters do
-		fighter.x = if fighter.slot == 1 then -half else half
-		fighter.y = 0
+		local spawn = sim.stage.spawns[fighter.slot]
+		fighter.x = spawn.x
+		fighter.y = spawn.y
+		fighter.floorY = spawn.y
+		fighter.standY = spawn.y
 		fighter.vx = 0
 		fighter.vy = 0
-		fighter.facing = if fighter.slot == 1 then 1 else -1
+		fighter.facing = if spawn.x <= 0 then 1 else -1
+		fighter.airJumps = sim.stage.airJumps
+		fighter.target = 0
 		fighter.buffer = {}
 		fighter.dashRequest = 0
 		fighter.dashRequestFrames = 0
@@ -111,6 +132,7 @@ function Simulation.resetPositions(sim: Sim)
 		resetCombatState(fighter)
 		Fighter.setState(fighter, "Idle")
 	end
+	updateTargets(sim)
 end
 
 -- Полностью восстановить HP (новый раунд).
@@ -118,18 +140,6 @@ function Simulation.restoreHealth(sim: Sim)
 	for _, fighter in sim.fighters do
 		fighter.health = fighter.maxHealth
 	end
-end
-
--- Заменить бойца в слоте (эстафета 2 на 2): новый боец выходит на позицию старого.
-function Simulation.replaceFighter(sim: Sim, slot: number, characterId: string, hpMultiplier: number?): Fighter
-	local old = sim.fighters[slot]
-	local fighter = Fighter.new(slot, characterId, hpMultiplier)
-	fighter.x = old.x
-	fighter.facing = old.facing
-	fighter.lagFrames = old.lagFrames
-	fighter.tapDash = old.tapDash
-	sim.fighters[slot] = fighter
-	return fighter
 end
 
 function Simulation.opponentOf(sim: Sim, fighter: Fighter): Fighter
@@ -262,6 +272,8 @@ local function startMove(sim: Sim, fighter: Fighter, id: string, button: number)
 	fighter.moveFrame = 0
 	fighter.moveConnected = false
 	fighter.moveHits = 0
+	fighter.moveBaseY = fighter.floorY
+	table.clear(fighter.targetHits)
 	if airborne then
 		fighter.airAttackUsed = true
 	else
@@ -355,6 +367,7 @@ local function finishMove(sim: Sim, fighter: Fighter)
 	fighter.move = nil
 	fighter.moveConnected = false
 	fighter.moveHits = 0
+	table.clear(fighter.targetHits)
 	fighter.armor = 0
 	if Fighter.isAirborne(fighter) then
 		Fighter.setState(fighter, "Air")
@@ -398,17 +411,22 @@ local function updateAttack(sim: Sim, fighter: Fighter)
 	end
 end
 
--- Угрожает ли противник ударом (для стойки блока при удержании «назад»).
+-- Угрожает ли какой-нибудь противник ударом рядом (для стойки блока при удержании «назад»).
 local function isThreatened(sim: Sim, fighter: Fighter): boolean
-	local opponent = Simulation.opponentOf(sim, fighter)
-	if opponent.state ~= "Attack" then
-		return false
+	for _, opponent in sim.fighters do
+		if opponent.team ~= fighter.team and opponent.state == "Attack" then
+			local move = moveOf(opponent)
+			if
+				move
+				and opponent.moveFrame < move.startup + move.active
+				and math.abs(opponent.x - fighter.x) <= Combat.ProximityGuardRange
+				and math.abs(opponent.y - fighter.y) <= Physics.StandHeight + 2
+			then
+				return true
+			end
+		end
 	end
-	local move = moveOf(opponent)
-	if move == nil or opponent.moveFrame >= move.startup + move.active then
-		return false
-	end
-	return math.abs(opponent.x - fighter.x) <= Combat.ProximityGuardRange
+	return false
 end
 
 ----------------------------------------------------------------------------------------------
@@ -463,10 +481,10 @@ function groundControl(sim: Sim, fighter: Fighter)
 		return
 	end
 
-	-- Удержание «назад» при угрозе удара — стойка блока (стоя или сидя).
+	-- Кнопка блока — всегда стойка блока; удержание «назад» — блок только при угрозе удара.
 	local opponent = Simulation.opponentOf(sim, fighter)
 	local away = if opponent.x > fighter.x then -1 elseif opponent.x < fighter.x then 1 else -fighter.facing
-	if direction == away and isThreatened(sim, fighter) then
+	if InputBits.has(held, InputBits.Block) or (direction == away and isThreatened(sim, fighter)) then
 		if fighter.state ~= "Block" then
 			Fighter.setState(fighter, "Block")
 		end
@@ -501,7 +519,7 @@ end
 -- Конец комбо: боец вернулся в нейтральное положение.
 local function endCombo(sim: Sim, fighter: Fighter)
 	if fighter.comboHits >= 2 then
-		emit(sim, "ComboEnd", fighter, fighter.comboHits, 3 - fighter.slot)
+		emit(sim, "ComboEnd", fighter, fighter.comboHits, fighter.lastHitBy)
 	end
 	fighter.comboHits = 0
 	fighter.comboDamage = 0
@@ -526,8 +544,14 @@ local function updateState(sim: Sim, fighter: Fighter)
 			if state == "Hitstun" then
 				endCombo(sim, fighter)
 			end
-			Fighter.setState(fighter, "Idle")
-			groundControl(sim, fighter)
+			if fighter.y > fighter.floorY + 0.01 then
+				-- Оглушение кончилось в воздухе (сбили с платформы): падаем, можно двойной прыжок.
+				Fighter.setState(fighter, "Air")
+				fighter.jumpDir = 0
+			else
+				Fighter.setState(fighter, "Idle")
+				groundControl(sim, fighter)
+			end
 		end
 	elseif state == "Juggle" then
 		fighter.vy -= Physics.Gravity * DT
@@ -560,7 +584,30 @@ local function updateState(sim: Sim, fighter: Fighter)
 		end
 	elseif state == "Air" then
 		-- Удар в прыжке сохраняет инерцию; гравитация действует всегда.
-		tryStartAttack(sim, fighter, nil)
+		if not tryStartAttack(sim, fighter, nil) then
+			local held = fighter.held
+			local direction = InputBits.horizontal(held)
+			local newlyUp = InputBits.has(held, InputBits.Up) and not InputBits.has(fighter.prevHeld, InputBits.Up)
+			if newlyUp and fighter.airJumps > 0 then
+				-- Двойной прыжок (2 на 2): можно запрыгнуть на второй этаж.
+				fighter.airJumps -= 1
+				fighter.airAttackUsed = false
+				fighter.vy = Physics.JumpVelocity * Physics.AirJumpFactor
+				fighter.vx = direction * fighter.stats.walkSpeed * Physics.JumpForwardSpeedFactor
+				emit(sim, "Jump", fighter, nil, nil, "Double")
+			elseif sim.stage.airControl and direction ~= 0 then
+				-- Управление в воздухе: плавно разгоняемся в сторону удерживаемого направления
+				-- (прыжок вперёд, который и так быстрее, не тормозим).
+				local desired = direction * fighter.stats.walkSpeed * Physics.AirControlSpeed
+				if fighter.vx * direction < math.abs(desired) then
+					fighter.vx += math.clamp(
+						desired - fighter.vx,
+						-Physics.AirAcceleration * DT,
+						Physics.AirAcceleration * DT
+					)
+				end
+			end
+		end
 		fighter.vy -= Physics.Gravity * DT
 	elseif state == "Landing" then
 		fighter.vx = 0
@@ -582,12 +629,27 @@ local function updateState(sim: Sim, fighter: Fighter)
 		-- KO, Win, Lose, Intro, Cinematic: стоим.
 		fighter.vx = 0
 	end
+
+	-- Оглушённый, сбитый или стоящий боец, оказавшийся без опоры (столкнули с края), падает.
+	local current = fighter.state
+	if
+		current ~= "Air"
+		and current ~= "Juggle"
+		and current ~= "Attack"
+		and current ~= "PreJump"
+		and current ~= "Cinematic"
+		and fighter.y > fighter.floorY + 0.01
+	then
+		fighter.vy -= Physics.Gravity * DT
+	end
 end
 
 local function onLand(sim: Sim, fighter: Fighter)
-	fighter.y = 0
+	fighter.y = fighter.floorY
+	fighter.standY = fighter.floorY
 	fighter.vy = 0
 	fighter.airAttackUsed = false
+	fighter.airJumps = sim.stage.airJumps
 	local state = fighter.state
 	if state == "Juggle" then
 		fighter.vx = 0
@@ -612,17 +674,63 @@ local function onLand(sim: Sim, fighter: Fighter)
 	end
 end
 
+-- Высота головы для удара о потолок (в прыжке тело компактнее).
+local function headHeight(fighter: Fighter): number
+	return if Fighter.isCrouching(fighter) then Physics.CrouchHeight else Physics.AirPushTop
+end
+
+-- Начать падение без опоры (сошёл с края второго этажа).
+local function startFalling(fighter: Fighter)
+	local state = fighter.state
+	if state == "Idle" or state == "Walk" or state == "Crouch" or state == "Block" or state == "Landing" then
+		Fighter.setState(fighter, "Air")
+		fighter.jumpDir = if fighter.vx > 0 then 1 elseif fighter.vx < 0 then -1 else 0
+	elseif state == "Dash" or state == "Backdash" then
+		Fighter.setState(fighter, "Air")
+		fighter.jumpDir = fighter.dashDir
+	end
+end
+
 local function integrate(sim: Sim, fighter: Fighter)
+	local layout = sim.stage
+	-- Удар с разбега не уносит с платформы: у края боец останавливается
+	-- (падают только от удара противника или сойдя с края сами).
+	local platform = if fighter.state == "Attack" and fighter.vy <= 0
+		then Stage.platformAt(layout, fighter.x, fighter.y)
+		else nil
 	fighter.x += (fighter.vx + fighter.push) * DT
+	if platform and fighter.push == 0 then
+		fighter.x = math.clamp(fighter.x, platform.left, platform.right)
+	end
 	fighter.push *= Combat.PushFriction
 	if math.abs(fighter.push) < 0.05 then
 		fighter.push = 0
 	end
 	local state = fighter.state
-	if state == "Air" or state == "Juggle" or fighter.y > 0 or fighter.vy > 0 then
+	local previousY = fighter.y
+	if state == "Air" or state == "Juggle" or fighter.y > fighter.floorY + 0.01 or fighter.vy > 0 then
 		fighter.y += fighter.vy * DT
-		if fighter.y <= 0 and fighter.vy <= 0 then
+		-- Удар головой о нижнюю грань второго этажа.
+		if fighter.vy > 0 then
+			local height = headHeight(fighter)
+			local ceiling = Stage.ceilingCrossed(layout, fighter.x, previousY + height, fighter.y + height)
+			if ceiling then
+				fighter.y = ceiling - height
+				fighter.vy = 0
+			end
+		end
+		-- Приземление на ближайшую поверхность под ногами (пол или второй этаж).
+		fighter.floorY = Stage.floorBelow(layout, fighter.x, math.max(previousY, fighter.y))
+		if fighter.y <= fighter.floorY and fighter.vy <= 0 then
 			onLand(sim, fighter)
+		end
+	else
+		-- Стоим: если опоры под ногами больше нет (край платформы), начинаем падать.
+		local floor = Stage.floorBelow(layout, fighter.x, fighter.y)
+		fighter.floorY = floor
+		if fighter.y > floor + 0.01 then
+			fighter.vy = math.min(fighter.vy, 0)
+			startFalling(fighter)
 		end
 	end
 end
@@ -631,16 +739,15 @@ end
 -- Пространство: раздвигание, границы, дистанция, поворот
 ----------------------------------------------------------------------------------------------
 
-local WALL = Physics.ArenaHalfWidth - Physics.PushWidth / 2
-
 local function clampToArena(sim: Sim, fighter: Fighter)
-	local clamped = math.clamp(fighter.x, -WALL, WALL)
+	local wall = Stage.wall(sim.stage)
+	local clamped = math.clamp(fighter.x, -wall, wall)
 	if clamped ~= fighter.x then
 		-- Отбрасывание «в стену» переходит на атакующего: он отлетает назад.
 		if fighter.push ~= 0 and math.sign(fighter.push) == math.sign(fighter.x) then
-			local opponent = Simulation.opponentOf(sim, fighter)
-			if opponent.state == "Attack" then
-				opponent.push = -fighter.push * 0.8
+			local attacker = sim.fighters[fighter.lastHitBy]
+			if attacker and attacker.state == "Attack" then
+				attacker.push = -fighter.push * 0.8
 			end
 			fighter.push = 0
 		end
@@ -648,8 +755,8 @@ local function clampToArena(sim: Sim, fighter: Fighter)
 	end
 end
 
-local function separate(sim: Sim)
-	local a, b = sim.fighters[1], sim.fighters[2]
+local function separatePair(sim: Sim, a: Fighter, b: Fighter)
+	local wall = Stage.wall(sim.stage)
 	local aBottom, aTop = Fighter.pushExtent(a)
 	local bBottom, bTop = Fighter.pushExtent(b)
 	if aTop <= bBottom or bTop <= aBottom then
@@ -668,12 +775,12 @@ local function separate(sim: Sim)
 	local bTarget = b.x + side * overlap / 2
 
 	-- Если кто-то упёрся в стену, второй отодвигается на всё расстояние.
-	if math.abs(aTarget) > WALL then
-		local excess = math.abs(aTarget) - WALL
+	if math.abs(aTarget) > wall then
+		local excess = math.abs(aTarget) - wall
 		aTarget -= math.sign(aTarget) * excess
 		bTarget += side * excess
-	elseif math.abs(bTarget) > WALL then
-		local excess = math.abs(bTarget) - WALL
+	elseif math.abs(bTarget) > wall then
+		local excess = math.abs(bTarget) - wall
 		bTarget -= math.sign(bTarget) * excess
 		aTarget -= side * excess
 	end
@@ -681,11 +788,30 @@ local function separate(sim: Sim)
 	b.x = bTarget
 end
 
+-- Противники не проходят друг сквозь друга (только если сцена это предусматривает — 1 на 1).
+local function separate(sim: Sim)
+	if not sim.stage.pushboxes then
+		return
+	end
+	for index, a in sim.fighters do
+		for other = index + 1, #sim.fighters do
+			local b = sim.fighters[other]
+			if a.team ~= b.team then
+				separatePair(sim, a, b)
+			end
+		end
+	end
+end
+
 -- Бойцы не могут разойтись дальше MaxSeparation: «лишнее» забирается у того, кто уходит.
 local function limitSeparation(sim: Sim)
+	local limit = sim.stage.maxSeparation
+	if limit == nil or #sim.fighters ~= 2 then
+		return
+	end
 	local a, b = sim.fighters[1], sim.fighters[2]
 	local distance = math.abs(b.x - a.x)
-	local excess = distance - Physics.MaxSeparation
+	local excess = distance - limit
 	if excess <= 0 then
 		return
 	end
@@ -710,8 +836,30 @@ local function canTurn(fighter: Fighter): boolean
 		or state == "WakeUp"
 end
 
-local function faceOpponent(sim: Sim)
+--[[
+	Цель бойца: ближайший не выбитый противник; противник на другом этаже считается «дальше»
+	(нижние дерутся с нижними, верхние — с верхними), а текущая цель чуть в приоритете,
+	чтобы цель не «прыгала» туда-сюда. Боец поворачивается к цели, когда может.
+]]
+function updateTargets(sim: Sim)
 	for _, fighter in sim.fighters do
+		local best: Fighter? = nil
+		local bestScore = math.huge
+		for _, other in sim.fighters do
+			if other.team ~= fighter.team and not other.ko then
+				-- Этаж считаем по последней опоре: прыжок над дырой не меняет «свой» этаж.
+				local score = math.abs(other.x - fighter.x) + math.abs(other.standY - fighter.standY) * 4
+				if other.slot == fighter.target then
+					score -= 3
+				end
+				if score < bestScore then
+					best, bestScore = other, score
+				end
+			end
+		end
+		if best then
+			fighter.target = best.slot
+		end
 		if canTurn(fighter) then
 			local opponent = Simulation.opponentOf(sim, fighter)
 			local dx = opponent.x - fighter.x
@@ -793,8 +941,9 @@ local function canBlock(defender: Fighter, attacker: Fighter, guard: Types.Guard
 	if guard == "Unblockable" or Fighter.isAirborne(defender) or not BLOCKING_STATES[defender.state] then
 		return false
 	end
+	-- Кнопка блока защищает с любой стороны; «назад» — только от удара спереди.
 	local away = if attacker.x > defender.x then -1 elseif attacker.x < defender.x then 1 else -defender.facing
-	if InputBits.horizontal(defender.held) ~= away then
+	if not InputBits.has(defender.held, InputBits.Block) and InputBits.horizontal(defender.held) ~= away then
 		return false
 	end
 	local crouching = InputBits.has(defender.held, InputBits.Down)
@@ -813,6 +962,10 @@ local function isGrabImmune(defender: Fighter): boolean
 	return Fighter.isAirborne(defender) or state == "Hitstun" or state == "Blockstun" or state == "Juggle"
 end
 
+--[[
+	Попадания ударов вплотную. Удар может задеть каждого противника (в 2 на 2 — сразу двоих),
+	но захват — только одного. Многоударные приёмы бьют каждого не чаще, чем положено по фреймдате.
+]]
 local function collectHits(sim: Sim): { PendingHit }
 	local pending: { PendingHit } = {}
 	for _, attacker in sim.fighters do
@@ -822,14 +975,26 @@ local function collectHits(sim: Sim): { PendingHit }
 			local hitsTotal = move.hits or 1
 			local interval = math.max(1, math.floor(move.active / hitsTotal))
 			local due = math.min(hitsTotal, math.floor((attacker.moveFrame - move.startup) / interval) + 1)
-			local defender = Simulation.opponentOf(sim, attacker)
-			if attacker.moveHits < due and not (move.guard == "Unblockable" and isGrabImmune(defender)) then
-				local id = attacker.move :: string
-				local reach = if MoveBook.isNormal(id) then attacker.stats.rangeMultiplier else 1
-				local rect = Hitbox.attack(attacker.x, attacker.y, attacker.facing, move.hitbox, reach)
-				local x, y = findContact(defender, rect, attacker.lagFrames)
-				if x and y then
-					table.insert(pending, { attacker = attacker, defender = defender, move = move, x = x, y = y })
+			local id = attacker.move :: string
+			local reach = if MoveBook.isNormal(id) then attacker.stats.rangeMultiplier else 1
+			local rect = Hitbox.attack(attacker.x, attacker.y, attacker.facing, move.hitbox, reach)
+			local grab = move.guard == "Unblockable"
+			if grab and next(attacker.targetHits) ~= nil then
+				continue -- захват уже взял одного противника
+			end
+			for _, defender in sim.fighters do
+				if
+					defender.team ~= attacker.team
+					and (attacker.targetHits[defender.slot] or 0) < due
+					and not (grab and isGrabImmune(defender))
+				then
+					local x, y = findContact(defender, rect, attacker.lagFrames)
+					if x and y then
+						table.insert(pending, { attacker = attacker, defender = defender, move = move, x = x, y = y })
+						if grab then
+							break
+						end
+					end
 				end
 			end
 		end
@@ -860,6 +1025,7 @@ local function startCinematic(sim: Sim, attacker: Fighter, defender: Fighter, mo
 	defender.move = nil
 	attacker.vx, attacker.push = 0, 0
 	emit(sim, "CinematicStart", attacker, cinematic.duration, attacker.slot, style)
+	sim.events[#sim.events].target = defender.slot
 end
 
 local applyHit: (sim: Sim, hit: PendingHit) -> ()
@@ -872,7 +1038,7 @@ local function counterAttack(sim: Sim, counterer: Fighter, striker: Fighter, hit
 	end
 	counterer.moveConnected = true
 	striker.moveConnected = true
-	striker.moveHits = 99 -- этот удар больше не попадёт
+	striker.targetHits[counterer.slot] = 99 -- этот удар больше не попадёт
 	emitAt(sim, "Parry", counterer, hit.x, hit.y, 0, counterer.slot, if behaviour.isSuper then "Super" else nil)
 	if behaviour.isSuper then
 		startCinematic(sim, counterer, striker, behaviour.move)
@@ -913,7 +1079,9 @@ function applyHit(sim: Sim, hit: PendingHit)
 	if projectile == nil then
 		attacker.moveConnected = true
 		attacker.moveHits += 1
+		attacker.targetHits[defender.slot] = (attacker.targetHits[defender.slot] or 0) + 1
 	end
+	defender.lastHitBy = attacker.slot
 
 	-- Блок.
 	if canBlock(defender, attacker, move.guard) then
@@ -1114,7 +1282,7 @@ function Simulation.step(sim: Sim, inputs: { FrameInput })
 	for _, fighter in sim.fighters do
 		clampToArena(sim, fighter)
 	end
-	faceOpponent(sim)
+	updateTargets(sim)
 
 	-- Попадания собираются для обоих бойцов, затем применяются — так возможны размены.
 	if sim.freeze == 0 then

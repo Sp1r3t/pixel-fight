@@ -10,9 +10,9 @@
 	  Wave  — волна по земле (Glacia), низкий удар;
 	  Mine  — ловушка (Byte): лежит на полу, взводится, срабатывает под противником на земле.
 
-	Правила: снаряды разных владельцев при встрече уничтожают друг друга; активный луч или обстрел
-	(супер Beam/Barrage) сносит снаряды соперника; у бойца одновременно не больше одного снаряда
-	своего особого приёма (проверяет Specials.canStart).
+	Правила: снаряды разных команд при встрече уничтожают друг друга; активный луч или обстрел
+	(супер Beam/Barrage) сносит снаряды соперников; у бойца одновременно не больше одного снаряда
+	своего особого приёма (проверяет Specials.canStart). Снаряд задевает первого противника на пути.
 ]]
 
 local Types = require(script.Parent.Parent.Types)
@@ -224,11 +224,12 @@ function Projectiles.step(sim: Sim, beamActive: (Fighter.Fighter) -> boolean): {
 		end
 	end
 
-	-- Встречные снаряды разных владельцев гасят друг друга (ловушки не участвуют).
+	-- Встречные снаряды разных команд гасят друг друга (ловушки не участвуют).
 	for _, a in table.clone(sim.projectiles) do
 		for _, b in table.clone(sim.projectiles) do
 			if
 				a.owner < b.owner
+				and sim.fighters[a.owner].team ~= sim.fighters[b.owner].team
 				and a.kind ~= "Mine"
 				and b.kind ~= "Mine"
 				and table.find(sim.projectiles, a)
@@ -241,23 +242,29 @@ function Projectiles.step(sim: Sim, beamActive: (Fighter.Fighter) -> boolean): {
 		end
 	end
 
-	-- Луч или обстрел супера сносит снаряды соперника.
+	-- Луч или обстрел супера сносит снаряды соперников.
 	for _, fighter in sim.fighters do
 		if sweepsProjectiles(fighter, beamActive) then
 			for _, projectile in table.clone(sim.projectiles) do
-				if projectile.owner ~= fighter.slot then
+				if sim.fighters[projectile.owner].team ~= fighter.team then
 					remove(sim, projectile, "Swept")
 				end
 			end
 		end
 	end
 
+	-- Снаряд попадает в первого задетого противника.
 	for _, projectile in table.clone(sim.projectiles) do
-		local defender = sim.fighters[3 - projectile.owner]
 		if projectile.rehitCooldown == 0 and projectile.hitsLeft > 0 then
-			local x, y = touches(projectile, defender)
-			if x and y then
-				table.insert(hits, { projectile = projectile, defender = defender, x = x, y = y })
+			local team = sim.fighters[projectile.owner].team
+			for _, defender in sim.fighters do
+				if defender.team ~= team then
+					local x, y = touches(projectile, defender)
+					if x and y then
+						table.insert(hits, { projectile = projectile, defender = defender, x = x, y = y })
+						break
+					end
+				end
 			end
 		end
 	end

@@ -14,7 +14,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -35,8 +34,6 @@ local CosmeticStyles = require(script.Parent.Parent.Fight.CosmeticStyles)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 local UIController = require(script.Parent.UIController)
 
-local peek = Fusion.peek
-
 type NetEvent = {
 	k: string,
 	s: number,
@@ -49,7 +46,7 @@ type NetEvent = {
 	r: number?,
 	w: { number }?,
 	fin: boolean?,
-	ms: { number }?,
+	d: number?,
 }
 
 local TICK = 60
@@ -142,48 +139,29 @@ local function viewDefinition(def: Types.CharacterDef, palette: Types.Palette?):
 	return copy
 end
 
--- Составы команд эстафеты (слот = команда).
-local function readTeams(value: any): { { AppState.BattleMember } }?
-	if type(value) ~= "table" or #value ~= 2 then
-		return nil
-	end
-	local teams: { { AppState.BattleMember } } = {}
-	for slot = 1, 2 do
-		local team = value[slot]
-		if type(team) ~= "table" or #team == 0 then
-			return nil
-		end
-		local members: { AppState.BattleMember } = {}
-		for _, member in team do
-			if type(member) ~= "table" or type(member.characterId) ~= "string" then
-				return nil
-			end
-			if CharacterRegistry.get(member.characterId) == nil then
-				return nil
-			end
-			table.insert(members, {
-				characterId = member.characterId,
-				playerName = if type(member.playerName) == "string" then member.playerName else nil,
-			})
-		end
-		teams[slot] = members
-	end
-	return teams
-end
-
 local function readSetup(payload: any): AppState.BattleInfo?
 	if type(payload) ~= "table" or type(payload.matchId) ~= "number" or type(payload.fighters) ~= "table" then
 		return nil
 	end
 	local fighters: { AppState.BattleFighter } = {}
+	local seen: { [number]: boolean } = {}
 	for _, fighter in payload.fighters do
+		local slot = if type(fighter) == "table" then tonumber(fighter.slot) else nil
 		if
 			type(fighter) == "table"
+			and slot ~= nil
+			and slot == math.floor(slot)
+			and slot >= 1
+			and slot <= AppState.MAX_FIGHTERS
+			and not seen[slot]
 			and type(fighter.characterId) == "string"
 			and CharacterRegistry.get(fighter.characterId)
 		then
+			seen[slot] = true
+			local team = tonumber(fighter.team)
 			table.insert(fighters, {
-				slot = tonumber(fighter.slot) or #fighters + 1,
+				slot = slot,
+				team = if team == 1 or team == 2 then team :: number else 2 - slot % 2,
 				characterId = fighter.characterId,
 				playerName = if type(fighter.playerName) == "string" then fighter.playerName else nil,
 				maxHealth = tonumber(fighter.maxHealth) or 1000,
@@ -194,79 +172,43 @@ local function readSetup(payload: any): AppState.BattleInfo?
 			})
 		end
 	end
-	if #fighters ~= 2 then
+	if #fighters ~= 2 and #fighters ~= 4 then
 		return nil
 	end
+	for slot = 1, #fighters do
+		if not seen[slot] then
+			return nil -- слоты должны идти подряд с 1
+		end
+	end
+	table.sort(fighters, function(a, b)
+		return a.slot < b.slot
+	end)
+	local localTeam = tonumber(payload.localTeam)
 	return {
 		matchId = payload.matchId,
 		mode = if type(payload.mode) == "string" then payload.mode else "Training",
 		arenaId = if type(payload.arenaId) == "string" then payload.arenaId else "dojo",
 		localSlot = if type(payload.localSlot) == "number" then payload.localSlot else nil,
+		localTeam = if localTeam == 1 or localTeam == 2 then localTeam else nil,
 		fighters = fighters,
+		stage = if payload.stage == "TwoFloors" and #fighters == 4 then "TwoFloors" else "Duel",
 		roundsToWin = if type(payload.roundsToWin) == "number" then payload.roundsToWin else 0,
 		boss = readBoss(payload.boss),
-		teams = readTeams(payload.teams),
-		localMember = if type(payload.localMember) == "number" then payload.localMember else nil,
 	}
 end
 
--- Управляет ли игрок бойцом сейчас (в эстафете — только когда на арене его участник).
-local function isControlling(info: AppState.BattleInfo, members: { number }): boolean
-	local localSlot = info.localSlot
-	if localSlot == nil then
-		return false
-	end
-	return info.teams == nil or members[localSlot] == info.localMember
-end
+local TEAM_COLORS: { Color3 } = { Color3.fromHex("#4DB8FF"), Color3.fromHex("#FF5A6E") }
 
---[[
-	Эстафета: на арену вышли участники members (по командам). Меняем бойцов на экране,
-	данные HUD и включаем/выключаем отправку ввода.
-]]
-local function applyMembers(members: { number })
-	local info = battleInfo
-	local teams = if info then info.teams else nil
-	if info == nil or teams == nil then
-		return
+-- Табличка над бойцом в 2 на 2: кто это и за какую команду (свой — «ВЫ»).
+local function nameplateText(info: AppState.BattleInfo, fighter: AppState.BattleFighter): string
+	if fighter.slot == info.localSlot then
+		return "ВЫ"
 	end
-	local fighters = table.clone(info.fighters)
-	for index, fighter in fighters do
-		local team = teams[fighter.slot]
-		local member = if team then team[members[fighter.slot]] else nil
-		if member and member.characterId ~= fighter.characterId then
-			local updated = table.clone(fighter)
-			updated.characterId = member.characterId
-			updated.playerName = member.playerName
-			fighters[index] = updated
-			local def = CharacterRegistry.get(member.characterId)
-			local folder = if arena then arena.folder else nil
-			if def and folder then
-				local old = views[fighter.slot]
-				if old then
-					old.destroy()
-				end
-				views[fighter.slot] = FighterView.new(folder, def, fighter.slot)
-			end
-		end
+	if fighter.playerName then
+		return fighter.playerName
 	end
-	local updatedInfo = table.clone(info)
-	updatedInfo.fighters = fighters
-	battleInfo = updatedInfo
-	local controlling = isControlling(updatedInfo, members)
-	InputController.setActive(controlling)
-	local state = UIController.getState()
-	if state then
-		state.battle:set(updatedInfo)
-		state.hud.members:set(table.clone(members))
-		state.hud.controlling:set(controlling)
-	end
-end
-
-local function readMembers(value: any): { number }?
-	if type(value) == "table" and type(value[1]) == "number" and type(value[2]) == "number" then
-		return { value[1], value[2] }
-	end
-	return nil
+	local def = CharacterRegistry.get(fighter.characterId)
+	return fighter.displayName or (if def then def.displayName else fighter.characterId)
 end
 
 local function onMatchStart(payload: any)
@@ -278,17 +220,22 @@ local function onMatchStart(payload: any)
 	cleanup()
 	matchId = info.matchId
 	battleInfo = info
-	local built = Arena.build(info.arenaId, Workspace)
+	local built = Arena.build(info.arenaId, Workspace, info.stage)
 	arena = built
 	projectileViews = ProjectileView.new(built.folder)
+	local teamMode = #info.fighters > 2
 	for _, fighter in info.fighters do
 		local def = CharacterRegistry.get(fighter.characterId)
 		if def then
-			views[fighter.slot] = FighterView.new(built.folder, viewDefinition(def, fighter.palette), fighter.slot)
+			local view = FighterView.new(built.folder, viewDefinition(def, fighter.palette), fighter.slot, info.stage)
+			views[fighter.slot] = view
+			if teamMode then
+				view.setNameplate(nameplateText(info, fighter), TEAM_COLORS[fighter.team])
+			end
 		end
 	end
-	CameraController.enterFight()
-	InputController.setActive(isControlling(info, { 1, 1 }))
+	CameraController.enterFight(info.stage)
+	InputController.setActive(info.localSlot ~= nil)
 	local state = UIController.getState()
 	if state then
 		AppState.resetHud(state, info)
@@ -311,7 +258,9 @@ local function onMatchEnd(payload: any)
 		AppState.exitBattle(state)
 		if type(payload) == "table" then
 			local reason = payload.reason
-			local won = payload.winner ~= nil and payload.winner ~= 0 and payload.winner == payload.localSlot
+			-- Победитель — команда (в 1 на 1 номер команды совпадает со слотом).
+			local localTeam = payload.localTeam or payload.localSlot
+			local won = payload.winner ~= nil and payload.winner ~= 0 and payload.winner == localTeam
 			if (reason == "PlayerLeft" or reason == "Left") and won then
 				AppState.notify(state, "Соперник покинул бой — победа за вами")
 			elseif reason == "Finished" and payload.localSlot ~= nil then
@@ -371,68 +320,36 @@ local function playFlowEvent(event: NetEvent)
 		hud.wins:set(table.clone(event.w))
 	end
 	local kind = event.k
-	local members = readMembers(event.ms)
 	if kind == "RoundStart" then
 		hud.round:set(event.r or 1)
 		local text = if event.fin then "FINAL ROUND" else `ROUND {event.r or 1}`
 		AppState.showBanner(state, text, 1, BANNER_WHITE)
-		if members then
-			hud.eliminated:set({ {}, {} })
-			applyMembers(members)
-		end
-	elseif kind == "DuelEnd" then
-		-- Эстафета: дуэль окончена, проигравший выбывает до конца раунда.
-		local result = RESULT_TEXT[event.t or "KO"] or RESULT_TEXT.KO
-		AppState.showBanner(state, result.text, 1.5, result.color)
-		local current = peek(hud.members)
-		local eliminated = table.clone(peek(hud.eliminated))
-		for slot = 1, 2 do
-			if event.s == 0 or event.s == 3 - slot then
-				local set = table.clone(eliminated[slot] or {})
-				set[current[slot]] = true
-				eliminated[slot] = set
-			end
-		end
-		hud.eliminated:set(eliminated)
-	elseif kind == "Relay" then
-		if members then
-			applyMembers(members)
-		end
-		local characterId: string? = nil
-		local fighters: { AppState.BattleFighter } = if battleInfo then battleInfo.fighters else {}
-		for _, fighter in fighters do
-			if fighter.slot == event.s then
-				characterId = fighter.characterId
-			end
-		end
-		local def = if characterId then CharacterRegistry.get(characterId) else nil
-		if def then
-			AppState.showBanner(state, `NEXT: {string.upper(def.displayName)}`, 1.2, BANNER_GOLD)
-		end
 	elseif kind == "Fight" then
 		AppState.showBanner(state, "FIGHT!", 0.8, BANNER_GOLD)
 	elseif kind == "RoundEnd" then
 		local result = RESULT_TEXT[event.t or "KO"] or RESULT_TEXT.KO
 		AppState.showBanner(state, result.text, 1.8, result.color)
 	elseif kind == "MatchEnd" then
-		local localSlot = if battleInfo then battleInfo.localSlot else nil
-		if localSlot ~= nil then
-			local won = event.s == localSlot
+		-- event.s — команда-победитель.
+		local localTeam = if battleInfo then battleInfo.localTeam else nil
+		if localTeam ~= nil then
+			local won = event.s == localTeam
 			AppState.showBanner(
 				state,
 				if won then "YOU WIN!" else "YOU LOSE",
 				3,
 				if won then BANNER_GREEN else BANNER_RED
 			)
+		elseif battleInfo and #battleInfo.fighters > 2 then
+			AppState.showBanner(state, if event.s == 1 then "BLUE TEAM WINS" else "RED TEAM WINS", 3, BANNER_GOLD)
 		else
 			local winnerName = "PLAYER"
 			if battleInfo then
-				for _, fighter in battleInfo.fighters do
-					if fighter.slot == event.s then
-						local def = CharacterRegistry.get(fighter.characterId)
-						local name = fighter.displayName or (if def then def.displayName else fighter.characterId)
-						winnerName = string.upper(name)
-					end
+				local fighter = AppState.fighterInSlot(battleInfo, event.s)
+				if fighter then
+					local def = CharacterRegistry.get(fighter.characterId)
+					winnerName =
+						string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
 				end
 			end
 			AppState.showBanner(state, `{winnerName} WINS`, 3, BANNER_GOLD)
@@ -498,16 +415,17 @@ local function playEvent(event: NetEvent)
 	elseif kind == "CinematicStart" then
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
 		local attackerView = views[event.s]
-		local defenderView = views[3 - event.s]
+		local defenderSlot = event.d or (3 - event.s)
+		local defenderView = views[defenderSlot]
 		local sample = lastSample
-		if attackerView and defenderView and arena and sample then
+		if attackerView and defenderView and arena and sample and sample.fighters[defenderSlot] then
 			local def = attackerView.def
 			Cinematics.start({
 				folder = arena.folder,
 				attacker = attackerView,
 				defender = defenderView,
 				attackerX = sample.fighters[event.s].x,
-				defenderX = sample.fighters[3 - event.s].x,
+				defenderX = sample.fighters[defenderSlot].x,
 				duration = (event.v or 120) / TICK,
 				hits = def.super.cinematic.hits,
 			})

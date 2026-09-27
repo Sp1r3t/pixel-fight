@@ -51,6 +51,20 @@ describe("Раскладка управления", function()
 		end
 	)
 
+	it(
+		"кнопки по умолчанию не перекрываются; есть «Прыжок» и «Блок»",
+		function()
+			local layout = ControlsLayout.default()
+			expect(#ControlsLayout.overlaps(layout)).toBe(0)
+			expect(layout.controls.Jump ~= nil).toBeTruthy()
+			expect(layout.controls.Block ~= nil).toBeTruthy()
+			-- Старая раскладка (до новых кнопок) заменяется новой по умолчанию, режим показа сохраняется.
+			local old = ControlsLayout.sanitize({ version = 1, mode = "Always", controls = { Light = { x = 400 } } })
+			expect(old.mode).toBe("Always")
+			expect(old.controls.Light.x).toBe(layout.controls.Light.x)
+		end
+	)
+
 	it("допустимые значения сохраняются", function()
 		local custom = ControlsLayout.default()
 		custom.mode = "Always"

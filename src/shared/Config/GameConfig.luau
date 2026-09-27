@@ -43,6 +43,9 @@ local GameConfig = deepFreeze({
 		JumpSquatFrames = 3, -- подготовка к прыжку
 		LandingFrames = 3, -- приземление
 		JumpForwardSpeedFactor = 1.0, -- горизонтальная скорость прыжка = скорость ходьбы × фактор
+		AirJumpFactor = 0.9, -- двойной прыжок (2 на 2): доля скорости обычного прыжка
+		AirControlSpeed = 0.85, -- управление в воздухе (2 на 2): доля скорости ходьбы
+		AirAcceleration = 60, -- студ/с² разгона в воздухе
 		BackWalkFactor = 0.8, -- назад ходят медленнее
 		DashFrames = 16,
 		DashDistance = 5.5,
@@ -99,11 +102,9 @@ local GameConfig = deepFreeze({
 		InterpolationDelay = 0.05, -- секунды задержки отрисовки для плавной интерполяции
 	},
 
-	-- Режим 2 на 2 «эстафета»: на арене всегда 1 на 1, выбывшего заменяет напарник.
+	-- Режим 2 на 2: четыре бойца одновременно на сцене с двумя этажами (Combat/Stage, TwoFloors).
 	Team = {
 		Size = 2,
-		RelayPauseFrames = 120, -- пауза после нокаута перед выходом напарника
-		RegainFraction = 0.2, -- победитель дуэли восстанавливает эту долю потерянного HP
 	},
 
 	Matchmaking = {
@@ -113,6 +114,9 @@ local GameConfig = deepFreeze({
 		RoomCodeLength = 6,
 		RoomSeconds = 900, -- сколько живёт приватная комната
 		WinReward = 15, -- монеты за победу в матче из очереди
+		BotFillSeconds = 20, -- столько ждём соперников в очереди, потом добавляем ботов
+		BotLevel = 8, -- уровень ИИ ботов (кривая сложности боссов)
+		BotWinReward = 5, -- монеты за победу в матче с ботами
 	},
 })
 
