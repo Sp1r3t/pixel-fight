@@ -22,6 +22,7 @@ export type Props = {
 	Position: UDim2,
 	Size: UDim2,
 	AnchorPoint: Vector2?,
+	Compact: boolean?, -- тонкая шкала без надписи (строки 2 на 2)
 }
 
 local MAX = GameConfig.SuperMeter.Max
@@ -42,33 +43,10 @@ local function SuperMeter(scope: Scope, props: Props): Instance
 		return (math.sin(use(props.Clock) * 8) + 1) / 2
 	end)
 
-	return scope:New "Frame" {
-		Name = "SuperMeter",
-		AnchorPoint = props.AnchorPoint,
-		BackgroundColor3 = Color3.fromHex("#1A1233"),
-		BorderSizePixel = 0,
-		Position = props.Position,
-		Size = props.Size,
-		[Children] = {
-			scope:New "UIStroke" {
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = scope:Computed(function(use)
-					return Theme.Colors.Outline:Lerp(Color3.new(1, 1, 1), use(pulse))
-				end),
-				Thickness = 3,
-			},
-			scope:New "Frame" {
-				Name = "Fill",
-				AnchorPoint = Vector2.new(anchorX, 0),
-				BackgroundColor3 = scope:Computed(function(use)
-					return props.Color:Lerp(Color3.new(1, 1, 1), use(pulse) * 0.5)
-				end),
-				BorderSizePixel = 0,
-				Position = UDim2.fromScale(anchorX, 0),
-				Size = scope:Computed(function(use)
-					return UDim2.fromScale(use(fill), 1)
-				end),
-			},
+	local label: { Instance } = {}
+	if not props.Compact then
+		table.insert(
+			label,
 			scope:New "TextLabel" {
 				Name = "Label",
 				AnchorPoint = Vector2.new(anchorX, 1),
@@ -85,8 +63,39 @@ local function SuperMeter(scope: Scope, props: Props): Instance
 				TextSize = 20,
 				TextStrokeTransparency = 0.3,
 				TextXAlignment = if props.Side == "Left" then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right,
+			}
+		)
+	end
+
+	return scope:New "Frame" {
+		Name = "SuperMeter",
+		AnchorPoint = props.AnchorPoint,
+		BackgroundColor3 = Color3.fromHex("#1A1233"),
+		BorderSizePixel = 0,
+		Position = props.Position,
+		Size = props.Size,
+		[Children] = {
+			scope:New "UIStroke" {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = scope:Computed(function(use)
+					return Theme.Colors.Outline:Lerp(Color3.new(1, 1, 1), use(pulse))
+				end),
+				Thickness = if props.Compact then 1 else 3,
 			},
-		},
+			scope:New "Frame" {
+				Name = "Fill",
+				AnchorPoint = Vector2.new(anchorX, 0),
+				BackgroundColor3 = scope:Computed(function(use)
+					return props.Color:Lerp(Color3.new(1, 1, 1), use(pulse) * 0.5)
+				end),
+				BorderSizePixel = 0,
+				Position = UDim2.fromScale(anchorX, 0),
+				Size = scope:Computed(function(use)
+					return UDim2.fromScale(use(fill), 1)
+				end),
+			},
+			label,
+		} :: { Fusion.Child },
 	}
 end
 

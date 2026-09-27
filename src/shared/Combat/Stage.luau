@@ -40,6 +40,9 @@ export type Layout = {
 	airControl: boolean, -- можно менять направление в прыжке
 	cameraMinHeight: number, -- минимальная высота кадра камеры (студы)
 	cameraMaxWidth: number, -- максимальная ширина кадра (все бойцы в кадре)
+	-- 2 на 2: камера отъезжает, чтобы все бойцы поместились между полом и HUD (до этой высоты кадра);
+	-- nil — только поднимается за прыгнувшим (1 на 1).
+	cameraFitHeight: number?,
 }
 
 local EPSILON = 1e-4
@@ -59,6 +62,7 @@ local LAYOUTS: { [string]: Layout } = {
 		airControl = false,
 		cameraMinHeight = 15,
 		cameraMaxWidth = 34,
+		cameraFitHeight = nil,
 	},
 	TwoFloors = {
 		id = "TwoFloors",
@@ -77,8 +81,9 @@ local LAYOUTS: { [string]: Layout } = {
 		maxSeparation = nil,
 		airJumps = 1,
 		airControl = true,
-		cameraMinHeight = 22,
+		cameraMinHeight = 24,
 		cameraMaxWidth = 54,
+		cameraFitHeight = 34,
 	},
 }
 

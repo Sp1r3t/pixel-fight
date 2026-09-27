@@ -11,6 +11,7 @@
 ]]
 
 local CharacterRegistry = require(script.Parent.Parent.Characters.CharacterRegistry)
+local Arenas = require(script.Parent.Parent.Config.Arenas)
 local ControlsLayout = require(script.Parent.Parent.Config.ControlsLayout)
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
 
@@ -23,6 +24,8 @@ export type PlayerData = {
 	bossClears: { [string]: number },
 	-- Купленные платные персонажи (Game Pass, Robux или монеты).
 	ownedCharacters: { [string]: boolean },
+	-- Купленные премиальные карты.
+	ownedArenas: { [string]: boolean },
 	controls: ControlsLayout.Layout,
 	-- Обработанные покупки Developer Products: PurchaseId → os.time(). Защита от повторной выдачи.
 	purchases: { [string]: number },
@@ -34,10 +37,11 @@ export type PublicProfile = {
 	bossProgress: number,
 	bossClears: { [string]: number },
 	ownedCharacters: { [string]: boolean }, -- все доступные персонажи (бесплатные + купленные)
+	ownedArenas: { [string]: boolean }, -- все доступные карты (бесплатные + купленные)
 	controls: ControlsLayout.Layout,
 }
 
-local VERSION = 2
+local VERSION = 3
 local MAX_PURCHASES = 100 -- сколько последних покупок помнить (Roblox повторяет чек не дольше нескольких дней)
 local MAX_COINS = 1e9
 
@@ -53,6 +57,7 @@ function ProfileSchema.default(): PlayerData
 		bossProgress = 0,
 		bossClears = {},
 		ownedCharacters = {},
+		ownedArenas = {},
 		controls = ControlsLayout.default(),
 		purchases = {},
 	}
@@ -96,6 +101,18 @@ function ProfileSchema.migrate(raw: { [any]: any }): PlayerData
 	end
 	data.ownedCharacters = owned
 
+	-- v2 → v3: купленные премиальные карты.
+	local arenas: { [string]: boolean } = {}
+	if type(data.ownedArenas) == "table" then
+		for id, value in data.ownedArenas do
+			local arena = if type(id) == "string" then Arenas.byId[id] else nil
+			if arena and arena.premium and value == true then
+				arenas[id] = true
+			end
+		end
+	end
+	data.ownedArenas = arenas
+
 	data.controls = ControlsLayout.sanitize(data.controls)
 
 	-- v1 → v2: появился журнал покупок.
@@ -117,6 +134,7 @@ function ProfileSchema.migrate(raw: { [any]: any }): PlayerData
 		bossProgress = true,
 		bossClears = true,
 		ownedCharacters = true,
+		ownedArenas = true,
 		controls = true,
 		purchases = true,
 	}
@@ -153,11 +171,18 @@ function ProfileSchema.toPublic(data: PlayerData): PublicProfile
 			owned[def.id] = true
 		end
 	end
+	local arenas: { [string]: boolean } = {}
+	for _, arena in Arenas.list do
+		if not arena.premium or data.ownedArenas[arena.id] then
+			arenas[arena.id] = true
+		end
+	end
 	return {
 		coins = data.coins,
 		bossProgress = data.bossProgress,
 		bossClears = table.clone(data.bossClears),
 		ownedCharacters = owned,
+		ownedArenas = arenas,
 		controls = ControlsLayout.copy(data.controls),
 	}
 end

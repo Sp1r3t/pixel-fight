@@ -5,7 +5,8 @@
 	  • Scriptable-камера смотрит строго вдоль −Z, узкий FOV → почти ортографическая картинка;
 	  • в кадре всегда все бойцы: камера следит за центром между ними и плавно отъезжает,
 	    когда они расходятся (в 2 на 2 — как в Brawlhalla, до всей сцены); не выходит за края арены;
-	  • пол всегда в нижней части кадра, при высоких прыжках камера приподнимается;
+	  • пол всегда в нижней части кадра; верхние HUD_FRACTION кадра заняты интерфейсом — бойцы туда
+	    не заходят: при высоком прыжке камера приподнимается (1 на 1) или отъезжает (2 на 2);
 	  • тряска (shake) — затухающее смещение; её вызывает EffectsController при ударах.
 ]]
 
@@ -18,7 +19,8 @@ local Stage = require(ReplicatedStorage.Shared.Combat.Stage)
 local FOV = 30 -- вертикальный угол обзора
 local MIN_VIEW_WIDTH = 20 -- студов по горизонтали
 local VIEW_MARGIN = 12 -- запас по краям вокруг бойцов
-local FLOOR_FRACTION = 0.18 -- пол на такой доле высоты кадра снизу
+local FLOOR_FRACTION = 0.15 -- пол на такой доле высоты кадра снизу
+local HUD_FRACTION = 0.22 -- верх кадра под полосами здоровья и таймером
 local FOLLOW_SPEED = 7
 local EDGE_MARGIN = 1.5
 
@@ -39,6 +41,7 @@ local override: { x: number, y: number, width: number }? = nil
 -- Параметры сцены текущего боя.
 local maxViewWidth = Stage.get("Duel").cameraMaxWidth
 local minViewHeight = Stage.get("Duel").cameraMinHeight
+local fitViewHeight: number? = nil
 local arenaEdge = Stage.get("Duel").halfWidth + EDGE_MARGIN
 
 local function getCamera(): Camera?
@@ -56,6 +59,7 @@ function CameraController.enterFight(stageId: string?)
 	local layout = Stage.get(stageId)
 	maxViewWidth = layout.cameraMaxWidth
 	minViewHeight = layout.cameraMinHeight
+	fitViewHeight = layout.cameraFitHeight
 	arenaEdge = layout.halfWidth + EDGE_MARGIN
 	inFight = true
 	snapNext = true
@@ -95,6 +99,13 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 	end
 	local width = math.clamp(maxX - minX + VIEW_MARGIN, MIN_VIEW_WIDTH, maxViewWidth)
 	local distance = math.max(width / (2 * tanH), minViewHeight / (2 * tanV))
+	local highest = topY + 1
+	local fit = fitViewHeight
+	if fit then
+		-- Все между полом и HUD: при высоких прыжках камера отъезжает (не больше fit).
+		local needed = math.min(highest / (1 - HUD_FRACTION - FLOOR_FRACTION), fit)
+		distance = math.max(distance, needed / (2 * tanV))
+	end
 	local halfWidth = distance * tanH
 	local halfHeight = distance * tanV
 
@@ -102,11 +113,11 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 	local limit = arenaEdge - halfWidth
 	centerX = if limit > 0 then math.clamp(centerX, -limit, limit) else 0
 
-	-- Пол на FLOOR_FRACTION от низа кадра; если кто-то высоко прыгнул — поднимаемся.
+	-- Пол на FLOOR_FRACTION от низа кадра; если кто-то поднялся выше границы HUD — поднимаемся.
 	local centerY = halfHeight * (1 - 2 * FLOOR_FRACTION)
-	local highest = topY + 1.5
-	if highest > centerY + halfHeight * 0.8 then
-		centerY = highest - halfHeight * 0.8
+	local headroom = halfHeight * (1 - 2 * HUD_FRACTION)
+	if highest > centerY + headroom then
+		centerY = highest - headroom
 	end
 
 	target.x, target.y, target.distance = centerX, centerY, distance

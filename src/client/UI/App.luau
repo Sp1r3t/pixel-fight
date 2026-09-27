@@ -23,6 +23,7 @@ local CharacterSelect = require(Screens.CharacterSelect)
 local BossMap = require(Screens.BossMap)
 local Shop = require(Screens.Shop)
 local ControlsSettings = require(Screens.ControlsSettings)
+local Draft = require(Screens.Draft)
 local Battle = require(Screens.Battle)
 
 local Children, Out, peek = Fusion.Children, Fusion.Out, Fusion.peek
@@ -37,6 +38,7 @@ local SCREENS: { [string]: ScreenComponent } = {
 	BossMap = BossMap,
 	Shop = Shop,
 	ControlsSettings = ControlsSettings,
+	Draft = Draft,
 	Battle = Battle,
 }
 

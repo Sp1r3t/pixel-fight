@@ -7,6 +7,7 @@ local MatchFlow = requireShared("Combat", "MatchFlow")
 local InputBits = requireShared("Combat", "InputBits")
 local Stage = requireShared("Combat", "Stage")
 local GameConfig = requireShared("Config", "GameConfig")
+local Arenas = requireShared("Config", "Arenas")
 
 ----------------------------------------------------------------------------------------------
 -- 2 на 2: сцена с двумя этажами
@@ -401,6 +402,28 @@ local function services(game)
 	}
 end
 
+--[[
+	Пройти подготовку к бою: все жмут «ГОТОВ!», затем голосуют за карту arenaId (по умолчанию dojo),
+	и ждём показа выбранной карты. step — шаг «мира» (у двух серверов свой).
+]]
+local function finishDraft(step, clients, arenaId)
+	step(3)
+	for _, client in clients do
+		local ready = client.find("DraftReady")
+		if ready then
+			client.runtime.fire(ready:FindFirstChild("Face"), "Activated")
+		end
+	end
+	step(3)
+	for _, client in clients do
+		local card = client.find(`Map_{arenaId or "dojo"}`)
+		if card then
+			client.runtime.fire(card, "Activated")
+		end
+	end
+	step(math.ceil(60 * GameConfig.Draft.RevealSeconds) + 10)
+end
+
 local function openMultiplayer(game, clients)
 	game.step(3)
 	for _, client in clients do
@@ -451,6 +474,11 @@ describe("Очередь на сервере", function()
 
 			press(bob, "QueueVersus")
 			game.step(8)
+			-- Сначала подготовка: экран выбора бойца у обоих.
+			expect(alice.find("Draft") ~= nil).toBeTruthy()
+			expect(bob.find("Draft") ~= nil).toBeTruthy()
+			expect(s.match.getMatchOf(alice.player)).toBe(nil)
+			finishDraft(game.step, { alice, bob })
 			local match = s.match.getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
 			expect(s.match.getMatchOf(bob.player)).toBe(match)
@@ -498,6 +526,7 @@ describe("Очередь на сервере", function()
 		press(alice, "QueueVersus")
 		press(bob, "QueueVersus")
 		game.step(8)
+		finishDraft(game.step, { alice, bob })
 		local s = services(game)
 		local match = s.match.getMatchOf(alice.player)
 		finishByKnockouts(game, match, 2)
@@ -549,6 +578,7 @@ describe("2 на 2 по сети", function()
 			game.step(1)
 		end
 		game.step(8)
+		finishDraft(game.step, clients)
 		local match = services(game).match.getMatchOf(clients[1].player)
 		return game, clients, match
 	end
@@ -648,6 +678,7 @@ describe("Боты", function()
 			game.step(60 * (GameConfig.Matchmaking.BotFillSeconds - 2))
 			expect(s.match.getMatchOf(alice.player)).toBe(nil)
 			game.step(60 * 3)
+			finishDraft(game.step, { alice })
 			local match = s.match.getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
 			expect(match.stage).toBe("TwoFloors")
@@ -690,6 +721,7 @@ describe("Боты", function()
 			expect(alice.find("RoomStart").Visible).toBe(true)
 			press(alice, "RoomStart")
 			game.step(5)
+			finishDraft(game.step, { alice })
 			local s = services(game)
 			local match = s.match.getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
@@ -702,6 +734,129 @@ describe("Боты", function()
 			local ok, code = s.router.handle(alice.player, "RoomStart", nil, 99)
 			expect(ok).toBe(false)
 			expect(code).toBe("NotInRoom")
+		end
+	)
+end)
+
+describe("Подготовка к бою", function()
+	local function fire(client, name)
+		local target = client.find(name)
+		assert(target, `нет элемента {name}`)
+		client.runtime.fire(target, "Activated")
+	end
+
+	local function draftTitle(client)
+		return client.find("Draft"):FindFirstChild("Title").Text
+	end
+
+	it(
+		"сначала боец, потом карта; премиальную карту выбирает только владелец — играют на ней все",
+		function()
+			local game = Harness.new()
+			local alice = game.addClient("Alice")
+			local bob = game.addClient("Bob")
+			openMultiplayer(game, { alice, bob })
+			local s = services(game)
+			s.data.grantArena(alice.player, "neon")
+			press(alice, "QueueVersus")
+			press(bob, "QueueVersus")
+			game.step(8)
+			expect(draftTitle(alice)).toContainMatch("БОЙЦА")
+			-- Очередь больше не показывает «Соперники найдены» поверх меню.
+			expect(clientPeek(alice, appState(alice).queue).status).toBe("Idle")
+
+			fire(alice, "Pick_mira")
+			local ok, code = s.router.handle(bob.player, "DraftPick", { characterId = "ashka" }, 10)
+			expect(ok).toBe(false)
+			expect(code).toBe("CharacterNotAvailable")
+			game.step(3)
+			expect(bob.find("Slot1"):FindFirstChild("Fighter").Text).toBe("MIRA VOSS")
+			expect(alice.find("Pick_ashka"):FindFirstChild("Locked").Visible).toBe(true)
+
+			press(alice, "DraftReady")
+			game.step(2)
+			expect(draftTitle(alice)).toContainMatch("БОЙЦА") -- ждём второго
+			press(bob, "DraftReady")
+			game.step(3)
+			expect(draftTitle(alice)).toContainMatch("КАРТУ")
+			expect(bob.find("Map_dragon"):FindFirstChild("Locked").Visible).toBe(true)
+			expect(alice.find("Map_neon"):FindFirstChild("Locked").Visible).toBe(false)
+			local okVote, voteCode = s.router.handle(bob.player, "DraftVote", { arenaId = "dragon" }, 20)
+			expect(okVote).toBe(false)
+			expect(voteCode).toBe("ArenaLocked")
+			local _, lateCode = s.router.handle(bob.player, "DraftPick", { characterId = "rook" }, 22)
+			expect(lateCode).toBe("TooLate")
+
+			fire(alice, "Map_neon")
+			game.step(3)
+			expect(bob.find("Map_neon"):FindFirstChild("Votes").Text).toContainMatch("1")
+			-- Bob не голосует — ждём конца времени.
+			game.step(math.ceil(60 * (GameConfig.Draft.MapSeconds + GameConfig.Draft.RevealSeconds)) + 20)
+			local match = s.match.getMatchOf(alice.player)
+			expect(match ~= nil).toBeTruthy()
+			expect(match.arenaId).toBe("neon")
+			expect(match.characters[1]).toBe("mira")
+			expect(match.characters[2]).toBe("rook")
+			expect(bob.find("Battle") ~= nil).toBeTruthy()
+			expect(game.errors()).toBeEmpty()
+			expect(game.warnings()).toBeEmpty()
+		end
+	)
+
+	it(
+		"никто ничего не выбрал — бойцы из меню и случайная бесплатная карта",
+		function()
+			local game = Harness.new()
+			local alice = game.addClient("Alice")
+			local bob = game.addClient("Bob")
+			openMultiplayer(game, { alice, bob })
+			appState(bob).selectedCharacterId:set("zip")
+			press(alice, "QueueVersus")
+			press(bob, "QueueVersus")
+			local draft = GameConfig.Draft
+			game.step(math.ceil(60 * (draft.CharacterSeconds + draft.MapSeconds + draft.RevealSeconds)) + 30)
+			local match = services(game).match.getMatchOf(alice.player)
+			expect(match ~= nil).toBeTruthy()
+			expect(match.characters[1]).toBe("rook")
+			expect(match.characters[2]).toBe("zip")
+			local arena = Arenas.byId[match.arenaId]
+			expect(arena ~= nil and not arena.premium).toBeTruthy()
+		end
+	)
+
+	it(
+		"игрок вышел во время подготовки — вместо него бот; вышли все — бой отменён",
+		function()
+			local game = Harness.new()
+			local alice = game.addClient("Alice")
+			local bob = game.addClient("Bob")
+			openMultiplayer(game, { alice, bob })
+			press(alice, "QueueVersus")
+			press(bob, "QueueVersus")
+			game.step(8)
+			game.removeClient(bob)
+			game.step(3)
+			expect(alice.find("Slot2"):FindFirstChild("Player").Text).toBe("BOT")
+			finishDraft(game.step, { alice })
+			local s = services(game)
+			local match = s.match.getMatchOf(alice.player)
+			expect(match ~= nil).toBeTruthy()
+			expect(match.controllers[2].kind).toBe("AI")
+			expect(match.ranked).toBe(false)
+
+			-- Бой с компьютером: игрок сам вышел из подготовки — вернулся в меню, боя нет.
+			local carol = game.addClient("Carol")
+			openMultiplayer(game, { carol })
+			press(carol, "Cpu3")
+			game.step(4)
+			expect(carol.find("Draft") ~= nil).toBeTruthy()
+			press(carol, "DraftLeave")
+			game.step(4)
+			expect(carol.find("Draft")).toBe(nil)
+			expect(carol.find("ModeSelect") ~= nil).toBeTruthy()
+			game.step(math.ceil(60 * GameConfig.Draft.CharacterSeconds) + 10)
+			expect(s.match.getMatchOf(carol.player)).toBe(nil)
+			expect(game.errors()).toBeEmpty()
 		end
 	)
 end)
@@ -723,6 +878,7 @@ describe("Приватные комнаты", function()
 			bob.find("CodeInput").Text = " " .. string.lower(code) .. " "
 			press(bob, "JoinRoom")
 			game.step(8)
+			finishDraft(game.step, { alice, bob })
 			local s = services(game)
 			local match = s.match.getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
@@ -770,6 +926,7 @@ describe("Против компьютера", function()
 		openMultiplayer(game, { alice })
 		press(alice, "Cpu8")
 		game.step(6)
+		finishDraft(game.step, { alice })
 		local match = services(game).match.getMatchOf(alice.player)
 		expect(match ~= nil).toBeTruthy()
 		expect(match.mode).toBe("Cpu")
@@ -792,6 +949,7 @@ describe("Против компьютера", function()
 		expect(alice.find("CpuMode"):FindFirstChild("Face").Text).toContainMatch("2 на 2")
 		press(alice, "Cpu3")
 		game.step(6)
+		finishDraft(game.step, { alice })
 		local match = services(game).match.getMatchOf(alice.player)
 		expect(match ~= nil).toBeTruthy()
 		expect(match.stage).toBe("TwoFloors")
@@ -802,12 +960,18 @@ describe("Против компьютера", function()
 		expect(match.sim.fighters[3].team).toBe(1)
 		expect(alice.find("TeamRow3") ~= nil).toBeTruthy()
 		stepUntilPhase(game, match, "Fight")
-		game.step(600)
-		-- Боты на обоих этажах дерутся (кто-то получил урон).
+		-- Боты дерутся (урон получили хотя бы двое; персонажи ботов случайные — ждём до 30 с).
 		local damaged = 0
-		for _, fighter in match.sim.fighters do
-			if fighter.health < fighter.maxHealth then
-				damaged += 1
+		for _ = 1, 60 do
+			game.step(30)
+			damaged = 0
+			for _, fighter in match.sim.fighters do
+				if fighter.health < fighter.maxHealth then
+					damaged += 1
+				end
+			end
+			if damaged >= 2 or match.ended then
+				break
 			end
 		end
 		expect(damaged >= 2).toBeTruthy()
@@ -1020,6 +1184,7 @@ describe("Мультиплеер между серверами (Harness)", funct
 			-- Bob «прибыл» на сервер A с данными телепорта.
 			local arrived = serverA.addClient("Bob", teleport.data)
 			serverA.step(10)
+			finishDraft(serverA.step, { alice, arrived })
 			local match = serverA.serverRequire("Services", "MatchService").getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
 			expect(match.controllers[2].player).toBe(arrived.player)
@@ -1052,6 +1217,7 @@ describe("Сервер матча (зарезервированный)", functio
 			expect(MatchService.getMatchOf(alice.player)).toBe(nil)
 			local bob = game.addClient("Bob", ticketData())
 			game.step(5)
+			finishDraft(game.step, { alice, bob })
 			local match = MatchService.getMatchOf(alice.player)
 			expect(match ~= nil).toBeTruthy()
 			expect(match.characters[1]).toBe("mira")

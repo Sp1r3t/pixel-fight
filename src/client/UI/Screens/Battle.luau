@@ -296,6 +296,7 @@ local function TeamRow(
 					AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
 					Position = if isLeft then UDim2.fromOffset(barX, 35) else UDim2.new(1, -barX, 0, 35),
 					Size = UDim2.fromOffset(ROW_BAR_WIDTH * 0.7, 6),
+					Compact = true,
 				})
 			end),
 		} :: { Fusion.Child },

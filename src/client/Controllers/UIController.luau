@@ -15,6 +15,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
+local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local InputController = require(script.Parent.InputController)
@@ -56,6 +57,15 @@ local ERROR_TEXT: { [string]: string } = {
 	ProfileLoading = "Сохранения ещё загружаются — секунду",
 	NotInRoom = "Вы не в комнате",
 	NotHost = "Начать бой может только хозяин комнаты",
+	NotInDraft = "Подготовка к бою уже закончилась",
+	TooLate = "Время вышло — выбор уже сделан",
+	ArenaLocked = "Эту карту можно выбрать, только если она куплена",
+}
+
+-- Почему отменена подготовка к бою.
+local DRAFT_CANCEL_TEXT: { [string]: string } = {
+	Empty = "Все игроки вышли — бой отменён",
+	Replaced = "Начался другой бой",
 }
 
 local scope: Fusion.Scope<typeof(Fusion)>? = nil
@@ -106,8 +116,34 @@ function UIController.Init()
 	appState.actions.roomStart = function()
 		request("RoomStart", nil)
 	end
+	appState.actions.draftPick = function(id: string)
+		request("DraftPick", { characterId = id })
+	end
+	appState.actions.draftReady = function()
+		request("DraftReady", nil)
+	end
+	appState.actions.draftVote = function(arenaId: string)
+		request("DraftVote", { arenaId = arenaId })
+	end
+	appState.actions.draftLeave = function()
+		request("DraftLeave", nil)
+		AppState.exitDraft(appState)
+	end
 	appState.actions.buyCharacter = function(id: string)
 		request("BuyCharacter", { characterId = id })
+	end
+	appState.actions.buyArena = function(arenaId: string)
+		request("BuyArena", { arenaId = arenaId })
+	end
+	appState.actions.promptArenaPass = function(arenaId: string)
+		local passId = Monetization.arenaPasses[arenaId] or 0
+		if passId == 0 then
+			AppState.notify(appState, NOT_CONFIGURED, 4)
+			return
+		end
+		pcall(function()
+			game:GetService("MarketplaceService"):PromptGamePassPurchase(Players.LocalPlayer, passId)
+		end)
 	end
 	appState.actions.promptPass = function(id: string)
 		local passId = Monetization.gamePasses[id] or 0
@@ -178,7 +214,13 @@ function UIController.Start()
 	end)
 	-- Поиск матча, комнаты и награды мультиплеера.
 	Transport.onClientEvent("MatchEvent", function(kind: any, payload: any)
-		if kind == "Queue" then
+		if kind == "Draft" then
+			AppState.applyDraft(appState, payload)
+		elseif kind == "DraftCancelled" then
+			local reason = if type(payload) == "table" then payload.reason else nil
+			AppState.exitDraft(appState)
+			AppState.notify(appState, DRAFT_CANCEL_TEXT[reason] or "Бой отменён", 4)
+		elseif kind == "Queue" then
 			AppState.applyQueue(appState, payload)
 			local reason = if type(payload) == "table" then payload.reason else nil
 			if type(reason) == "string" and QUEUE_REASON_TEXT[reason] then
@@ -191,6 +233,9 @@ function UIController.Start()
 			if payload.kind == "Character" and type(payload.characterId) == "string" then
 				local def = CharacterRegistry.get(payload.characterId)
 				AppState.notify(appState, `Боец {if def then def.displayName else "?"} открыт!`, 4)
+			elseif payload.kind == "Arena" and type(payload.arenaId) == "string" then
+				local arena = Arenas.byId[payload.arenaId]
+				AppState.notify(appState, `Карта «{if arena then arena.name else "?"}» открыта!`, 4)
 			elseif payload.kind == "Coins" and type(payload.amount) == "number" then
 				AppState.notify(appState, `+{payload.amount} монет`, 4)
 			elseif payload.kind == "SkipBoss" then

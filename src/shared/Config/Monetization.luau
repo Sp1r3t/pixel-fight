@@ -36,6 +36,16 @@ local Monetization = {
 	-- Альтернатива без доната: открыть платного бойца за монеты.
 	characterCoinPrice = 6000,
 
+	-- Премиальные карты (Config/Arenas, premium = true): Game Pass за Robux или монеты.
+	-- Купленную карту можно выбирать в голосовании перед боем — если она победит, на ней играют все.
+	arenaPasses = {
+		dragon = 0,
+		neon = 0,
+		cosmos = 0,
+	} :: { [string]: number },
+	arenaPassPriceHint = 99,
+	arenaCoinPrice = 4000,
+
 	products = {
 		{ key = "SkipBoss", id = 0, kind = "SkipBoss", name = "Пропустить босса", priceHint = 49 },
 		{ key = "Coins1000", id = 0, kind = "Coins", name = "1000 монет", amount = 1000, priceHint = 99 },

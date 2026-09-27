@@ -7,6 +7,7 @@
 	    (нижние слоты 1–2, верхние 3–4; команды: 1-й и 3-й против 2-го и 4-го);
 	  • Cpu — бой против компьютера выбранного уровня (ИИ боссов), 1 на 1 или 2 на 2 с ботами.
 	Если соперники не нашлись за Matchmaking.BotFillSeconds, пустые места занимают боты.
+	Перед каждым боем — подготовка (DraftService): выбор бойца, затем голосование за карту.
 
 	Подбор соперников:
 	  1. очередь этого сервера: как только набралось нужное число игроков — матч начинается сразу;
@@ -28,7 +29,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
-local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -40,6 +40,7 @@ local CrossServer = require(script.Parent.Parent.Matchmaking.CrossServer)
 local Protocol = require(script.Parent.Parent.Matchmaking.Protocol)
 local MatchService = require(script.Parent.MatchService)
 local DataService = require(script.Parent.DataService)
+local DraftService = require(script.Parent.DraftService)
 
 type Mode = Protocol.Mode
 
@@ -191,9 +192,9 @@ end
 -- Запуск матчей
 ----------------------------------------------------------------------------------------------
 
-local function randomArena(): string
-	local list = Arenas.list
-	return list[random:NextInteger(1, #list)].id
+-- Игрок занят: в бою или в подготовке к бою.
+local function isBusy(player: Player): boolean
+	return MatchService.getMatchOf(player) ~= nil or DraftService.draftOf(player) ~= nil
 end
 
 local function returnToLobby(players: { Player })
@@ -240,10 +241,72 @@ local function randomCharacter(): string
 	return roster[random:NextInteger(1, #roster)].id
 end
 
+local function teamOfSlot(slot: number): number
+	return if slot % 2 == 1 then 1 else 2
+end
+
+local function botController(level: number): Match.SlotController
+	return {
+		kind = "AI",
+		think = BossAI.controller(BossRegistry.profileForLevel(level), random:NextInteger(1, 2 ^ 30)),
+	}
+end
+
 --[[
-	Начать матч. entries — игроки в порядке подбора: слот = номер в списке; нечётные слоты — команда 1,
-	чётные — команда 2 (в 2 на 2 слоты 1–2 начинают внизу, 3–4 — на втором этаже).
-	fillBots — занять свободные слоты ботами. Награда за победу — только в матчах из очереди.
+	Матч по итогам подготовки: люди — свои контроллеры, боты (и вышедшие во время подготовки) — ИИ.
+	ranked — матч из очереди без ботов (полная награда); private — комната с другом (без наград).
+]]
+local function createFromDraft(
+	mode: Match.MatchMode,
+	result: DraftService.DraftResult,
+	ranked: boolean,
+	private: boolean,
+	botLevel: number,
+	botTag: string
+): Match.Match?
+	local participants: { Player } = {}
+	local characters: { string } = {}
+	local controllers: { Match.SlotController } = {}
+	local presentation: { [number]: Match.Presentation } = {}
+	local bots = 0
+	for _, slot in result.slots do
+		characters[slot.slot] = slot.characterId
+		local player = slot.player
+		if player and player.Parent ~= nil and MatchService.getMatchOf(player) == nil then
+			table.insert(participants, player)
+			controllers[slot.slot] = { kind = "Player", player = player }
+		else
+			bots += 1
+			controllers[slot.slot] = botController(botLevel)
+			local def = CharacterRegistry.get(slot.characterId)
+			presentation[slot.slot] = { displayName = `{if def then def.displayName else slot.characterId} ({botTag})` }
+		end
+	end
+	if #participants == 0 then
+		return nil
+	end
+	local match = MatchService.create({
+		mode = mode,
+		arenaId = result.arenaId,
+		characters = characters,
+		controllers = controllers,
+		participants = participants,
+		roundsToWin = GameConfig.RoundsToWin.Versus,
+		ranked = ranked and bots == 0,
+		stage = if #characters == 4 then "TwoFloors" else "Duel",
+		presentation = presentation,
+		onFinished = onPvpFinished,
+	})
+	match.data.bots = if mode == "Cpu" then 0 else bots
+	match.data.private = private
+	return match
+end
+
+--[[
+	Начать бой: сначала подготовка (выбор бойца → карта), потом матч.
+	entries — игроки в порядке подбора: слот = номер в списке; нечётные слоты — команда 1, чётные — 2
+	(в 2 на 2 слоты 1–2 начинают внизу, 3–4 — на втором этаже). fillBots — свободные места займут боты.
+	Награда за победу — только в матчах из очереди (с ботами — уменьшенная), в комнатах — нет.
 ]]
 function MatchmakingService.startMatch(
 	mode: Mode,
@@ -251,52 +314,41 @@ function MatchmakingService.startMatch(
 	ranked: boolean,
 	fillBots: boolean?,
 	private: boolean?
-): Match.Match
+): DraftService.Draft
 	local size = Protocol.groupSize(mode) :: number
-	local participants: { Player } = {}
-	local characters: { string } = {}
-	local controllers: { Match.SlotController } = {}
-	local presentation: { [number]: Match.Presentation } = {}
-	for slot, entry in entries do
-		table.insert(participants, entry.player)
+	local slots: { DraftService.DraftSlot } = {}
+	for index, entry in entries do
 		removeFromQueue(entry.player, false)
 		send(entry.player, { status = "Found" })
-		characters[slot] = entry.characterId
-		controllers[slot] = { kind = "Player", player = entry.player }
+		table.insert(slots, {
+			slot = index,
+			team = teamOfSlot(index),
+			player = entry.player,
+			name = entry.player.DisplayName,
+			characterId = entry.characterId,
+			ready = false,
+		})
 	end
-	local bots = 0
 	if fillBots then
-		for slot = #entries + 1, size do
-			bots += 1
-			local characterId = randomCharacter()
-			local def = CharacterRegistry.get(characterId)
-			characters[slot] = characterId
-			controllers[slot] = {
-				kind = "AI",
-				think = BossAI.controller(
-					BossRegistry.profileForLevel(GameConfig.Matchmaking.BotLevel),
-					random:NextInteger(1, 2 ^ 30)
-				),
-			}
-			presentation[slot] = { displayName = `{if def then def.displayName else characterId} (BOT)` }
+		for index = #entries + 1, size do
+			table.insert(slots, {
+				slot = index,
+				team = teamOfSlot(index),
+				player = nil,
+				name = "BOT",
+				characterId = randomCharacter(),
+				ready = true,
+			})
 		end
 	end
-	assert(#characters == size, "Не хватает бойцов для матча")
-	local match = MatchService.create({
+	assert(#slots == size, "Не хватает бойцов для матча")
+	return DraftService.start({
 		mode = mode,
-		arenaId = randomArena(),
-		characters = characters,
-		controllers = controllers,
-		participants = participants,
-		roundsToWin = GameConfig.RoundsToWin.Versus,
-		ranked = ranked and bots == 0,
-		stage = if mode == "Team" then "TwoFloors" else "Duel",
-		presentation = presentation,
-		onFinished = onPvpFinished,
+		slots = slots,
+		onDone = function(result: DraftService.DraftResult)
+			createFromDraft(mode, result, ranked, private == true, GameConfig.Matchmaking.BotLevel, "BOT")
+		end,
 	})
-	match.data.bots = bots
-	match.data.private = private == true
-	return match
 end
 
 -- Бой против компьютера: ИИ уровня level. Team — 2 на 2: игрок с ботом-напарником против двух ботов.
@@ -304,33 +356,37 @@ function MatchmakingService.startCpu(
 	player: Player,
 	characterId: string,
 	level: number,
-	seed: number?,
 	mode: Mode?
-): Match.Match
+): DraftService.Draft
 	leaveRoom(player, false)
 	removeFromQueue(player, false)
 	local size = if mode == "Team" then 4 else 2
-	local characters: { string } = { characterId }
-	local controllers: { Match.SlotController } = { { kind = "Player", player = player } }
-	local presentation: { [number]: Match.Presentation } = {}
-	local baseSeed = seed or random:NextInteger(1, 2 ^ 30)
-	for slot = 2, size do
-		local opponentId = randomCharacter()
-		local def = CharacterRegistry.get(opponentId)
-		characters[slot] = opponentId
-		controllers[slot] =
-			{ kind = "AI", think = BossAI.controller(BossRegistry.profileForLevel(level), baseSeed + slot) }
-		presentation[slot] = { displayName = `{if def then def.displayName else opponentId} (CPU)` }
+	local slots: { DraftService.DraftSlot } = {
+		{
+			slot = 1,
+			team = 1,
+			player = player,
+			name = player.DisplayName,
+			characterId = characterId,
+			ready = false,
+		},
+	}
+	for index = 2, size do
+		table.insert(slots, {
+			slot = index,
+			team = teamOfSlot(index),
+			player = nil,
+			name = "CPU",
+			characterId = randomCharacter(),
+			ready = true,
+		})
 	end
-	return MatchService.create({
+	return DraftService.start({
 		mode = "Cpu",
-		arenaId = randomArena(),
-		characters = characters,
-		controllers = controllers,
-		participants = { player },
-		roundsToWin = GameConfig.RoundsToWin.Versus,
-		stage = if mode == "Team" then "TwoFloors" else "Duel",
-		presentation = presentation,
+		slots = slots,
+		onDone = function(result: DraftService.DraftResult)
+			createFromDraft("Cpu", result, false, false, level, "CPU")
+		end,
 	})
 end
 
@@ -341,7 +397,7 @@ local function tryLocal(mode: Mode)
 	-- Игроки, которые тем временем ушли в другой бой, из очереди выбывают.
 	for index = #queue, 1, -1 do
 		local entry = queue[index]
-		if entry.player.Parent == nil or MatchService.getMatchOf(entry.player) ~= nil then
+		if entry.player.Parent == nil or isBusy(entry.player) then
 			removeFromQueue(entry.player, true)
 		end
 	end
@@ -579,7 +635,7 @@ local function registerRequests()
 		if characterId == nil then
 			return false, "CharacterNotAvailable"
 		end
-		if MatchService.getMatchOf(player) ~= nil then
+		if isBusy(player) then
 			return false, "InMatch"
 		end
 		leaveRoom(player, false)
@@ -621,7 +677,7 @@ local function registerRequests()
 		if characterId == nil then
 			return false, "CharacterNotAvailable"
 		end
-		if MatchService.getMatchOf(player) ~= nil then
+		if isBusy(player) then
 			return false, "InMatch"
 		end
 		leaveRoom(player, false)
@@ -652,7 +708,7 @@ local function registerRequests()
 		if characterId == nil then
 			return false, "CharacterNotAvailable"
 		end
-		if MatchService.getMatchOf(player) ~= nil then
+		if isBusy(player) then
 			return false, "InMatch"
 		end
 		local room = rooms[code]
@@ -699,9 +755,12 @@ local function registerRequests()
 		if characterId == nil then
 			return false, "CharacterNotAvailable"
 		end
+		if isBusy(player) then
+			return false, "InMatch"
+		end
 		local mode: Mode? = Protocol.readMode((payload :: any).mode)
-		local match = MatchmakingService.startCpu(player, characterId, level, nil, mode)
-		return true, match.id
+		MatchmakingService.startCpu(player, characterId, level, mode)
+		return true, nil
 	end)
 
 	-- Хозяин комнаты начинает матч сразу: свободные места займут боты.

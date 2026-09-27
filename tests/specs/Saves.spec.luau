@@ -19,6 +19,9 @@ local function configuredMonetization()
 		gamePasses = { ashka = 201, glacia = 202, tempest = 203, byte = 204, morrow = 205, astra = 206 },
 		gamePassPriceHint = Monetization.gamePassPriceHint,
 		characterCoinPrice = Monetization.characterCoinPrice,
+		arenaPasses = { dragon = 301, neon = 302, cosmos = 303 },
+		arenaPassPriceHint = Monetization.arenaPassPriceHint,
+		arenaCoinPrice = Monetization.arenaCoinPrice,
 		products = products,
 	}
 end
@@ -261,6 +264,77 @@ describe("Покупки: бойцы", function()
 			expect(free).toBe("BadRequest")
 			-- Купленным бойцом можно играть.
 			expect((s.router.handle(alice.player, "StartTraining", { characterId = "byte" }, 9))).toBe(true)
+		end
+	)
+end)
+
+describe("Покупки: премиальные карты", function()
+	it(
+		"Game Pass и монеты открывают карту; бесплатные доступны всем; профиль v2 → v3",
+		function()
+			local game = Harness.new({ overrides = { [MONETIZATION_PATH] = configuredMonetization() } })
+			game.world.ownedPasses["1:301"] = true
+			local alice = game.addClient("Alice", nil, 1)
+			game.step(3)
+			local s = services(game)
+			expect(s.data.ownsArena(alice.player, "dojo")).toBe(true)
+			expect(s.data.ownsArena(alice.player, "dragon")).toBe(true) -- Game Pass куплен заранее
+			expect(s.data.ownsArena(alice.player, "neon")).toBe(false)
+			expect(clientPeek(alice, appState(alice).ownedArenas).dragon).toBe(true)
+
+			local ok, code = s.router.handle(alice.player, "BuyArena", { arenaId = "neon" }, 1)
+			expect(ok).toBe(false)
+			expect(code).toBe("NotEnoughCoins")
+			s.data.addCoins(alice.player, Monetization.arenaCoinPrice)
+			expect((s.router.handle(alice.player, "BuyArena", { arenaId = "neon" }, 3))).toBe(true)
+			expect(s.data.ownsArena(alice.player, "neon")).toBe(true)
+			expect(s.data.getCoins(alice.player)).toBe(0)
+			local _, again = s.router.handle(alice.player, "BuyArena", { arenaId = "neon" }, 5)
+			expect(again).toBe("AlreadyOwned")
+			local _, free = s.router.handle(alice.player, "BuyArena", { arenaId = "dojo" }, 7)
+			expect(free).toBe("BadRequest")
+			game.step(3)
+			expect(alice.find("Notice").Text).toContainMatch("Неон")
+
+			-- Покупка в игре через Game Pass.
+			game.server.services.MarketplaceService.PromptGamePassPurchaseFinished:Fire(alice.player, 303, true)
+			game.step(3)
+			expect(s.data.ownsArena(alice.player, "cosmos")).toBe(true)
+
+			-- Старый профиль (v2) получает пустой список карт; мусор отбрасывается.
+			local migrated =
+				ProfileSchema.migrate({ version = 2, coins = 5, ownedArenas = { dojo = true, neon = true, x = true } })
+			expect(migrated.version).toBe(ProfileSchema.VERSION)
+			expect(migrated.ownedArenas.neon).toBe(true)
+			expect(migrated.ownedArenas.dojo).toBe(nil) -- бесплатные не хранятся
+			expect(migrated.ownedArenas.x).toBe(nil)
+		end
+	)
+
+	it(
+		"магазин: вкладка «Карты» — картинки, покупка за монеты и окно Robux",
+		function()
+			local game = Harness.new({ overrides = { [MONETIZATION_PATH] = configuredMonetization() } })
+			local alice = game.addClient("Alice", nil, 1)
+			game.step(3)
+			local s = services(game)
+			alice.click("Магазин")
+			game.step(2)
+			expect(alice.find("Maps").Visible).toBe(false)
+			press(alice, "Tab_Maps")
+			game.step(2)
+			expect(alice.find("Maps").Visible).toBe(true)
+			expect(alice.find("Deluxe").Visible).toBe(false)
+			expect(alice.find("Arena_dragon"):FindFirstChild("Picture"):FindFirstChild("ArenaPreview") ~= nil).toBeTruthy()
+			press(alice, "ArenaPass_cosmos")
+			expect(game.world.prompts[1].id).toBe(303)
+			s.data.addCoins(alice.player, Monetization.arenaCoinPrice)
+			game.step(3)
+			press(alice, "ArenaCoins_dragon")
+			game.step(5)
+			expect(s.data.ownsArena(alice.player, "dragon")).toBe(true)
+			expect(alice.find("Arena_dragon"):FindFirstChild("Owned").Visible).toBe(true)
+			expect(game.errors()).toBeEmpty()
 		end
 	)
 end)

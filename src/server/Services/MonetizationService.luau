@@ -2,8 +2,8 @@
 --[[
 	MonetizationService — покупки.
 
-	  • платные бойцы: Game Pass (владение проверяется при входе и после покупки) или монеты,
-	    заработанные в игре (запрос BuyCharacter);
+	  • платные бойцы и премиальные карты: Game Pass (владение проверяется при входе и после покупки)
+	    или монеты, заработанные в игре (запросы BuyCharacter, BuyArena);
 	  • Developer Products (ProcessReceipt): «Пропустить босса», наборы монет.
 	    Защита от повторной выдачи: PurchaseId записывается в профиль вместе с выдачей награды,
 	    а PurchaseGranted возвращается только после того, как профиль с этой записью сохранён.
@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -44,6 +45,13 @@ for characterId, passId in Monetization.gamePasses do
 	end
 end
 
+local arenaByPass: { [number]: string } = {}
+for arenaId, passId in Monetization.arenaPasses do
+	if passId ~= 0 then
+		arenaByPass[passId] = arenaId
+	end
+end
+
 local function marketplace(): any
 	return game:GetService("MarketplaceService")
 end
@@ -62,11 +70,16 @@ local function ownsPass(player: Player, passId: number): boolean
 	return ok and owns == true
 end
 
--- При загрузке профиля: открыть бойцов, чьи Game Pass куплены (в том числе на сайте).
+-- При загрузке профиля: открыть бойцов и карты, чьи Game Pass куплены (в том числе на сайте).
 local function syncPasses(player: Player)
 	for characterId, passId in Monetization.gamePasses do
 		if passId ~= 0 and not DataService.ownsCharacter(player, characterId) and ownsPass(player, passId) then
 			DataService.grantCharacter(player, characterId)
+		end
+	end
+	for arenaId, passId in Monetization.arenaPasses do
+		if passId ~= 0 and not DataService.ownsArena(player, arenaId) and ownsPass(player, passId) then
+			DataService.grantArena(player, arenaId)
 		end
 	end
 end
@@ -145,6 +158,26 @@ function MonetizationService.buyWithCoins(player: Player, characterId: string): 
 	return true, nil
 end
 
+-- Покупка премиальной карты за монеты.
+function MonetizationService.buyArenaWithCoins(player: Player, arenaId: string): (boolean, string?)
+	local arena = Arenas.byId[arenaId]
+	if arena == nil or not arena.premium then
+		return false, "BadRequest"
+	end
+	if not DataService.isLoaded(player) then
+		return false, "ProfileLoading"
+	end
+	if DataService.ownsArena(player, arenaId) then
+		return false, "AlreadyOwned"
+	end
+	if not DataService.spendCoins(player, Monetization.arenaCoinPrice) then
+		return false, "NotEnoughCoins"
+	end
+	DataService.grantArena(player, arenaId)
+	notify(player, { kind = "Arena", arenaId = arenaId })
+	return true, nil
+end
+
 function MonetizationService.Init()
 	RequestRouter.register("BuyCharacter", function(player: Player, payload: unknown)
 		local characterId = if type(payload) == "table" then (payload :: any).characterId else nil
@@ -152,6 +185,13 @@ function MonetizationService.Init()
 			return false, "BadRequest"
 		end
 		return MonetizationService.buyWithCoins(player, characterId)
+	end)
+	RequestRouter.register("BuyArena", function(player: Player, payload: unknown)
+		local arenaId = if type(payload) == "table" then (payload :: any).arenaId else nil
+		if type(arenaId) ~= "string" then
+			return false, "BadRequest"
+		end
+		return MonetizationService.buyArenaWithCoins(player, arenaId)
 	end)
 	DataService.onLoaded(syncPasses)
 end
@@ -165,6 +205,11 @@ function MonetizationService.Start()
 		if purchased and characterId then
 			DataService.grantCharacter(player, characterId)
 			notify(player, { kind = "Character", characterId = characterId })
+		end
+		local arenaId = arenaByPass[passId]
+		if purchased and arenaId then
+			DataService.grantArena(player, arenaId)
+			notify(player, { kind = "Arena", arenaId = arenaId })
 		end
 	end)
 end

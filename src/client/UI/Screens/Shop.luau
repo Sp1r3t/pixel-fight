@@ -1,11 +1,12 @@
 --!strict
 --[[
-	Экран «Магазин».
-	  • Бойцы Deluxe: 6 платных бойцов — Game Pass за Robux или монеты, заработанные в игре;
-	  • Монеты: наборы монет (Developer Products);
-	  • Башня: «Пропустить босса» (Developer Product) — засчитывает следующего босса без награды.
+	Экран «Магазин» — вкладки:
+	  • «Бойцы»: 6 платных бойцов Deluxe — Game Pass за Robux или монеты, заработанные в игре;
+	  • «Карты»: 3 премиальные карты — Game Pass или монеты; купленную карту можно выбрать
+	    в голосовании перед боем, и тогда на ней играют все;
+	  • «Монеты и боссы»: наборы монет и «Пропустить босса» (Developer Products).
 	Покупку подтверждает сервер; экран только открывает окно покупки Roblox и показывает профиль.
-	Платные бойцы не сильнее бесплатных — отличаются только внешним видом.
+	Платные бойцы не сильнее бесплатных — отличаются только внешним видом; карты — только фон.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,13 +16,21 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
+local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
 local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
+local ArenaArt = require(script.Parent.Parent.Parent.Fight.ArenaArt)
 
-local Children = Fusion.Children
+local Children, peek = Fusion.Children, Fusion.peek
+
+local TABS: { { id: string, text: string } } = {
+	{ id = "Fighters", text = "Бойцы" },
+	{ id = "Maps", text = "Карты 👑" },
+	{ id = "Coins", text = "Монеты и боссы" },
+}
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -100,8 +109,8 @@ local function CharacterCard(scope: Scope, def: Types.CharacterDef, state: AppSt
 			scope:New "Frame" {
 				Name = "Buy",
 				BackgroundTransparency = 1,
-				Position = UDim2.fromOffset(6, 78),
-				Size = UDim2.new(1, -12, 0, 36),
+				Position = UDim2.fromOffset(76, 52),
+				Size = UDim2.new(1, -82, 0, 36),
 				Visible = scope:Computed(function(use)
 					return not use(owned)
 				end),
@@ -135,7 +144,132 @@ local function CharacterCard(scope: Scope, def: Types.CharacterDef, state: AppSt
 	}
 end
 
+-- Карточка премиальной карты: большая картинка, описание, покупка.
+local function MapCard(scope: Scope, arena: Arenas.ArenaTheme, index: number, state: AppState.AppState): Instance
+	local owned = scope:Computed(function(use)
+		return use(state.ownedArenas)[arena.id] == true
+	end)
+	local price = Monetization.arenaCoinPrice
+	local picture = scope:New "Frame" {
+		Name = "Picture",
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		Position = UDim2.fromOffset(8, 8),
+		Size = UDim2.fromOffset(276, 155),
+	}
+	ArenaArt.preview(picture, arena)
+	return scope:New "Frame" {
+		Name = `Arena_{arena.id}`,
+		BackgroundColor3 = Theme.Colors.PanelLight,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(24 + (index - 1) * 304, 0),
+		Size = UDim2.fromOffset(292, 330),
+		[Children] = {
+			scope:New "UIStroke" {
+				Color = Theme.Colors.Paid,
+				Thickness = 3,
+			},
+			picture,
+			Text(scope, {
+				Name = "ArenaName",
+				Text = `👑 {arena.name}`,
+				Position = UDim2.fromOffset(10, 168),
+				Size = UDim2.fromOffset(272, 26),
+				TextSize = 20,
+				Color = Theme.Colors.Paid,
+			}),
+			Text(scope, {
+				Name = "ArenaDescription",
+				Text = arena.description,
+				Font = Theme.Fonts.BodyRegular,
+				Position = UDim2.fromOffset(10, 196),
+				Size = UDim2.fromOffset(272, 74),
+				TextSize = 14,
+				Color = Theme.Colors.TextDim,
+			}),
+			Text(scope, {
+				Name = "Owned",
+				Text = "✓ Открыта — выбирай в голосовании!",
+				Position = UDim2.fromOffset(10, 284),
+				Size = UDim2.fromOffset(272, 36),
+				Color = Theme.Colors.Free,
+				Visible = owned,
+			}),
+			scope:New "Frame" {
+				Name = "Buy",
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(8, 280),
+				Size = UDim2.fromOffset(276, 42),
+				Visible = scope:Computed(function(use)
+					return not use(owned)
+				end),
+				[Children] = {
+					Button(scope, {
+						Name = `ArenaPass_{arena.id}`,
+						Text = `R$ {Monetization.arenaPassPriceHint}`,
+						Color = Theme.Colors.Paid,
+						Size = UDim2.new(0.5, -3, 1, 0),
+						TextSize = 17,
+						OnClick = function()
+							state.actions.promptArenaPass(arena.id)
+						end,
+					}),
+					Button(scope, {
+						Name = `ArenaCoins_{arena.id}`,
+						Text = `{price} мон.`,
+						Position = UDim2.new(0.5, 3, 0, 0),
+						Size = UDim2.new(0.5, -3, 1, 0),
+						TextSize = 16,
+						Disabled = scope:Computed(function(use)
+							return use(state.coins) < price
+						end),
+						OnClick = function()
+							state.actions.buyArena(arena.id)
+						end,
+					}),
+				} :: { Fusion.Child },
+			},
+		} :: { Fusion.Child },
+	}
+end
+
 local function Shop(scope: Scope, state: AppState.AppState): Instance
+	local tab = scope:Value("Fighters")
+	local function visibleOn(id: string): Fusion.Computed<boolean>
+		return scope:Computed(function(use)
+			return use(tab) == id
+		end)
+	end
+	local tabButtons: { Instance } = {}
+	for index, entry in TABS do
+		table.insert(
+			tabButtons,
+			Button(scope, {
+				Name = `Tab_{entry.id}`,
+				Text = entry.text,
+				Color = scope:Computed(function(use)
+					return if use(tab) == entry.id then Theme.Colors.ButtonPrimary else Theme.Colors.Button
+				end),
+				Position = UDim2.fromOffset(24 + (index - 1) * 208, 70),
+				Size = UDim2.fromOffset(200, 40),
+				TextSize = 18,
+				OnClick = function()
+					if peek(tab) ~= entry.id then
+						tab:set(entry.id)
+					end
+				end,
+			})
+		)
+	end
+	local mapCards: { Instance } = {}
+	local premiumIndex = 0
+	for _, arena in Arenas.list do
+		if arena.premium then
+			premiumIndex += 1
+			table.insert(mapCards, MapCard(scope, arena, premiumIndex, state))
+		end
+	end
+
 	local cards: { Instance } = {}
 	for _, def in CharacterRegistry.list() do
 		if def.unlock == "Paid" then
@@ -200,12 +334,35 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Align = Enum.TextXAlignment.Right,
 				TextSize = 20,
 			}),
+			tabButtons,
+			scope:New "Frame" {
+				Name = "Maps",
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(0, 122),
+				Size = UDim2.fromOffset(960, 400),
+				Visible = visibleOn("Maps"),
+				[Children] = {
+					mapCards,
+					Text(scope, {
+						Name = "MapsHint",
+						Text = "Премиальную карту в голосовании перед боем выбирает тот, кто её купил, — "
+							.. "и если она победит, на ней играют все. На силу бойцов карты не влияют.",
+						Font = Theme.Fonts.BodyRegular,
+						Position = UDim2.fromOffset(24, 340),
+						Size = UDim2.fromOffset(912, 44),
+						TextSize = 14,
+						Color = Theme.Colors.TextDim,
+						Align = Enum.TextXAlignment.Center,
+					}),
+				} :: { Fusion.Child },
+			},
 			scope:New "Frame" {
 				Name = "Deluxe",
 				BackgroundColor3 = Theme.Colors.Panel,
 				BorderSizePixel = 0,
-				Position = UDim2.fromOffset(24, 76),
-				Size = UDim2.fromOffset(588, 440),
+				Position = UDim2.new(0.5, -294, 0, 122),
+				Size = UDim2.fromOffset(588, 400),
+				Visible = visibleOn("Fighters"),
 				[Children] = {
 					scope:New "UIStroke" {
 						Color = Theme.Colors.Outline,
@@ -221,12 +378,12 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 					scope:New "Frame" {
 						Name = "Cards",
 						BackgroundTransparency = 1,
-						Position = UDim2.fromOffset(16, 44),
-						Size = UDim2.fromOffset(556, 330),
+						Position = UDim2.fromOffset(16, 40),
+						Size = UDim2.fromOffset(556, 300),
 						[Children] = {
 							scope:New "UIGridLayout" {
 								CellPadding = UDim2.fromOffset(8, 8),
-								CellSize = UDim2.fromOffset(274, 120),
+								CellSize = UDim2.fromOffset(274, 94),
 								SortOrder = Enum.SortOrder.LayoutOrder,
 							},
 							cards,
@@ -236,7 +393,7 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 						Text = "Платные бойцы не сильнее бесплатных: у всех одинаковый «бюджет» характеристик. "
 							.. "Deluxe — это внешний вид: аура, шлейф на рывках, особый фон супера.",
 						Font = Theme.Fonts.BodyRegular,
-						Position = UDim2.fromOffset(16, 384),
+						Position = UDim2.fromOffset(16, 346),
 						Size = UDim2.fromOffset(556, 48),
 						Color = Theme.Colors.TextDim,
 						TextSize = 13,
@@ -247,8 +404,9 @@ local function Shop(scope: Scope, state: AppState.AppState): Instance
 				Name = "Products",
 				BackgroundColor3 = Theme.Colors.Panel,
 				BorderSizePixel = 0,
-				Position = UDim2.fromOffset(636, 76),
-				Size = UDim2.fromOffset(300, 440),
+				Position = UDim2.new(0.5, -150, 0, 122),
+				Size = UDim2.fromOffset(300, 400),
+				Visible = visibleOn("Coins"),
 				[Children] = {
 					scope:New "UIStroke" {
 						Color = Theme.Colors.Outline,

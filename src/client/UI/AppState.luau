@@ -16,6 +16,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Types = require(ReplicatedStorage.Shared.Types)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
+local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 
 local peek = Fusion.peek
 
@@ -28,6 +29,7 @@ export type ScreenName =
 	| "BossMap"
 	| "Shop"
 	| "ControlsSettings"
+	| "Draft"
 	| "Battle"
 
 export type BattleFighter = {
@@ -70,6 +72,28 @@ export type QueueStatus = {
 	since: number, -- os.clock() начала ожидания (для таймера на экране)
 }
 
+-- Подготовка к бою (выбор бойца → голосование за карту), присылает DraftService.
+export type DraftSlotInfo = {
+	slot: number,
+	team: number,
+	name: string,
+	characterId: string,
+	ready: boolean,
+	bot: boolean,
+	vote: string?,
+}
+
+export type DraftInfo = {
+	id: number,
+	mode: string, -- "Versus" | "Team" | "Cpu"
+	phase: string, -- "Character" | "Map" | "Reveal"
+	deadline: number, -- os.clock() конца фазы (на этом клиенте)
+	localSlot: number?,
+	slots: { DraftSlotInfo },
+	votes: { [string]: number },
+	arenaId: string?,
+}
+
 -- Живые данные бойца для HUD (обновляет FightController каждый кадр).
 export type HudFighter = {
 	health: Fusion.Value<number>,
@@ -102,8 +126,15 @@ export type Actions = {
 	leaveRoom: () -> (),
 	startCpu: (level: number, mode: string) -> (), -- mode: "Versus" (1 на 1) | "Team" (2 на 2 с ботами)
 	roomStart: () -> (), -- хозяин комнаты начинает сразу, пустые места займут боты
+	-- Подготовка к бою.
+	draftPick: (characterId: string) -> (),
+	draftReady: () -> (),
+	draftVote: (arenaId: string) -> (),
+	draftLeave: () -> (),
 	-- Покупки.
 	buyCharacter: (characterId: string) -> (), -- за монеты
+	buyArena: (arenaId: string) -> (), -- премиальная карта за монеты
+	promptArenaPass: (arenaId: string) -> (), -- премиальная карта за Robux
 	promptPass: (characterId: string) -> (), -- Game Pass за Robux
 	promptProduct: (key: string) -> (), -- Developer Product (пропуск босса, монеты)
 	leaveMatch: () -> (),
@@ -121,12 +152,16 @@ export type AppState = {
 	selectedCharacterId: Fusion.Value<string>,
 	-- Какие персонажи доступны игроку (бесплатные + купленные) — из профиля с сервера.
 	ownedCharacters: Fusion.Value<{ [string]: boolean }>,
+	-- Доступные карты (бесплатные + купленные премиальные).
+	ownedArenas: Fusion.Value<{ [string]: boolean }>,
 	coins: Fusion.Value<number>,
 	-- Прогресс боссов: пройдено по порядку (открыт следующий), победы над каждым.
 	bossProgress: Fusion.Value<number>,
 	bossClears: Fusion.Value<{ [string]: number }>,
 	selectedBossId: Fusion.Value<string>,
 	queue: Fusion.Value<QueueStatus>,
+	-- Подготовка к бою (nil — нет).
+	draft: Fusion.Value<DraftInfo?>,
 	-- Текущий бой (nil — не в бою).
 	battle: Fusion.Value<BattleInfo?>,
 	-- Короткое уведомление внизу экрана ("" — нет уведомления).
@@ -158,8 +193,16 @@ function AppState.new(scope: Scope): AppState
 		end
 	end
 
+	local arenas: { [string]: boolean } = {}
+	for _, arena in Arenas.list do
+		if not arena.premium then
+			arenas[arena.id] = true
+		end
+	end
+
 	local firstCharacter = CharacterRegistry.list()[1]
 	local noBattle: BattleInfo? = nil
+	local noDraft: DraftInfo? = nil
 
 	local hudFighters: { HudFighter } = {}
 	for _ = 1, AppState.MAX_FIGHTERS do
@@ -176,11 +219,13 @@ function AppState.new(scope: Scope): AppState
 		history = {},
 		selectedCharacterId = scope:Value(firstCharacter.id),
 		ownedCharacters = scope:Value(owned),
+		ownedArenas = scope:Value(arenas),
 		coins = scope:Value(0),
 		bossProgress = scope:Value(0),
 		bossClears = scope:Value({}),
 		selectedBossId = scope:Value(BossRegistry.list()[1].id),
 		queue = scope:Value({ status = "Idle", since = 0 } :: QueueStatus),
+		draft = scope:Value(noDraft),
 		battle = scope:Value(noBattle),
 		notice = scope:Value(""),
 		noticeId = 0,
@@ -209,7 +254,13 @@ function AppState.new(scope: Scope): AppState
 			leaveRoom = noop,
 			startCpu = function(_level: number, _mode: string) end,
 			roomStart = noop,
+			draftPick = function(_characterId: string) end,
+			draftReady = noop,
+			draftVote = function(_arenaId: string) end,
+			draftLeave = noop,
 			buyCharacter = function(_characterId: string) end,
+			buyArena = function(_arenaId: string) end,
+			promptArenaPass = function(_arenaId: string) end,
 			promptPass = function(_characterId: string) end,
 			promptProduct = function(_key: string) end,
 			leaveMatch = noop,
@@ -260,6 +311,20 @@ function AppState.applyProfile(state: AppState, profile: unknown)
 		end
 		state.ownedCharacters:set(owned)
 	end
+	if type(raw.ownedArenas) == "table" then
+		local arenas: { [string]: boolean } = {}
+		for id, value in raw.ownedArenas do
+			if type(id) == "string" and value == true and Arenas.byId[id] then
+				arenas[id] = true
+			end
+		end
+		for _, arena in Arenas.list do
+			if not arena.premium then
+				arenas[arena.id] = true
+			end
+		end
+		state.ownedArenas:set(arenas)
+	end
 	if raw.controls ~= nil then
 		state.controlsLayout:set(ControlsLayout.sanitize(raw.controls))
 	end
@@ -279,12 +344,99 @@ function AppState.back(state: AppState)
 	state.screen:set(previous)
 end
 
--- Бой начался: показать экран боя.
+-- Заменить текущий экран (без записи в историю: «назад» вернёт на предыдущий).
+function AppState.replace(state: AppState, screen: ScreenName)
+	state.screen:set(screen)
+end
+
+local IDLE_QUEUE: QueueStatus = { status = "Idle", since = 0 }
+
+-- Бой начался: показать экран боя (экран подготовки заменяется — после боя вернёмся в меню).
 function AppState.enterBattle(state: AppState, info: BattleInfo)
 	state.battle:set(info)
-	if peek(state.screen) ~= "Battle" then
+	state.queue:set(table.clone(IDLE_QUEUE))
+	local screen = peek(state.screen)
+	if screen == "Draft" then
+		state.draft:set(nil)
+		AppState.replace(state, "Battle")
+	elseif screen ~= "Battle" then
 		AppState.navigate(state, "Battle")
 	end
+end
+
+-- Подготовка к бою с сервера (данные из сети — проверяются). Открывает экран подготовки.
+function AppState.applyDraft(state: AppState, payload: unknown)
+	if type(payload) ~= "table" then
+		return
+	end
+	local raw = payload :: { [string]: any }
+	if type(raw.id) ~= "number" or type(raw.slots) ~= "table" then
+		return
+	end
+	local slots: { DraftSlotInfo } = {}
+	for _, slot in raw.slots do
+		if
+			type(slot) == "table"
+			and type(slot.slot) == "number"
+			and type(slot.characterId) == "string"
+			and CharacterRegistry.get(slot.characterId)
+		then
+			table.insert(slots, {
+				slot = slot.slot,
+				team = if slot.team == 2 then 2 else 1,
+				name = if type(slot.name) == "string" then string.sub(slot.name, 1, 30) else "?",
+				characterId = slot.characterId,
+				ready = slot.ready == true,
+				bot = slot.bot == true,
+				vote = if type(slot.vote) == "string" and Arenas.byId[slot.vote] then slot.vote else nil,
+			})
+		end
+	end
+	table.sort(slots, function(a, b)
+		return a.slot < b.slot
+	end)
+	local votes: { [string]: number } = {}
+	if type(raw.votes) == "table" then
+		for id, count in raw.votes do
+			if type(id) == "string" and type(count) == "number" and Arenas.byId[id] then
+				votes[id] = count
+			end
+		end
+	end
+	local phase = if raw.phase == "Map" or raw.phase == "Reveal" then raw.phase else "Character"
+	local seconds = if type(raw.seconds) == "number" then math.clamp(raw.seconds, 0, 60) else 0
+	state.draft:set({
+		id = raw.id,
+		mode = if type(raw.mode) == "string" then raw.mode else "Versus",
+		phase = phase,
+		deadline = os.clock() + seconds,
+		localSlot = if type(raw.localSlot) == "number" then raw.localSlot else nil,
+		slots = slots,
+		votes = votes,
+		arenaId = if type(raw.arenaId) == "string" and Arenas.byId[raw.arenaId] then raw.arenaId else nil,
+	})
+	state.queue:set(table.clone(IDLE_QUEUE))
+	if peek(state.screen) ~= "Draft" then
+		AppState.navigate(state, "Draft")
+	end
+end
+
+-- Подготовка отменена или покинута: вернуться в меню.
+function AppState.exitDraft(state: AppState)
+	state.draft:set(nil)
+	if peek(state.screen) == "Draft" then
+		AppState.back(state)
+	end
+end
+
+-- Свой слот в подготовке.
+function AppState.draftSlot(info: DraftInfo): DraftSlotInfo?
+	for _, slot in info.slots do
+		if slot.slot == info.localSlot then
+			return slot
+		end
+	end
+	return nil
 end
 
 -- Бой закончился: вернуться туда, откуда пришли.

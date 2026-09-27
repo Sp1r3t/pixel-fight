@@ -601,6 +601,9 @@ local function onRenderStep(dt: number)
 
 	local minX, maxX, topY = math.huge, -math.huge, 0
 	Cinematics.update(dt)
+	if arena then
+		arena.update(dt)
+	end
 	for slot, fighter in sample.fighters do
 		local view = views[slot]
 		if view then

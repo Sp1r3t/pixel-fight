@@ -17,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -113,6 +114,31 @@ function DataService.grantCharacter(player: Player, characterId: string): boolea
 		return false
 	end
 	data.ownedCharacters[characterId] = true
+	DataService.publish(player)
+	return true
+end
+
+-- Доступна ли игроку карта (бесплатная или купленная премиальная).
+function DataService.ownsArena(player: Player, arenaId: string): boolean
+	local arena = Arenas.byId[arenaId]
+	if arena == nil then
+		return false
+	end
+	if not arena.premium then
+		return true
+	end
+	local data = DataService.get(player)
+	return data ~= nil and data.ownedArenas[arenaId] == true
+end
+
+-- Открыть премиальную карту (покупка). false — профиль не загружен или карта бесплатная.
+function DataService.grantArena(player: Player, arenaId: string): boolean
+	local arena = Arenas.byId[arenaId]
+	local data = DataService.get(player)
+	if arena == nil or not arena.premium or data == nil then
+		return false
+	end
+	data.ownedArenas[arenaId] = true
 	DataService.publish(player)
 	return true
 end
