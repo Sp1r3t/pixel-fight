@@ -10,7 +10,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 
 local Children = Fusion.Children
 
@@ -71,8 +71,11 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 			Position = UDim2.new(1, -60, 0.55, 0),
 			Size = UDim2.fromOffset(300, 360),
 			[Children] = {
-				PixelFigure(innerScope, {
-					Palette = def.palette,
+				FighterPortrait(innerScope, {
+					Character = def,
+					Framing = "Full",
+					Facing = -1,
+					Animated = true,
 					Size = UDim2.fromOffset(280, 280),
 					Position = UDim2.fromOffset(10, 0),
 				}),

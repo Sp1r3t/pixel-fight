@@ -4,7 +4,8 @@
 
 	  • если у персонажа задан спрайт-лист (Characters[..].sprites) — SheetSprite
 	    (ImageLabel + ImageRectOffset/ImageRectSize, ResampleMode = Pixelated);
-	  • иначе — PuppetSprite, процедурная пиксельная «кукла» из цветов палитры.
+	  • иначе — Rig, детализированный процедурный боец (скелет с локтями и коленями, облик из
+	    Config/CharacterLooks, ткань с физикой, шлейфы ударов, свечение магии).
 
 	Аниматор не хранит время сам: каждый кадр бой сообщает, какую анимацию показать
 	и сколько времени персонаж в этом состоянии (или прогресс удара по фреймдате).
@@ -19,16 +20,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Types = require(ReplicatedStorage.Shared.Types)
 local SheetSprite = require(script.Parent.SheetSprite)
-local PuppetSprite = require(script.Parent.PuppetSprite)
+local Rig = require(script.Parent.Rig)
 
 export type Animator = {
 	root: GuiObject,
-	kind: "Sheet" | "Puppet",
+	kind: "Sheet" | "Rig",
 	show: (animation: Types.AnimationName, time: number, progress: number?) -> (),
 	setFacing: (facing: number) -> (),
 	setFlash: (amount: number) -> (),
+	-- Подкраска к цвету (силуэт в меню): 0 — исходные цвета, 1 — целиком цвет.
+	setTint: (color: Color3, amount: number) -> (),
+	-- Время кадра и скорость бойца (студ/с) — для ткани и эффектов; вызывается перед show.
+	update: (dt: number, vx: number, vy: number) -> (),
 	destroy: () -> (),
 }
+
+local function noUpdate(_dt: number, _vx: number, _vy: number) end
 
 local SpriteAnimator = {}
 
@@ -42,17 +49,21 @@ function SpriteAnimator.new(parent: Instance, def: Types.CharacterDef): Animator
 			show = sprite.show,
 			setFacing = sprite.setFacing,
 			setFlash = sprite.setFlash,
+			setTint = sprite.setTint,
+			update = noUpdate,
 			destroy = sprite.destroy,
 		}
 	end
-	local puppet = PuppetSprite.new(parent, def)
+	local rig = Rig.new(parent, def)
 	return {
-		root = puppet.root,
-		kind = "Puppet",
-		show = puppet.show,
-		setFacing = puppet.setFacing,
-		setFlash = puppet.setFlash,
-		destroy = puppet.destroy,
+		root = rig.root,
+		kind = "Rig",
+		show = rig.show,
+		setFacing = rig.setFacing,
+		setFlash = rig.setFlash,
+		setTint = rig.setTint,
+		update = rig.update,
+		destroy = rig.destroy,
 	}
 end
 

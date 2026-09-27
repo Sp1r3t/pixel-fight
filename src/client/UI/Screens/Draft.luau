@@ -18,7 +18,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ArenaArt = require(script.Parent.Parent.Parent.Fight.ArenaArt)
 
 local Children, OnEvent, peek = Fusion.Children, Fusion.OnEvent, Fusion.peek
@@ -79,8 +79,10 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 	if def then
 		table.insert(
 			portrait,
-			PixelFigure(scope, {
-				Palette = def.palette,
+			FighterPortrait(scope, {
+				Character = def,
+				Framing = "Bust",
+				Facing = if slot.team == 1 then 1 else -1,
 				Size = UDim2.fromOffset(60, 60),
 				Position = UDim2.fromOffset(6, 6),
 			})
@@ -215,8 +217,9 @@ local function CharacterPhase(scope: Scope, state: AppState.AppState): Instance
 							return if use(isChosen) then 4 else 1
 						end),
 					},
-					PixelFigure(scope, {
-						Palette = def.palette,
+					FighterPortrait(scope, {
+						Character = def,
+						Framing = "Bust",
 						Size = UDim2.fromOffset(62, 62),
 						Position = UDim2.new(0.5, 0, 0, 4),
 						AnchorPoint = Vector2.new(0.5, 0),

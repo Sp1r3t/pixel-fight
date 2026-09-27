@@ -101,6 +101,7 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 
 		local choice = AnimationSelect.choose(fighter, def.id)
 		animator.setFacing(fighter.facing)
+		animator.update(dt, fighter.vx, fighter.vy)
 		animator.show(choice.name, choice.time, choice.progress)
 
 		if flashAmount > 0 then

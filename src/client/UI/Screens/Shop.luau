@@ -20,7 +20,7 @@ local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 local ArenaArt = require(script.Parent.Parent.Parent.Fight.ArenaArt)
 
@@ -78,8 +78,9 @@ local function CharacterCard(scope: Scope, def: Types.CharacterDef, state: AppSt
 				Color = Color3.fromHex(def.palette.accent),
 				Thickness = 2,
 			},
-			PixelFigure(scope, {
-				Palette = def.palette,
+			FighterPortrait(scope, {
+				Character = def,
+				Framing = "Bust",
 				Size = UDim2.fromOffset(64, 64),
 				Position = UDim2.fromOffset(6, 8),
 			}),

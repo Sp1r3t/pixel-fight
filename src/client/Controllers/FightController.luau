@@ -18,6 +18,8 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
+local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
+local CharacterLooks = require(ReplicatedStorage.Shared.Config.CharacterLooks)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local Arena = require(script.Parent.Parent.Fight.Arena)
@@ -78,6 +80,8 @@ local projectileViews: ProjectileView.ProjectileViews? = nil
 -- Deluxe-косметика: накопители частиц ауры и шлейфа по слотам.
 local auraCarry: { [number]: number } = {}
 local trailCarry: { [number]: number } = {}
+-- Начало особого приёма (кадр), когда уже показали сбор энергии.
+local chargeStarts: { [number]: number } = {}
 local cosmeticRng = Rng.new(31)
 
 local function cleanup()
@@ -88,6 +92,7 @@ local function cleanup()
 	end
 	table.clear(auraCarry)
 	table.clear(trailCarry)
+	table.clear(chargeStarts)
 	for _, view in views do
 		view.destroy()
 	end
@@ -373,6 +378,7 @@ local function playEvent(event: NetEvent)
 		EffectsController.dust(x, y, if kind == "Dash" then -facing else facing)
 	elseif kind == "Knockdown" then
 		EffectsController.dust(x, y, nil)
+		EffectsController.shockwave(x, y, Color3.fromRGB(235, 225, 205), 7)
 		CameraController.shake(0.25, 0.15)
 	elseif kind == "Hit" or kind == "CinematicHit" then
 		local attackerView = if event.a then views[event.a] else nil
@@ -389,6 +395,37 @@ local function playEvent(event: NetEvent)
 			Cinematics.hit()
 		end
 		EffectsController.hitSpark(hitX, hitY, strength, style.primary, style.secondary, direction)
+		-- Характер удара по стилю искр бойца: режущий — росчерк, энергия — кольцо, силовой — звезда.
+		local position = Vector3.new(hitX, hitY, 0)
+		local hitStyle = if attackerView then attackerView.def.cosmetics.hitSpark else "Impact"
+		if hitStyle == "Slash" then
+			EffectsController.slash(
+				position,
+				style.primary,
+				2.5 + strength * 2,
+				direction * (20 + math.random(-15, 15)),
+				0.2
+			)
+		elseif hitStyle == "Energy" then
+			EffectsController.ring(position, style.secondary, 0.8 + strength, 0.25, 3)
+		else
+			EffectsController.starBurst(position, style.primary, 1.2 + strength, 0.16)
+		end
+		if strength >= 0.9 then
+			EffectsController.ring(position, Color3.new(1, 1, 1), 1.4 + strength, 0.3, 5)
+		end
+		local big = event.t == "Super" or event.t == "Counter" or kind == "CinematicHit"
+		if event.v and event.v > 0 then
+			EffectsController.damageNumber(
+				position + Vector3.new(0, 1.3, 0),
+				event.v,
+				if event.t == "Counter"
+					then Color3.fromRGB(255, 170, 60)
+					elseif big then Color3.fromRGB(255, 216, 77)
+					else Color3.new(1, 1, 1),
+				big
+			)
+		end
 		if defenderView then
 			defenderView.flash(1)
 		end
@@ -400,18 +437,36 @@ local function playEvent(event: NetEvent)
 		local style = SparkStyles.block()
 		local defenderX = if lastSample and lastSample.fighters[event.s] then lastSample.fighters[event.s].x else x
 		EffectsController.hitSpark(x, y, 0.35, style.primary, style.secondary, if defenderX >= x then 1 else -1)
+		EffectsController.ring(Vector3.new(x, y, 0), Color3.fromRGB(127, 212, 255), 1, 0.2, 3)
 		CameraController.shake(0.08, 0.08)
 	elseif kind == "Armor" then
 		EffectsController.hitSpark(x, y, 0.6, Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 240, 200), 1)
 		CameraController.shake(0.2, 0.12)
 	elseif kind == "KO" then
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.5, 0.7)
+		EffectsController.starBurst(Vector3.new(x, y + 2.5, 0), Color3.fromRGB(255, 216, 77), 4, 0.45, 12)
+		EffectsController.ring(Vector3.new(x, y + 2.5, 0), Color3.new(1, 1, 1), 5, 0.5, 6)
 		CameraController.shake(0.9, 0.5)
 	elseif kind == "SuperFlash" then
 		local view = views[event.s]
 		local color = if view then Color3.fromHex(view.def.cosmetics.superFlash) else Color3.new(1, 1, 1)
 		EffectsController.screenFlash(color, 0.45, 0.55)
 		CameraController.shake(0.3, 0.3)
+		if view then
+			-- Вставка супера: портрет с той стороны экрана, где стоит боец.
+			local facing = if lastSample and lastSample.fighters[event.s]
+				then lastSample.fighters[event.s].facing
+				else 1
+			local fighterInfo = if battleInfo then AppState.fighterInSlot(battleInfo, event.s) else nil
+			EffectsController.superCutIn(
+				view.def,
+				if fighterInfo then fighterInfo.palette else nil,
+				view.def.super.move.name,
+				if facing > 0 then -1 else 1
+			)
+			EffectsController.converge(Vector3.new(x, y + 3, 0), color, 4, 16, 0.4)
+			EffectsController.ring(Vector3.new(x, y + 3, 0), color, 4, 0.4, 5)
+		end
 	elseif kind == "CinematicStart" then
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.25, 0.8)
 		local attackerView = views[event.s]
@@ -429,15 +484,14 @@ local function playEvent(event: NetEvent)
 				duration = (event.v or 120) / TICK,
 				hits = def.super.cinematic.hits,
 			})
-			local state = UIController.getState()
-			if state then
-				AppState.showBanner(
-					state,
-					string.upper(def.super.move.name),
-					1.2,
-					Color3.fromHex(def.cosmetics.superFlash)
-				)
-			end
+			-- Название супера уже было во вставке — здесь только вспышка и кольцо.
+			EffectsController.ring(
+				Vector3.new(sample.fighters[defenderSlot].x, sample.fighters[defenderSlot].y + 3, 0),
+				Color3.fromHex(def.cosmetics.superFlash),
+				6,
+				0.5,
+				6
+			)
 		end
 	elseif kind == "CinematicEnd" then
 		Cinematics.stop()
@@ -446,6 +500,8 @@ local function playEvent(event: NetEvent)
 		-- Контратака: белая вспышка, «звон» и надпись.
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.15, 0.5)
 		EffectsController.hitSpark(x, y, 1, Color3.new(1, 1, 1), Color3.fromRGB(150, 220, 255), 1)
+		EffectsController.ring(Vector3.new(x, y, 0), Color3.fromRGB(255, 216, 77), 2.5, 0.35, 5)
+		EffectsController.starBurst(Vector3.new(x, y, 0), Color3.fromRGB(150, 220, 255), 2.5, 0.25, 10)
 		CameraController.shake(0.3, 0.2)
 		local state = UIController.getState()
 		if state then
@@ -472,14 +528,15 @@ local function playEvent(event: NetEvent)
 		if view then
 			local color = Color3.fromHex(view.def.palette.accent)
 			EffectsController.burst(Vector3.new(x, y, 0), {
-				count = 6,
+				count = 10,
 				color = color,
 				secondary = Color3.new(1, 1, 1),
-				speed = 6,
+				speed = 8,
 				size = 0.3,
-				life = 0.2,
+				life = 0.25,
 				spread = 360,
 			})
+			EffectsController.ring(Vector3.new(x, y, 0), color, 1.2, 0.22, 3)
 		end
 	elseif kind == "ProjectileEnd" then
 		if event.t == "Clash" or event.t == "Swept" or event.t == "Ground" or event.t == "Wall" then
@@ -589,6 +646,39 @@ local function updateCosmetics(slot: number, view: FighterView.FighterView, figh
 	end
 end
 
+-- Цвет магии бойца (Config/CharacterLooks.element: слот палитры или свой цвет).
+local function elementColor(view: FighterView.FighterView): Color3
+	local element = CharacterLooks.get(view.def.id).element
+	local palette = view.def.palette
+	if element == "primary" then
+		return Color3.fromHex(palette.primary)
+	elseif element == "secondary" then
+		return Color3.fromHex(palette.secondary)
+	elseif element == "accent" then
+		return Color3.fromHex(palette.accent)
+	end
+	return Color3.fromHex(element)
+end
+
+local function chargeMagic(
+	slot: number,
+	view: FighterView.FighterView,
+	fighter: Snapshot.FighterSnapshot,
+	frame: number
+)
+	if fighter.state ~= "Attack" or MoveBook.fromIndex(fighter.move) ~= "Special" then
+		return
+	end
+	local start = math.floor(frame - fighter.moveFrame + 0.5)
+	if fighter.moveFrame > 4 or math.abs((chargeStarts[slot] or -100) - start) <= 2 then
+		return
+	end
+	chargeStarts[slot] = start
+	local color = elementColor(view)
+	local hands = Vector3.new(fighter.x + fighter.facing * 0.9, fighter.y + 3.2, 0)
+	EffectsController.converge(hands, color, 2.2, 12, 0.3)
+end
+
 local function onRenderStep(dt: number)
 	if matchId == nil then
 		return
@@ -609,6 +699,7 @@ local function onRenderStep(dt: number)
 		if view then
 			view.update(fighter, dt)
 			updateCosmetics(slot, view, fighter, dt)
+			chargeMagic(slot, view, fighter, sample.latest.frame)
 		end
 		minX = math.min(minX, fighter.x)
 		maxX = math.max(maxX, fighter.x)

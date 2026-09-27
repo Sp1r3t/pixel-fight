@@ -14,7 +14,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 local StatBar = require(script.Parent.Parent.Components.StatBar)
 
@@ -165,8 +165,9 @@ local function RosterCard(
 				),
 				[Children] = strokeChildren,
 			},
-			PixelFigure(scope, {
-				Palette = def.palette,
+			FighterPortrait(scope, {
+				Character = def,
+				Framing = "Bust",
 				Size = UDim2.fromOffset(70, 70),
 				Position = UDim2.new(0.5, 0, 0, 6),
 				AnchorPoint = Vector2.new(0.5, 0),
@@ -283,8 +284,10 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				Color = Theme.Colors.Outline,
 				Thickness = Theme.Outline,
 			},
-			PixelFigure(scope, {
-				Palette = def.palette,
+			FighterPortrait(scope, {
+				Character = def,
+				Framing = "Full",
+				Showcase = true,
 				Size = UDim2.fromOffset(120, 120),
 				Position = UDim2.fromOffset(12, 12),
 			}),

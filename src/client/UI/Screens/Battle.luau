@@ -19,7 +19,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local HealthBar = require(script.Parent.Parent.Components.HealthBar)
 local SuperMeter = require(script.Parent.Parent.Components.SuperMeter)
 local RoundPips = require(script.Parent.Parent.Components.RoundPips)
@@ -84,7 +84,12 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 					Color = Color3.fromHex(palette.accent),
 					Thickness = 3,
 				},
-				PixelFigure(innerScope, { Palette = palette }),
+				FighterPortrait(innerScope, {
+					Character = def,
+					Palette = palette,
+					Framing = "Bust",
+					Facing = if isLeft then 1 else -1,
+				}),
 			},
 		}
 	end)
@@ -206,7 +211,12 @@ local function TeamRow(
 		if fighter == nil or def == nil then
 			return nil
 		end
-		return PixelFigure(innerScope, { Palette = fighter.palette or def.palette })
+		return FighterPortrait(innerScope, {
+			Character = def,
+			Palette = fighter.palette,
+			Framing = "Bust",
+			Facing = if isLeft then 1 else -1,
+		})
 	end)
 
 	local name = scope:Computed(function(use)

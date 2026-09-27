@@ -21,6 +21,7 @@ export type SheetSprite = {
 	show: (animation: Types.AnimationName, time: number, progress: number?) -> (),
 	setFacing: (facing: number) -> (),
 	setFlash: (amount: number) -> (),
+	setTint: (color: Color3, amount: number) -> (),
 	destroy: () -> (),
 }
 
@@ -111,6 +112,10 @@ function SheetSprite.new(parent: Instance, sheet: Types.SpriteSheet): SheetSprit
 	-- Реакция на удар: ImageColor3 умеет только тонировать, поэтому кадр кратко краснеет.
 	function sprite.setFlash(amount: number)
 		image.ImageColor3 = Color3.new(1, 1, 1):Lerp(Color3.fromRGB(255, 110, 110), math.clamp(amount, 0, 1))
+	end
+
+	function sprite.setTint(color: Color3, amount: number)
+		image.ImageColor3 = Color3.new(1, 1, 1):Lerp(color, math.clamp(amount, 0, 1))
 	end
 
 	function sprite.destroy()

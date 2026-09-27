@@ -462,23 +462,32 @@ describe("Эффекты на клиенте", function()
 	end)
 
 	it(
-		"ролик супера: фон, надпись с названием, затем всё убирается",
+		"супер: вставка с портретом и названием, ролик с фоном, затем всё убирается",
 		function()
 			local game, client, match = training("rook")
 			match.sim.fighters[1].x = -1.5
 			match.sim.fighters[2].x = 1.5
 			tapKey(game, client, "I")
-			local backdrop, banner = false, false
+			local backdrop, cutIn, portrait = false, false, false
+			local function fx()
+				return client.player:FindFirstChild("PlayerGui"):FindFirstChild("PixelFightFX")
+			end
 			for _ = 1, 200 do
 				game.step(1)
 				backdrop = backdrop or arenaChild(client, "SuperBackdrop") ~= nil
-				local label = client.findText("VANGUARD BREAKER", "TextLabel")
-				banner = banner or label ~= nil
+				local gui = fx()
+				local band = if gui then client.runtime.findByName(gui, "Band") else nil
+				if band then
+					cutIn = cutIn or band:FindFirstChild("Title").Text == "VANGUARD BREAKER"
+					portrait = portrait or client.runtime.findByName(band, "Rig") ~= nil
+				end
 			end
 			expect(backdrop).toBeTruthy()
-			expect(banner).toBeTruthy()
+			expect(cutIn).toBeTruthy()
+			expect(portrait).toBeTruthy()
 			game.step(120)
 			expect(arenaChild(client, "SuperBackdrop")).toBe(nil)
+			expect(client.runtime.findByName(fx(), "SuperCutIn")).toBe(nil)
 			expect(game.errors()).toBeEmpty()
 		end
 	)

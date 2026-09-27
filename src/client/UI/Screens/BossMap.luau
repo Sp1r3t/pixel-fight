@@ -19,7 +19,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
-local PixelFigure = require(script.Parent.Parent.Components.PixelFigure)
+local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -36,9 +36,6 @@ local TIER_COLORS: { [string]: Color3 } = {
 	VeryHard = Color3.fromHex("#FF4D6D"),
 	Final = Color3.fromHex("#C77DFF"),
 }
-
--- Силуэт закрытого босса.
-local LOCKED_PALETTE: Types.Palette = { primary = "#2A2440", secondary = "#3A3550", accent = "#1F1838" }
 
 local CARD_SIZE = Vector2.new(100, 92)
 
@@ -65,10 +62,17 @@ local function BossCard(scope: Scope, boss: BossDef, state: AppState.AppState, n
 	end)
 	local color = tierColor(boss)
 
-	local portrait = scope:Computed(function(use, innerScope: Scope): Instance
-		local locked = use(status) == "Locked"
-		return PixelFigure(innerScope, {
-			Palette = if locked then LOCKED_PALETTE else boss.palette,
+	local portrait = scope:Computed(function(use, innerScope: Scope): Instance?
+		local def = CharacterRegistry.get(boss.character)
+		if def == nil then
+			return nil
+		end
+		return FighterPortrait(innerScope, {
+			Character = def,
+			Palette = boss.palette,
+			Framing = "Bust",
+			Facing = -1,
+			Silhouette = use(status) == "Locked",
 			Size = UDim2.fromOffset(52, 52),
 			Position = UDim2.fromOffset(24, 14),
 		})
@@ -267,11 +271,21 @@ local function DetailsPanel(scope: Scope, boss: BossDef, state: AppState.AppStat
 				Color = tierColor(boss),
 				Thickness = Theme.Outline,
 			},
-			PixelFigure(scope, {
-				Palette = boss.palette,
-				Size = UDim2.fromOffset(96, 96),
-				Position = UDim2.fromOffset(12, 10),
-			}),
+			scope:Computed(function(use, innerScope: Scope): Instance?
+				if moveset == nil then
+					return nil
+				end
+				return FighterPortrait(innerScope, {
+					Character = moveset,
+					Palette = boss.palette,
+					Framing = "Full",
+					Facing = -1,
+					Animated = true,
+					Silhouette = use(status) == "Locked",
+					Size = UDim2.fromOffset(96, 96),
+					Position = UDim2.fromOffset(12, 10),
+				})
+			end),
 			scope:New "TextLabel" {
 				Name = "BossTitle",
 				BackgroundTransparency = 1,
