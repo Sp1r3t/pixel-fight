@@ -16,6 +16,7 @@ local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local Panel = require(script.Parent.Parent.Components.Panel)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 
 local Children, peek = Fusion.Children, Fusion.peek
@@ -27,9 +28,11 @@ local CONTROL_NAMES: { [string]: string } = {
 	Joystick = "Джойстик",
 	Light = "Рука",
 	Heavy = "Нога",
-	Special = "Особый",
+	Special = "Приём",
 	Super = "Супер",
 	Dash = "Рывок",
+	Jump = "Прыжок",
+	Block = "Блок",
 }
 
 local MODE_NAMES: { [string]: string } = {
@@ -38,8 +41,9 @@ local MODE_NAMES: { [string]: string } = {
 	Never = "Никогда",
 }
 
-local PC_HELP = "ПК: A/D — движение, W — прыжок, S — присед, Shift — рывок, J — рука, K — нога, "
-	.. "L — особый, I — супер. Геймпад: стик, A — прыжок, X/Y/B — удары, RB — супер, LB — рывок."
+local HELP = "Двигай кнопки пальцем. Нажми на кнопку — и меняй её размер «−» / «+». "
+	.. "Рывок — двойной толчок джойстика в сторону или кнопка 💨. "
+	.. "ПК: A/D, W, S, J, K, L, I, Q, Shift. Геймпад: стик, A, X, Y, B, RB, LT, LB."
 
 local function Label(scope: Scope, text: Fusion.UsedAs<string>, position: UDim2, size: UDim2): Instance
 	return scope:New "TextLabel" {
@@ -89,8 +93,8 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 			modeButtons,
 			Button(scope, {
 				Text = MODE_NAMES[mode],
-				Position = UDim2.fromOffset(190 + (index - 1) * 110, 16),
-				Size = UDim2.fromOffset(100, 36),
+				Position = UDim2.fromOffset(212 + (index - 1) * 110, 14),
+				Size = UDim2.fromOffset(100, 40),
 				TextSize = 16,
 				Color = scope:Computed(function(use)
 					return if use(state.controlsDraft).mode == mode
@@ -128,24 +132,18 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 					AppState.back(state)
 				end,
 			}),
-			scope:New "Frame" {
+			Panel(scope, {
 				Name = "Panel",
 				AnchorPoint = Vector2.new(0.5, 0),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.1,
-				BorderSizePixel = 0,
 				Position = UDim2.new(0.5, 0, 0, 70),
-				Size = UDim2.fromOffset(560, 262),
-				[Children] = {
-					scope:New "UIStroke" {
-						Color = Theme.Colors.Outline,
-						Thickness = Theme.Outline,
-					},
+				Size = UDim2.fromOffset(560, 266),
+				Transparency = 0.08,
+				Content = {
 					Label(
 						scope,
-						"Сенсорное управление:",
+						"Показывать кнопки:",
 						UDim2.fromOffset(16, 20),
-						UDim2.fromOffset(170, 28)
+						UDim2.fromOffset(190, 28)
 					),
 					modeButtons,
 					Label(scope, selectedName, UDim2.fromOffset(16, 66), UDim2.fromOffset(330, 28)),
@@ -187,13 +185,15 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 						end,
 					}),
 					Button(scope, {
+						Name = "DashToggle",
 						Text = scope:Computed(function(use)
 							return if use(state.controlsDraft).dashButton
 								then "Кнопка рывка: вкл"
 								else "Кнопка рывка: выкл"
 						end),
+						Icon = "💨",
 						Position = UDim2.fromOffset(16, 152),
-						Size = UDim2.fromOffset(250, 36),
+						Size = UDim2.fromOffset(250, 40),
 						TextSize = 16,
 						OnClick = function()
 							edit(function(layout)
@@ -203,8 +203,8 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 					}),
 					Button(scope, {
 						Text = "Сбросить",
-						Position = UDim2.fromOffset(290, 152),
-						Size = UDim2.fromOffset(120, 36),
+						Position = UDim2.fromOffset(282, 152),
+						Size = UDim2.fromOffset(124, 40),
 						TextSize = 16,
 						OnClick = function()
 							state.controlsDraft:set(ControlsLayout.default())
@@ -213,8 +213,8 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 					Button(scope, {
 						Text = "Сохранить",
 						Color = Theme.Colors.ButtonPrimary,
-						Position = UDim2.fromOffset(420, 152),
-						Size = UDim2.fromOffset(120, 36),
+						Position = UDim2.fromOffset(418, 152),
+						Size = UDim2.fromOffset(126, 40),
 						TextSize = 16,
 						OnClick = function()
 							state.actions.saveControls(peek(state.controlsDraft))
@@ -224,18 +224,17 @@ local function ControlsSettings(scope: Scope, state: AppState.AppState): Instanc
 						Name = "Help",
 						BackgroundTransparency = 1,
 						Font = Theme.Fonts.BodyRegular,
-						Position = UDim2.fromOffset(16, 198),
+						Position = UDim2.fromOffset(16, 204),
 						Size = UDim2.fromOffset(528, 56),
-						Text = "Перетаскивайте кнопки по экрану; нажмите на элемент, чтобы менять его размер. "
-							.. PC_HELP,
+						Text = HELP,
 						TextColor3 = Theme.Colors.TextDim,
-						TextSize = 13,
+						TextSize = 14,
 						TextWrapped = true,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					},
 				} :: { Fusion.Child },
-			},
+			}),
 		} :: { Fusion.Child },
 	}
 end

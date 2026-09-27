@@ -195,7 +195,7 @@ describe("Режим боссов: прогресс", function()
 
 		local second = s.boss.startBoss(client.player, BossRegistry.get("pip"), "rook", 3)
 		game.step(3)
-		client.click("Выйти")
+		client.leaveBattle()
 		game.step(5)
 		expect(second.ended).toBe(true)
 		expect(s.data.getBossProgress(client.player)).toBe(0)

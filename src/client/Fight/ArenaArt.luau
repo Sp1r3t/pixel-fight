@@ -1517,11 +1517,8 @@ function ArenaArt.build(layers: Layers, theme: Theme): Art
 	}
 end
 
---[[
-	Статичная картинка карты (для карточек выбора и магазина): видимая в бою часть неба,
-	силуэты, пол. parent — рамка карточки (картинка заполняет её целиком и обрезается по краям).
-]]
-function ArenaArt.preview(parent: Instance, theme: Theme): Frame
+-- Картинка карты во всю рамку parent: небо, силуэты, пол. preview — облегчённый рисунок без анимаций.
+local function picture(parent: Instance, theme: Theme, preview: boolean): (Frame, Ctx)
 	local root = Instance.new("Frame")
 	root.Name = "ArenaPreview"
 	root.BackgroundColor3 = hex(theme.skyTop)
@@ -1542,7 +1539,7 @@ function ArenaArt.preview(parent: Instance, theme: Theme): Frame
 	midFrame.Position = UDim2.fromScale(-0.4, 0.2)
 	midFrame.Size = UDim2.fromScale(1.8, 0.95)
 	midFrame.Parent = root
-	local ctx = newCtx(theme, true)
+	local ctx = newCtx(theme, preview)
 	drawAll({
 		sky = { canvas = skyFrame, cols = 260, rows = 120 },
 		mid = { canvas = midFrame, cols = 200, rows = 40 },
@@ -1565,7 +1562,35 @@ function ArenaArt.preview(parent: Instance, theme: Theme): Frame
 		line.ZIndex = 21
 		line.Parent = floor
 	end
+	return root, ctx
+end
+
+--[[
+	Статичная картинка карты (для карточек выбора и магазина): видимая в бою часть неба,
+	силуэты, пол. parent — рамка карточки (картинка заполняет её целиком и обрезается по краям).
+]]
+function ArenaArt.preview(parent: Instance, theme: Theme): Frame
+	local root = picture(parent, theme, true)
 	return root
+end
+
+--[[
+	Живая картинка карты (фон меню): как preview, но с полной детализацией и анимациями
+	(облака, звёзды, неон, птицы, летающие машины). update(dt) двигает анимации.
+]]
+function ArenaArt.scene(parent: Instance, theme: Theme): (Frame, Art)
+	local root, ctx = picture(parent, theme, false)
+	root.Name = "ArenaScene"
+	local t = 0
+	return root,
+		{
+			update = function(dt: number)
+				t += dt
+				for _, animation in ctx.animations do
+					animation(t, dt)
+				end
+			end,
+		}
 end
 
 return ArenaArt

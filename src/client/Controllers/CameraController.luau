@@ -7,7 +7,9 @@
 	    когда они расходятся (в 2 на 2 — как в Brawlhalla, до всей сцены); не выходит за края арены;
 	  • пол всегда в нижней части кадра; верхние HUD_FRACTION кадра заняты интерфейсом — бойцы туда
 	    не заходят: при высоком прыжке камера приподнимается (1 на 1) или отъезжает (2 на 2);
-	  • тряска (shake) — затухающее смещение; её вызывает EffectsController при ударах.
+	  • тряска (shake) — затухающее смещение; её вызывает EffectsController при ударах;
+	  • с сенсорным управлением (setTouchFraming) кнопки занимают низ экрана у краёв: пол в кадре
+	    выше, а запас по бокам больше — бойцы стоят над кнопками и ближе к центру, их не закрывает.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +25,9 @@ local FLOOR_FRACTION = 0.15 -- пол на такой доле высоты ка
 local HUD_FRACTION = 0.22 -- верх кадра под полосами здоровья и таймером
 local FOLLOW_SPEED = 7
 local EDGE_MARGIN = 1.5
+-- С сенсорным управлением.
+local TOUCH_FLOOR_FRACTION = 0.25
+local TOUCH_VIEW_MARGIN = 18
 
 type Shake = { amplitude: number, duration: number, age: number, seed: number }
 
@@ -43,6 +48,8 @@ local maxViewWidth = Stage.get("Duel").cameraMaxWidth
 local minViewHeight = Stage.get("Duel").cameraMinHeight
 local fitViewHeight: number? = nil
 local arenaEdge = Stage.get("Duel").halfWidth + EDGE_MARGIN
+-- На экране сенсорные кнопки.
+local touchFraming = false
 
 local function getCamera(): Camera?
 	return Workspace.CurrentCamera
@@ -97,13 +104,15 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 		target.x, target.y, target.distance = focus.x, focus.y, distance
 		return
 	end
-	local width = math.clamp(maxX - minX + VIEW_MARGIN, MIN_VIEW_WIDTH, maxViewWidth)
+	local floorFraction = if touchFraming then TOUCH_FLOOR_FRACTION else FLOOR_FRACTION
+	local margin = if touchFraming then TOUCH_VIEW_MARGIN else VIEW_MARGIN
+	local width = math.clamp(maxX - minX + margin, MIN_VIEW_WIDTH, maxViewWidth)
 	local distance = math.max(width / (2 * tanH), minViewHeight / (2 * tanV))
 	local highest = topY + 1
 	local fit = fitViewHeight
 	if fit then
 		-- Все между полом и HUD: при высоких прыжках камера отъезжает (не больше fit).
-		local needed = math.min(highest / (1 - HUD_FRACTION - FLOOR_FRACTION), fit)
+		local needed = math.min(highest / (1 - HUD_FRACTION - floorFraction), fit)
 		distance = math.max(distance, needed / (2 * tanV))
 	end
 	local halfWidth = distance * tanH
@@ -113,8 +122,8 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 	local limit = arenaEdge - halfWidth
 	centerX = if limit > 0 then math.clamp(centerX, -limit, limit) else 0
 
-	-- Пол на FLOOR_FRACTION от низа кадра; если кто-то поднялся выше границы HUD — поднимаемся.
-	local centerY = halfHeight * (1 - 2 * FLOOR_FRACTION)
+	-- Пол на floorFraction от низа кадра; если кто-то поднялся выше границы HUD — поднимаемся.
+	local centerY = halfHeight * (1 - 2 * floorFraction)
 	local headroom = halfHeight * (1 - 2 * HUD_FRACTION)
 	if highest > centerY + headroom then
 		centerY = highest - headroom
@@ -125,6 +134,15 @@ function CameraController.setFocus(minX: number, maxX: number, topY: number)
 		current.x, current.y, current.distance = centerX, centerY, distance
 		snapNext = false
 	end
+end
+
+-- Сенсорные кнопки на экране: бойцы держатся выше и ближе к центру кадра.
+function CameraController.setTouchFraming(enabled: boolean)
+	touchFraming = enabled
+end
+
+function CameraController.getTouchFraming(): boolean
+	return touchFraming
 end
 
 -- Наезд камеры на время ролика супера (nil — вернуть обычное слежение).

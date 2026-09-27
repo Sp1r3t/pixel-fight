@@ -1,8 +1,12 @@
 --!strict
 --[[
-	Выбор персонажа: сетка из 16 бойцов + панель с превью, характеристиками и приёмами.
+	Выбор персонажа: сетка из 16 бойцов + панель с живым превью, характеристиками и приёмами.
 	Данные берутся из Config/Characters через CharacterRegistry — экран сам ничего не хранит.
 	Платного персонажа, которого ещё нет, кнопка ведёт в магазин (Game Pass или монеты).
+
+	Раскладка без наложений: карточка — портрет по пояс и имя внизу, метки (выбран ✓, замок 🔒)
+	в правом верхнем углу поверх рамки, а не на лице; в панели всё, что может быть длинным,
+	лежит в прокручиваемом списке.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +18,8 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local Panel = require(script.Parent.Parent.Components.Panel)
+local Pill = require(script.Parent.Parent.Components.Pill)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 local StatBar = require(script.Parent.Parent.Components.StatBar)
@@ -45,6 +51,8 @@ local STAT_COLORS = table.freeze({
 	superGain = Color3.fromHex("#FFC845"),
 })
 
+local CARD = 102
+
 local function multiplierText(value: number): string
 	return string.format("×%.2f", value)
 end
@@ -74,20 +82,31 @@ local function Label(
 	}
 end
 
-local function Badge(scope: Scope, def: CharacterDef, props: { Position: UDim2?, AnchorPoint: Vector2? }): Instance
-	local isPaid = def.unlock == "Paid"
+-- Круглая метка в углу карточки (✓ выбран, 🔒 закрыт).
+local function CornerMark(
+	scope: Scope,
+	props: { Name: string, Text: string, Color: Color3, Visible: Fusion.UsedAs<boolean> }
+): Instance
 	return scope:New "TextLabel" {
-		Name = "Badge",
-		AnchorPoint = props.AnchorPoint,
-		BackgroundColor3 = if isPaid then Theme.Colors.Paid else Theme.Colors.Free,
-		BorderSizePixel = 0,
-		Font = Theme.Fonts.Pixel,
-		Position = props.Position,
-		Size = UDim2.fromOffset(if isPaid then 52 else 44, 16),
-		Text = if isPaid then "DELUXE" else "FREE",
+		Name = props.Name,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = props.Color,
+		Font = Theme.Fonts.Title,
+		Position = UDim2.new(1, -8, 0, 8),
+		Size = UDim2.fromOffset(24, 24),
+		Text = props.Text,
 		TextColor3 = Theme.Colors.Outline,
-		TextSize = 14,
-		ZIndex = 5,
+		TextSize = 15,
+		Visible = props.Visible,
+		ZIndex = 8,
+		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+			scope:New "UIStroke" {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Theme.Colors.Outline,
+				Thickness = 2,
+			},
+		},
 	}
 end
 
@@ -107,29 +126,32 @@ local function RosterCard(
 	local isOwned = scope:Computed(function(use)
 		return use(state.ownedCharacters)[def.id] == true
 	end)
+	local deluxe = def.cosmetics.tier == "Deluxe"
+	local accent = Color3.fromHex(def.palette.accent)
 
-	local strokeChildren: { Instance } = {}
-	if def.cosmetics.tier == "Deluxe" then
-		-- Платные персонажи выглядят эффектнее: переливающаяся рамка-аура.
-		table.insert(
-			strokeChildren,
-			scope:New "UIGradient" {
+	-- Платные персонажи выглядят эффектнее: переливающаяся рамка-аура (пока карточку не выбрали).
+	local strokeChildren = scope:Computed(function(use, innerScope: Scope): { Instance }
+		if not deluxe or use(isViewing) then
+			return {}
+		end
+		return {
+			innerScope:New "UIGradient" {
 				Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(0, Color3.fromHex(def.palette.accent)),
+					ColorSequenceKeypoint.new(0, accent),
 					ColorSequenceKeypoint.new(0.5, Color3.fromHex(def.palette.primary)),
-					ColorSequenceKeypoint.new(1, Color3.fromHex(def.palette.accent)),
+					ColorSequenceKeypoint.new(1, accent),
 				}),
-				Rotation = scope:Computed(function(use)
-					return (use(now) * 120) % 360
+				Rotation = innerScope:Computed(function(innerUse)
+					return (innerUse(now) * 120) % 360
 				end),
-			}
-		)
-	end
+			},
+		}
+	end)
 
 	return scope:New "TextButton" {
 		Name = def.id,
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.PanelLight,
+		BackgroundColor3 = accent:Lerp(Theme.Colors.Panel, 0.78),
 		BorderSizePixel = 0,
 		LayoutOrder = def.order,
 		Text = "",
@@ -139,6 +161,7 @@ local function RosterCard(
 		end,
 
 		[Children] = {
+			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			scope:New "UIScale" {
 				Scale = scope:Spring(
 					scope:Computed(function(use)
@@ -151,14 +174,15 @@ local function RosterCard(
 			scope:New "UIStroke" {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = scope:Computed(function(use)
-					if def.cosmetics.tier == "Deluxe" then
-						return Color3.new(1, 1, 1) -- цвет задаёт UIGradient
+					if use(isViewing) then
+						return Theme.Colors.Accent
 					end
-					return if use(isViewing) then Theme.Colors.Accent else Theme.Colors.Outline
+					-- У Deluxe цвет рамки задаёт UIGradient.
+					return if deluxe then Color3.new(1, 1, 1) else Theme.Colors.Outline
 				end),
 				Thickness = scope:Spring(
 					scope:Computed(function(use)
-						return if use(isViewing) then 4 else 2
+						return if use(isViewing) then 4 else 3
 					end),
 					30,
 					1
@@ -168,47 +192,63 @@ local function RosterCard(
 			FighterPortrait(scope, {
 				Character = def,
 				Framing = "Bust",
-				Size = UDim2.fromOffset(70, 70),
-				Position = UDim2.new(0.5, 0, 0, 6),
+				Size = UDim2.fromOffset(CARD - 14, CARD - 14),
+				Position = UDim2.new(0.5, 0, 0, 2),
 				AnchorPoint = Vector2.new(0.5, 0),
+				ZIndex = 2,
 			}),
-			scope:New "TextLabel" {
-				Name = "Name",
-				AnchorPoint = Vector2.new(0.5, 1),
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Pixel,
-				Position = UDim2.new(0.5, 0, 1, -4),
-				Size = UDim2.new(1, -8, 0, 18),
-				Text = string.upper(def.displayName),
-				TextColor3 = Theme.Colors.Text,
-				TextScaled = true,
-			},
-			Badge(scope, def, { Position = UDim2.fromOffset(4, 4) }),
-			scope:New "TextLabel" {
-				Name = "ChosenMark",
-				AnchorPoint = Vector2.new(1, 0),
-				BackgroundColor3 = Theme.Colors.Accent,
+			-- Полоса с именем внизу.
+			scope:New "Frame" {
+				Name = "NameStrip",
+				AnchorPoint = Vector2.new(0, 1),
+				BackgroundColor3 = Theme.Colors.Outline,
+				BackgroundTransparency = 0.25,
 				BorderSizePixel = 0,
-				Font = Theme.Fonts.Pixel,
-				Position = UDim2.new(1, -4, 0, 4),
-				Size = UDim2.fromOffset(16, 16),
-				Text = "✓",
-				TextColor3 = Theme.Colors.Outline,
-				TextSize = 14,
-				Visible = isChosen,
-				ZIndex = 5,
+				Position = UDim2.fromScale(0, 1),
+				Size = UDim2.new(1, 0, 0, 22),
+				ZIndex = 4,
+				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
+					scope:New "TextLabel" {
+						Name = "Name",
+						BackgroundTransparency = 1,
+						Font = Theme.Fonts.Pixel,
+						Position = UDim2.fromOffset(4, 2),
+						Size = UDim2.new(1, -8, 1, -4),
+						Text = string.upper(def.displayName),
+						TextColor3 = Theme.Colors.Text,
+						TextScaled = true,
+						ZIndex = 5,
+						[Children] = scope:New "UITextSizeConstraint" { MaxTextSize = 16 },
+					},
+				},
 			},
 			scope:New "Frame" {
 				Name = "LockedShade",
 				BackgroundColor3 = Theme.Colors.Outline,
-				BackgroundTransparency = 0.55,
+				BackgroundTransparency = 0.5,
 				BorderSizePixel = 0,
 				Size = UDim2.fromScale(1, 1),
 				Visible = scope:Computed(function(use)
 					return not use(isOwned)
 				end),
-				ZIndex = 4,
+				ZIndex = 6,
+				[Children] = scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
 			},
+			CornerMark(scope, {
+				Name = "ChosenMark",
+				Text = "✓",
+				Color = Theme.Colors.Accent,
+				Visible = isChosen,
+			}),
+			CornerMark(scope, {
+				Name = "LockMark",
+				Text = "🔒",
+				Color = Theme.Colors.Paid,
+				Visible = scope:Computed(function(use)
+					return not use(isOwned)
+				end),
+			}),
 		},
 	}
 end
@@ -263,73 +303,122 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				Rating = stat.rating,
 				ValueText = stat.value,
 				Color = stat.color,
-				LayoutOrder = index,
+				LayoutOrder = 10 + index,
 			})
 		)
 	end
 
 	local accent = Color3.fromHex(def.palette.accent)
-	local unlockText = if def.unlock == "Paid"
-		then "платный (только косметика)"
-		else "бесплатный"
+	local paid = def.unlock == "Paid"
 
-	return scope:New "Frame" {
+	return Panel(scope, {
 		Name = "Details",
-		BackgroundColor3 = Theme.Colors.Panel,
-		BorderSizePixel = 0,
 		Position = UDim2.fromOffset(472, 76),
 		Size = UDim2.fromOffset(464, 444),
-		[Children] = {
-			scope:New "UIStroke" {
-				Color = Theme.Colors.Outline,
-				Thickness = Theme.Outline,
-			},
-			FighterPortrait(scope, {
-				Character = def,
-				Framing = "Full",
-				Showcase = true,
-				Size = UDim2.fromOffset(120, 120),
+		StrokeColor = accent:Lerp(Theme.Colors.Outline, 0.35),
+		Content = {
+			-- Живое превью: боец по кругу показывает удары, приём, супер и победу.
+			scope:New "Frame" {
+				Name = "Stage",
+				BackgroundColor3 = accent:Lerp(Theme.Colors.Outline, 0.72),
+				BorderSizePixel = 0,
 				Position = UDim2.fromOffset(12, 12),
-			}),
+				Size = UDim2.fromOffset(150, 150),
+				[Children] = {
+					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
+					scope:New "UIStroke" {
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = Theme.Colors.Outline,
+						Thickness = 2,
+					},
+					FighterPortrait(scope, {
+						Character = def,
+						Framing = "Full",
+						Showcase = true,
+						Size = UDim2.fromScale(1, 1),
+					}),
+				},
+			},
 			scope:New "Frame" {
 				Name = "Identity",
 				BackgroundTransparency = 1,
-				Position = UDim2.fromOffset(144, 12),
-				Size = UDim2.new(1, -156, 0, 124),
+				Position = UDim2.fromOffset(176, 14),
+				Size = UDim2.new(1, -188, 0, 146),
 				[Children] = {
 					scope:New "UIListLayout" {
-						Padding = UDim.new(0, 2),
+						Padding = UDim.new(0, 4),
 						SortOrder = Enum.SortOrder.LayoutOrder,
 					},
-					Label(scope, {
-						Text = string.upper(def.displayName),
+					scope:New "TextLabel" {
+						Name = "Name",
+						BackgroundTransparency = 1,
 						Font = Theme.Fonts.Pixel,
-						TextSize = 32,
-						Color = Theme.Colors.Text,
 						LayoutOrder = 1,
-					}),
-					Label(scope, {
-						Text = def.title,
+						Size = UDim2.new(1, 0, 0, 36),
+						Text = string.upper(def.displayName),
+						TextColor3 = Theme.Colors.Text,
+						TextScaled = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						[Children] = scope:New "UITextSizeConstraint" { MaxTextSize = 34 },
+					},
+					scope:New "TextLabel" {
+						Name = "Title",
+						BackgroundTransparency = 1,
 						Font = Theme.Fonts.Pixel,
-						TextSize = 20,
-						Color = accent,
 						LayoutOrder = 2,
-					}),
-					Label(scope, {
-						Text = `{ARCHETYPE_NAMES[def.archetype]} · {unlockText}`,
-						Font = Theme.Fonts.Body,
-						TextSize = 15,
-						Color = if def.unlock == "Paid" then Theme.Colors.Paid else Theme.Colors.Free,
+						Size = UDim2.new(1, 0, 0, 22),
+						Text = def.title,
+						TextColor3 = accent,
+						TextScaled = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						[Children] = scope:New "UITextSizeConstraint" { MaxTextSize = 20 },
+					},
+					scope:New "Frame" {
+						Name = "Tags",
+						BackgroundTransparency = 1,
 						LayoutOrder = 3,
-					}),
-					Label(scope, {
-						Text = def.style,
+						Size = UDim2.new(1, 0, 0, 28),
+						[Children] = {
+							scope:New "UIListLayout" {
+								FillDirection = Enum.FillDirection.Horizontal,
+								Padding = UDim.new(0, 6),
+								SortOrder = Enum.SortOrder.LayoutOrder,
+							},
+							Pill(scope, {
+								Name = "Role",
+								Text = ARCHETYPE_NAMES[def.archetype],
+								Color = Theme.Colors.PanelLight,
+								Height = 26,
+								TextSize = 15,
+								LayoutOrder = 1,
+							}),
+							Pill(scope, {
+								Name = "Unlock",
+								Icon = if paid then "👑" else nil,
+								Text = if paid then "Deluxe" else "Бесплатный",
+								Color = if paid then Theme.Colors.Paid else Theme.Colors.Success,
+								TextColor = Theme.Colors.Outline,
+								Height = 26,
+								TextSize = 15,
+								LayoutOrder = 2,
+							}),
+						},
+					},
+					scope:New "TextLabel" {
+						Name = "Fairness",
+						BackgroundTransparency = 1,
 						Font = Theme.Fonts.BodyRegular,
-						TextSize = 14,
-						Color = Theme.Colors.TextDim,
 						LayoutOrder = 4,
-						Wrapped = true,
-					}),
+						Size = UDim2.new(1, 0, 0, 36),
+						Text = if paid
+							then "Сила как у всех: платный боец отличается только видом."
+							else "Доступен сразу.",
+						TextColor3 = Theme.Colors.TextDim,
+						TextSize = 14,
+						TextWrapped = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextYAlignment = Enum.TextYAlignment.Top,
+					},
 				},
 			},
 			scope:New "ScrollingFrame" {
@@ -338,44 +427,58 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				CanvasSize = UDim2.new(),
-				Position = UDim2.fromOffset(12, 144),
-				ScrollBarThickness = 4,
+				Position = UDim2.fromOffset(14, 172),
+				ScrollBarImageColor3 = accent,
+				ScrollBarThickness = 5,
 				ScrollingDirection = Enum.ScrollingDirection.Y,
-				Size = UDim2.new(1, -24, 1, -208),
+				Size = UDim2.new(1, -24, 1, -240),
 				[Children] = {
 					scope:New "UIListLayout" {
-						Padding = UDim.new(0, 4),
+						Padding = UDim.new(0, 5),
 						SortOrder = Enum.SortOrder.LayoutOrder,
 					},
+					scope:New "UIPadding" {
+						PaddingRight = UDim.new(0, 10),
+					},
+					Label(scope, {
+						Text = def.style,
+						Font = Theme.Fonts.BodyRegular,
+						TextSize = 15,
+						Color = Theme.Colors.Text,
+						LayoutOrder = 1,
+						Wrapped = true,
+					}),
 					statBars,
 					Label(scope, {
-						Text = `ОСОБЫЙ ПРИЁМ · {def.special.move.name}`,
-						Font = Theme.Fonts.Body,
+						Text = `✨ ОСОБЫЙ ПРИЁМ · {def.special.move.name}`,
+						Font = Theme.Fonts.Title,
 						TextSize = 16,
 						Color = accent,
-						LayoutOrder = 10,
+						LayoutOrder = 20,
+						Wrapped = true,
 					}),
 					Label(scope, {
 						Text = def.special.description,
 						Font = Theme.Fonts.BodyRegular,
 						TextSize = 14,
 						Color = Theme.Colors.Text,
-						LayoutOrder = 11,
+						LayoutOrder = 21,
 						Wrapped = true,
 					}),
 					Label(scope, {
-						Text = `СУПЕР · {def.super.move.name}`,
-						Font = Theme.Fonts.Body,
+						Text = `⚡ СУПЕР · {def.super.move.name}`,
+						Font = Theme.Fonts.Title,
 						TextSize = 16,
 						Color = accent,
-						LayoutOrder = 12,
+						LayoutOrder = 22,
+						Wrapped = true,
 					}),
 					Label(scope, {
 						Text = def.super.description,
 						Font = Theme.Fonts.BodyRegular,
 						TextSize = 14,
 						Color = Theme.Colors.Text,
-						LayoutOrder = 13,
+						LayoutOrder = 23,
 						Wrapped = true,
 					}),
 				} :: { Fusion.Child },
@@ -384,17 +487,25 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				Name = "ChooseButton",
 				Text = scope:Computed(function(use)
 					if not use(isOwned) then
-						return "Купить в магазине"
+						return "Открыть в магазине"
 					end
 					return if use(isChosen) then "Выбран" else "Выбрать"
+				end),
+				Icon = scope:Computed(function(use)
+					if not use(isOwned) then
+						return "🔒"
+					end
+					return if use(isChosen) then "✅" else "👊"
 				end),
 				Disabled = scope:Computed(function(use)
 					return use(isOwned) and use(isChosen)
 				end),
-				Color = Theme.Colors.ButtonPrimary,
+				Color = scope:Computed(function(use)
+					return if use(isOwned) then Theme.Colors.ButtonPrimary else Color3.fromHex("#E08A1E")
+				end),
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -10),
-				Size = UDim2.fromOffset(240, 48),
+				Size = UDim2.fromOffset(260, 52),
 				OnClick = function()
 					if peek(isOwned) then
 						state.selectedCharacterId:set(def.id)
@@ -404,7 +515,7 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				end,
 			}),
 		},
-	}
+	})
 end
 
 local function CharacterSelect(scope: Scope, state: AppState.AppState): Instance
@@ -431,6 +542,7 @@ local function CharacterSelect(scope: Scope, state: AppState.AppState): Instance
 		[Children] = {
 			ScreenHeader(scope, {
 				Title = "ВЫБОР БОЙЦА",
+				Coins = state.coins,
 				OnBack = function()
 					AppState.back(state)
 				end,
@@ -443,7 +555,7 @@ local function CharacterSelect(scope: Scope, state: AppState.AppState): Instance
 				[Children] = {
 					scope:New "UIGridLayout" {
 						CellPadding = UDim2.fromOffset(8, 8),
-						CellSize = UDim2.fromOffset(102, 102),
+						CellSize = UDim2.fromOffset(CARD, CARD),
 						SortOrder = Enum.SortOrder.LayoutOrder,
 					},
 					cards,

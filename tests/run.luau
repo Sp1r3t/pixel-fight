@@ -3,6 +3,7 @@
 	Запуск тестов вне Roblox Studio:
 	    lune run tests/run.luau
 	(из корня репозитория). Ищет файлы tests/specs/*.spec.luau.
+	Только часть спеков: lune run tests/run.luau Touch Training (по подстроке имени файла).
 
 	Глобальные функции в спеках:
 	  describe / it / expect                  — тест-раннер (tests/lib/TestKit.luau);
@@ -32,9 +33,22 @@ local sharedLoader = RobloxRequire.new()
 local files = fs.readDir(SPEC_DIR)
 table.sort(files)
 
+local filters = process.args
+local function selected(file: string): boolean
+	if #filters == 0 then
+		return true
+	end
+	for _, filter in filters do
+		if string.find(file, filter, 1, true) then
+			return true
+		end
+	end
+	return false
+end
+
 local failedTotal = 0
 for _, file in files do
-	if string.match(file, "%.spec%.luau$") then
+	if string.match(file, "%.spec%.luau$") and selected(file) then
 		print(`\n{file}`)
 		local chunk = luau.load(fs.readFile(`{SPEC_DIR}/{file}`), {
 			debugName = file,

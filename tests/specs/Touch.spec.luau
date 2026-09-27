@@ -58,10 +58,42 @@ describe("Раскладка управления", function()
 			expect(#ControlsLayout.overlaps(layout)).toBe(0)
 			expect(layout.controls.Jump ~= nil).toBeTruthy()
 			expect(layout.controls.Block ~= nil).toBeTruthy()
-			-- Старая раскладка (до новых кнопок) заменяется новой по умолчанию, режим показа сохраняется.
-			local old = ControlsLayout.sanitize({ version = 1, mode = "Always", controls = { Light = { x = 400 } } })
-			expect(old.mode).toBe("Always")
-			expect(old.controls.Light.x).toBe(layout.controls.Light.x)
+			-- Старые раскладки (до кнопок «Прыжок»/«Блок» и до компактной дуги) заменяются новой
+			-- по умолчанию, режим показа сохраняется.
+			for version = 1, 2 do
+				local old = ControlsLayout.sanitize({
+					version = version,
+					mode = "Always",
+					controls = { Light = { x = 400 } },
+				})
+				expect(old.mode).toBe("Always")
+				expect(old.controls.Light.x).toBe(layout.controls.Light.x)
+			end
+		end
+	)
+
+	it(
+		"раскладка по умолчанию компактная: кнопки у краёв, середина над полом свободна для бойцов",
+		function()
+			local layout = ControlsLayout.default()
+			-- Рывок по умолчанию спрятан (двойной толчок джойстика), кнопок меньше.
+			expect(layout.dashButton).toBe(false)
+			-- Зона бойцов (макет 960×540, от края кнопок): по ширине 25–75%, по высоте от пола (25%)
+			-- до низа HUD (78%). Ни одна видимая кнопка в неё не заходит.
+			local zoneNear, zoneFar = 960 * 0.25, 960 * 0.75
+			local zoneLow, zoneHigh = 540 * 0.25, 540 * 0.78
+			for _, id in ControlsLayout.IDS do
+				if id ~= "Dash" then
+					local placement = layout.controls[id]
+					local radius = ControlsLayout.diameter(layout, id) / 2
+					local nearestX = math.clamp(placement.x, zoneNear, zoneFar)
+					local nearestY = math.clamp(placement.y, zoneLow, zoneHigh)
+					local distance = math.sqrt((placement.x - nearestX) ^ 2 + (placement.y - nearestY) ^ 2)
+					expect(distance >= radius).toBeTruthy()
+					-- И кнопки не уходят дальше трети ширины от своего края.
+					expect(placement.x + radius <= 960 * 0.36).toBeTruthy()
+				end
+			end
 		end
 	)
 
@@ -84,13 +116,46 @@ describe("Сенсорное управление в бою", function()
 	it("на ПК скрыто, на телефоне показывается", function()
 		local game, client = startTraining(false)
 		expect(client.find("TouchControls")).toBe(nil)
-		expect(client.find("ControlsHint").Text ~= "").toBeTruthy()
+		-- На ПК внизу — подсказка клавиш (в тренировке всегда).
+		expect(client.find("ControlsHint").Visible).toBe(true)
+		expect(client.runtime.findGuiByText(client.find("ControlsHint"), "Shift", "TextLabel") ~= nil).toBeTruthy()
 		uis(client).LastInputTypeChanged:Fire(Enum.UserInputType.Touch)
 		game.step(2)
 		expect(client.find("TouchControls") ~= nil).toBeTruthy()
-		expect(client.find("ControlsHint").Text).toBe("")
+		expect(client.find("ControlsHint").Visible).toBe(false)
+		-- Рывок по умолчанию спрятан, остальные кнопки на месте.
+		expect(client.find("DashButton").Visible).toBe(false)
+		expect(client.find("LightButton").Visible).toBe(true)
 		expect(game.errors()).toBeEmpty()
 	end)
+
+	it(
+		"плавающий джойстик: касание в любом месте слева ставит джойстик под палец",
+		function()
+			local game, client, match = startTraining(true)
+			local fighter = match.sim.fighters[1]
+			local startX = fighter.x
+			local zone = client.find("JoystickZone")
+			expect(zone ~= nil).toBeTruthy()
+			-- Касание далеко от кружка джойстика (выше и правее), затем палец уходит вправо.
+			local input = touch(330, 250)
+			client.runtime.fire(zone, "InputBegan", input)
+			game.step(1)
+			local joystick = client.find("Joystick")
+			-- Экран теста 1280×720 → масштаб интерфейса 720/540; координаты джойстика логические.
+			expect(math.abs(joystick.Position.X.Offset - 330 / (720 / 540)) <= 1).toBeTruthy()
+			input.Position = Vector3.new(410, 255, 0)
+			uis(client).InputChanged:Fire(input, false)
+			game.step(20)
+			expect(fighter.x > startX + 1).toBeTruthy()
+			-- Отпустили — джойстик вернулся на место, боец остановился.
+			uis(client).InputEnded:Fire(input, false)
+			game.step(6)
+			expect(fighter.state).toBe("Idle")
+			expect(joystick.Position.X.Offset).toBe(ControlsLayout.default().controls.Joystick.x)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
 
 	it("кнопка «Рука» бьёт в момент касания", function()
 		local game, client, match = startTraining(true)

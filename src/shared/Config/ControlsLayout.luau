@@ -32,14 +32,14 @@ local CONTROL_IDS: { string } = { "Joystick", "Light", "Heavy", "Special", "Supe
 
 -- Базовый диаметр (логические пиксели) при size = 1.
 local BASE_SIZE: { [string]: number } = {
-	Joystick = 170,
-	Light = 112,
-	Heavy = 112,
-	Special = 88,
-	Super = 88,
-	Dash = 66,
-	Jump = 84,
-	Block = 84,
+	Joystick = 160,
+	Light = 100,
+	Heavy = 100,
+	Special = 80,
+	Super = 86,
+	Dash = 64,
+	Jump = 80,
+	Block = 76,
 }
 
 -- Какому краю экрана принадлежит элемент.
@@ -54,22 +54,28 @@ local SIDE: { [string]: "Left" | "Right" } = {
 	Block = "Right",
 }
 
--- Кнопки не перекрываются: большие «Рука»/«Нога» под большим пальцем, «Прыжок» и «Блок» рядом,
--- «Особый»/«Супер» выше, «Рывок» — сверху. Проверяется тестом (ControlsLayout.overlaps).
+--[[
+	Раскладка по умолчанию (версия 3) — компактная дуга у правого нижнего угла под большой палец:
+	  • крупные «Рука» и «Нога» — ближе всего к пальцу, «Прыжок» — в самом углу, «Блок» — слева от «Руки»;
+	  • «Приём» — по диагонали, «Супер» — вверху у правого края (нужен редко, случайно не нажмёшь);
+	  • «Рывок» по умолчанию спрятан: рывок делается двойным толчком джойстика (включается в настройках).
+	Середина экрана выше пола свободна — там стоят бойцы (камера с сенсорным управлением держит пол
+	на 25% высоты). Кнопки не перекрываются и не заходят в зону бойцов — это проверяют тесты.
+]]
 local DEFAULT: Layout = {
-	version = 2,
+	version = 3,
 	mode = "Auto",
-	opacity = 0.55,
-	dashButton = true,
+	opacity = 0.6,
+	dashButton = false,
 	controls = {
-		Joystick = { x = 140, y = 140, size = 1 },
-		Light = { x = 205, y = 95, size = 1 },
-		Heavy = { x = 85, y = 165, size = 1 },
-		Jump = { x = 330, y = 80, size = 1 },
-		Block = { x = 215, y = 225, size = 1 },
-		Special = { x = 95, y = 290, size = 1 },
-		Super = { x = 330, y = 200, size = 1 },
-		Dash = { x = 215, y = 335, size = 1 },
+		Joystick = { x = 135, y = 130, size = 1 },
+		Light = { x = 175, y = 75, size = 1 },
+		Heavy = { x = 75, y = 165, size = 1 },
+		Jump = { x = 65, y = 55, size = 1 },
+		Block = { x = 280, y = 70, size = 1 },
+		Special = { x = 190, y = 190, size = 1 },
+		Super = { x = 75, y = 280, size = 1 },
+		Dash = { x = 290, y = 180, size = 1 },
 	},
 }
 
@@ -131,7 +137,7 @@ function ControlsLayout.sanitize(data: unknown): Layout
 	end
 	local raw = data :: { [any]: any }
 	if type(raw.version) == "number" and raw.version < DEFAULT.version then
-		-- Старая раскладка (до кнопок «Прыжок» и «Блок») — берём новую по умолчанию, режим сохраняем.
+		-- Старая раскладка (до компактной дуги) — берём новую по умолчанию, режим показа сохраняем.
 		if raw.mode == "Auto" or raw.mode == "Always" or raw.mode == "Never" then
 			result.mode = raw.mode
 		end

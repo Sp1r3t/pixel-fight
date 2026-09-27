@@ -23,7 +23,7 @@ export type Props = {
 	LayoutOrder: number?,
 }
 
-local SEGMENT_WIDTH = 22
+local SEGMENT_WIDTH = 18
 local SEGMENT_GAP = 3
 
 local function StatBar(scope: Scope, props: Props): Instance
@@ -44,6 +44,7 @@ local function StatBar(scope: Scope, props: Props): Instance
 				BorderSizePixel = 0,
 				LayoutOrder = index,
 				Size = UDim2.fromOffset(SEGMENT_WIDTH, 12),
+				[Children] = scope:New "UICorner" { CornerRadius = UDim.new(0, 3) },
 			}
 		)
 	end

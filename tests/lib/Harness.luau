@@ -23,6 +23,8 @@ export type Client = {
 	loader: RobloxRequire.Loader,
 	gui: () -> any,
 	click: (text: string) -> (),
+	press: (name: string) -> (),
+	leaveBattle: () -> (),
 	find: (name: string) -> any,
 	findText: (text: string, className: string?) -> any,
 	require: (...string) -> any,
@@ -149,6 +151,17 @@ function Harness.new(options: Options?): Game
 			local button = runtime.findGuiByText(client.gui(), text)
 			assert(button, `кнопка "{text}" не найдена`)
 			runtime.fire(button, "Activated")
+		end
+		-- Нажать кнопку-компонент Button по имени (её «лицо» Face).
+		function client.press(name: string)
+			local node = runtime.findByName(client.gui(), name)
+			assert(node, `кнопка {name} не найдена`)
+			runtime.fire(node:FindFirstChild("Face") or node, "Activated")
+		end
+		-- Выйти из боя: пауза → «Выйти».
+		function client.leaveBattle()
+			client.press("Pause")
+			client.click("Выйти")
 		end
 		function client.require(...: string): any
 			return loader.require(loader.get("StarterPlayer", "StarterPlayerScripts", "Client", ...))

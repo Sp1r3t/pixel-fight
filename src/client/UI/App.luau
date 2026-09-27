@@ -1,7 +1,7 @@
 --!strict
 --[[
 	Корневой компонент интерфейса.
-	  • ScreenGui на весь экран, фон;
+	  • ScreenGui на весь экран, фон — живая пиксельная карта (MenuBackdrop);
 	  • адаптивный масштаб: макеты сверстаны под Theme.ReferenceSize (960×540) и
 	    масштабируются UIScale под любой экран (ПК, планшет, телефон);
 	  • роутер: показывает экран из state.screen; при смене экрана старый экран
@@ -15,6 +15,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local AppState = require(script.Parent.AppState)
 local Theme = require(script.Parent.Theme)
 local TouchControls = require(script.Parent.Components.TouchControls)
+local MenuBackdrop = require(script.Parent.Components.MenuBackdrop)
 
 local Screens = script.Parent.Screens
 local MainMenu = require(Screens.MainMenu)
@@ -111,6 +112,9 @@ local function EdgeLayer(scope: Scope, state: AppState.AppState): Instance
 				SuperReady = innerScope:Computed(function(innerUse)
 					return innerUse(hudFighter.meter) >= GameConfig.SuperMeter.Max
 				end),
+				SuperFill = innerScope:Computed(function(innerUse)
+					return innerUse(hudFighter.meter) / GameConfig.SuperMeter.Max
+				end),
 				OnPress = function(bit: number)
 					state.actions.touchPress(bit)
 				end,
@@ -149,21 +153,12 @@ local function App(scope: Scope, props: Props): Instance
 		[Out "AbsoluteSize"] = screenSize,
 
 		[Children] = {
-			scope:New "Frame" {
-				Name = "Background",
-				BackgroundColor3 = Theme.Colors.Background,
-				BorderSizePixel = 0,
-				Size = UDim2.fromScale(1, 1),
-				-- Во время боя виден мир (арена), фон меню скрыт.
+			-- Живая пиксельная карта за меню; во время боя виден мир (арена), фон скрыт.
+			MenuBackdrop(scope, {
 				Visible = scope:Computed(function(use)
 					return use(props.State.screen) ~= "Battle"
 				end),
-				ZIndex = 0,
-				[Children] = scope:New "UIGradient" {
-					Color = ColorSequence.new(Theme.Colors.BackgroundAlt, Theme.Colors.Background),
-					Rotation = 90,
-				},
-			},
+			}),
 			-- Контейнер фиксированного «логического» размера, растянутый UIScale на весь экран.
 			scope:New "Frame" {
 				Name = "Root",

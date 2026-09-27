@@ -1,13 +1,16 @@
 --!strict
 --[[
-	Шапка экрана: кнопка «Назад» слева и заголовок по центру.
+	Шапка экрана: кнопка «Назад» слева, крупный заголовок по центру и (по желанию) монеты справа.
+	Высота шапки — 64 логических пикселя; содержимое экрана начинается ниже.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Theme = require(script.Parent.Parent.Theme)
+local Format = require(script.Parent.Parent.Format)
 local Button = require(script.Parent.Button)
+local Pill = require(script.Parent.Pill)
 
 local Children = Fusion.Children
 
@@ -16,33 +19,64 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Title: string,
 	OnBack: () -> (),
+	Coins: Fusion.Value<number>?, -- показать монеты игрока справа
+	BackText: string?,
 }
 
 local function ScreenHeader(scope: Scope, props: Props): Instance
+	local right: { Instance } = {}
+	local coins = props.Coins
+	if coins then
+		table.insert(
+			right,
+			Pill(scope, {
+				Name = "Coins",
+				Icon = "🪙",
+				Text = scope:Computed(function(use)
+					return Format.number(use(coins))
+				end),
+				Color = Theme.Colors.Panel,
+				TextColor = Theme.Colors.Coins,
+				Height = 34,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -16, 0, 14),
+			})
+		)
+	end
+
 	return scope:New "Frame" {
 		Name = "Header",
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 64),
 		[Children] = {
 			Button(scope, {
-				Text = "← Назад",
+				Name = "Back",
+				Text = props.BackText or "← Назад",
 				OnClick = props.OnBack,
-				Position = UDim2.fromOffset(16, 12),
-				Size = UDim2.fromOffset(130, 42),
+				Position = UDim2.fromOffset(16, 10),
+				Size = UDim2.fromOffset(132, 46),
 				TextSize = 20,
 			}),
 			scope:New "TextLabel" {
 				Name = "Title",
 				AnchorPoint = Vector2.new(0.5, 0),
 				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Body,
-				Position = UDim2.new(0.5, 0, 0, 14),
-				Size = UDim2.new(1, -340, 0, 40),
+				Font = Theme.Fonts.Title,
+				Position = UDim2.new(0.5, 0, 0, 10),
+				Size = UDim2.new(1, -380, 0, 44),
 				Text = props.Title,
 				TextColor3 = Theme.Colors.Accent,
-				TextSize = 32,
+				TextScaled = true,
+				[Children] = {
+					scope:New "UITextSizeConstraint" { MaxTextSize = 36 },
+					scope:New "UIStroke" {
+						Color = Theme.Colors.Outline,
+						Thickness = 3,
+					},
+				},
 			},
-		},
+			right,
+		} :: { Fusion.Child },
 	}
 end
 
