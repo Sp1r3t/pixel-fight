@@ -12,7 +12,8 @@
 	  newRuntime(options?)                    — эмуляция клиента/сервера Roblox (tests/lib/RobloxRuntime.luau);
 	  newLoader(options?)                     — загрузчик модулей проекта (tests/lib/RobloxRequire.luau);
 	  Harness.new(options?)                   — сервер + клиенты + сеть в одном процессе (tests/lib/Harness.luau);
-	  FakeMemoryStore.new(clock)              — поддельный MemoryStoreService (общий для нескольких «серверов»).
+	  FakeMemoryStore.new(clock)              — поддельный MemoryStoreService (общий для нескольких «серверов»);
+	  ComboPerformer.perform(id, tokens, comboId) — «нажать» комбо за бойца в симуляции (tests/lib).
 ]]
 
 local fs = require("@lune/fs")
@@ -25,6 +26,7 @@ local RobloxRuntime = require("./lib/RobloxRuntime")
 local Harness = require("./lib/Harness")
 local FakeMemoryStore = require("./lib/FakeMemoryStore")
 local TestKit = require("./lib/TestKit")
+local ComboPerformer = require("./lib/ComboPerformer")
 
 local SPEC_DIR = "tests/specs"
 
@@ -66,6 +68,7 @@ for _, file in files do
 				newLoader = RobloxRequire.new,
 				Harness = Harness,
 				FakeMemoryStore = FakeMemoryStore,
+				ComboPerformer = ComboPerformer,
 				Vector2 = roblox.Vector2,
 				Vector3 = roblox.Vector3,
 				Enum = RobloxRuntime.Enum,

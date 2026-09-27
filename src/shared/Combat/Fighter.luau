@@ -124,6 +124,8 @@ export type Fighter = {
 	push: number, -- скорость отбрасывания, студ/с (затухает)
 	comboHits: number, -- сколько ударов подряд пропустил
 	comboDamage: number,
+	-- Журнал серии: кто и каким ударом попал (жетоны Config/Combos) — для распознавания комбо.
+	comboLog: { { slot: number, token: string } },
 	juggleHits: number, -- ударов в воздухе за одно подбрасывание
 	knockdownOnLand: boolean,
 	ko: boolean,
@@ -211,6 +213,7 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?, t
 		push = 0,
 		comboHits = 0,
 		comboDamage = 0,
+		comboLog = {},
 		juggleHits = 0,
 		knockdownOnLand = false,
 		ko = false,

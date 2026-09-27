@@ -59,6 +59,35 @@ local function totalDamage(events)
 end
 
 describe("Удары", function()
+	it(
+		"удар в прыжке обрывается при приземлении (можно сразу продолжить комбо)",
+		function()
+			local sim = setup(8.5)
+			-- Прыжок вперёд, «Нога» на снижении, затем приземление.
+			frame(sim, { bit32.bor(U, R), U })
+			for _ = 1, 33 do
+				frame(sim, { R, 0 })
+			end
+			local a = sim.fighters[1]
+			frame(sim, { 0, HEAVY })
+			expect(a.move).toBe("AirHeavy")
+			local landedAt = nil
+			for index = 1, 40 do
+				frame(sim)
+				if a.y <= 0 and landedAt == nil then
+					landedAt = index
+				end
+				if landedAt and a.state ~= "Attack" then
+					break
+				end
+			end
+			expect(landedAt ~= nil).toBeTruthy()
+			-- Сразу после касания пола — приземление (несколько кадров), а не продолжение удара стоя.
+			expect(a.state == "Landing" or a.state == "Idle").toBeTruthy()
+			expect(a.move).toBe(nil)
+		end
+	)
+
 	it("«Рука» попадает вплотную: урон, оглушение, хитстоп", function()
 		local sim = setup(2)
 		local b = sim.fighters[2]

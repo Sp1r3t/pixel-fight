@@ -26,6 +26,7 @@ local SimState = require(script.Parent.SimState)
 local Projectiles = require(script.Parent.Projectiles)
 local Specials = require(script.Parent.Specials)
 local Stage = require(script.Parent.Stage)
+local Combos = require(script.Parent.Combos)
 
 type Fighter = Fighter.Fighter
 type FrameInput = InputBits.FrameInput
@@ -100,6 +101,7 @@ local function resetCombatState(fighter: Fighter)
 	fighter.push = 0
 	fighter.comboHits = 0
 	fighter.comboDamage = 0
+	table.clear(fighter.comboLog)
 	fighter.juggleHits = 0
 	fighter.knockdownOnLand = false
 	fighter.ko = false
@@ -518,6 +520,7 @@ end
 
 -- Конец комбо: боец вернулся в нейтральное положение.
 local function endCombo(sim: Sim, fighter: Fighter)
+	Combos.finish(sim, fighter)
 	if fighter.comboHits >= 2 then
 		emit(sim, "ComboEnd", fighter, fighter.comboHits, fighter.lastHitBy)
 	end
@@ -719,9 +722,11 @@ local function integrate(sim: Sim, fighter: Fighter)
 				fighter.vy = 0
 			end
 		end
-		-- Приземление на ближайшую поверхность под ногами (пол или второй этаж).
+		-- Приземление на ближайшую поверхность под ногами (пол или второй этаж). Допуск — как у
+		-- проверки «в воздухе» выше: иначе из-за погрешности (y ≈ 1e-15) боец в ударе «зависал»
+		-- над полом и доигрывал удар в прыжке уже стоя, без приземления.
 		fighter.floorY = Stage.floorBelow(layout, fighter.x, math.max(previousY, fighter.y))
-		if fighter.y <= fighter.floorY and fighter.vy <= 0 then
+		if fighter.y <= fighter.floorY + 0.01 and fighter.vy <= 0 then
 			onLand(sim, fighter)
 		end
 	else
@@ -1112,6 +1117,7 @@ function applyHit(sim: Sim, hit: PendingHit)
 			defender.vy = 20
 			defender.vx = direction * 6
 			emit(sim, "KO", defender, 0, attacker.slot, nil)
+			Combos.finish(sim, defender)
 		end
 		return
 	end
@@ -1135,6 +1141,7 @@ function applyHit(sim: Sim, hit: PendingHit)
 
 	-- Супер: попадание запускает кинематографичную серию (урон — в ней).
 	if isSuper then
+		Combos.record(defender, attacker.slot, "SU")
 		startCinematic(sim, attacker, defender, move)
 		emitAt(sim, "Hit", defender, hit.x, hit.y, 0, attacker.slot, "Super")
 		return
@@ -1150,6 +1157,10 @@ function applyHit(sim: Sim, hit: PendingHit)
 	drainLife(attacker, damage)
 	defender.comboHits += 1
 	defender.comboDamage += damage
+	local token = if projectile then "S" else Combos.tokenOf(attacker.move)
+	if token and (projectile ~= nil or attacker.targetHits[defender.slot] == 1) then
+		Combos.record(defender, attacker.slot, token)
+	end
 	defender.move = nil
 	defender.moveConnected = false
 	defender.armor = 0
@@ -1194,6 +1205,7 @@ function applyHit(sim: Sim, hit: PendingHit)
 	emitAt(sim, "Hit", defender, hit.x, hit.y, damage, attacker.slot, tag)
 	if defender.ko then
 		emit(sim, "KO", defender, damage, attacker.slot, nil)
+		Combos.finish(sim, defender)
 	end
 end
 
@@ -1231,6 +1243,7 @@ local function updateCinematic(sim: Sim)
 		emit(sim, "CinematicEnd", attacker, cinematic.dealt, attacker.slot, nil)
 		if defender.ko then
 			emit(sim, "KO", defender, cinematic.dealt, attacker.slot, nil)
+			Combos.finish(sim, defender)
 		end
 	end
 end
