@@ -85,6 +85,26 @@ describe("Профиль: схема и миграции", function()
 		end
 	)
 
+	it(
+		"v3 → v4: найденные комбо — только существующие, без мусора",
+		function()
+			local data = ProfileSchema.migrate({
+				version = 3,
+				coins = 10,
+				combos = { one_two = true, classic = "yes", nothing = true, [7] = true },
+			})
+			expect(data.version).toBe(ProfileSchema.VERSION)
+			expect(data.combos.one_two).toBe(true)
+			expect(data.combos.classic).toBe(nil)
+			expect(data.combos.nothing).toBe(nil)
+			local fresh = ProfileSchema.migrate({ version = 3, coins = 5 })
+			expect(type(fresh.combos)).toBe("table")
+			expect(next(fresh.combos)).toBe(nil)
+			-- Клиент видит найденные комбо.
+			expect(ProfileSchema.toPublic(data).combos.one_two).toBe(true)
+		end
+	)
+
 	it("журнал покупок хранит только последние записи", function()
 		local data = ProfileSchema.default()
 		for index = 1, ProfileSchema.MAX_PURCHASES + 20 do

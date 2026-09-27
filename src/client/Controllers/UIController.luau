@@ -16,6 +16,7 @@ local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
+local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local InputController = require(script.Parent.InputController)
@@ -233,6 +234,13 @@ function UIController.Start()
 			local reason = if type(payload) == "table" then payload.reason else nil
 			if type(reason) == "string" and QUEUE_REASON_TEXT[reason] then
 				AppState.notify(appState, QUEUE_REASON_TEXT[reason], 4)
+			end
+		elseif kind == "ComboUnlocked" and type(payload) == "table" and type(payload.id) == "string" then
+			-- Первое выполнение комбо: награда уже начислена (профиль придёт каналом Profile).
+			local combo = Combos.byId[payload.id]
+			if combo then
+				local coins = if type(payload.coins) == "number" then payload.coins else combo.reward
+				AppState.notify(appState, `Новое комбо «{combo.name}»! +{coins} 🪙`, 3)
 			end
 		elseif kind == "Reward" and type(payload) == "table" and type(payload.coins) == "number" then
 			AppState.notify(appState, `Победа! +{payload.coins} монет`, 4)

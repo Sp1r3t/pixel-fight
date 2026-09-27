@@ -17,6 +17,7 @@ local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local Types = require(ReplicatedStorage.Shared.Types)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
+local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 
 local peek = Fusion.peek
 
@@ -31,6 +32,7 @@ export type ScreenName =
 	| "ControlsSettings"
 	| "Draft"
 	| "Battle"
+	| "ComboList"
 
 export type BattleFighter = {
 	slot: number,
@@ -112,6 +114,10 @@ export type Hud = {
 	banner: Fusion.Value<string>,
 	bannerColor: Fusion.Value<Color3>,
 	bannerSerial: Fusion.Value<number>,
+	-- Название выполненного комбо у стороны того, кто его сделал.
+	comboName: Fusion.Value<string>,
+	comboTeam: Fusion.Value<number>,
+	comboSerial: Fusion.Value<number>,
 }
 
 -- Действия, которые UI может попросить выполнить (реализует UIController).
@@ -154,6 +160,8 @@ export type AppState = {
 	ownedCharacters: Fusion.Value<{ [string]: boolean }>,
 	-- Доступные карты (бесплатные + купленные премиальные).
 	ownedArenas: Fusion.Value<{ [string]: boolean }>,
+	-- Найденные комбо (Config/Combos) — из профиля.
+	combosFound: Fusion.Value<{ [string]: boolean }>,
 	coins: Fusion.Value<number>,
 	-- Прогресс боссов: пройдено по порядку (открыт следующий), победы над каждым.
 	bossProgress: Fusion.Value<number>,
@@ -224,6 +232,7 @@ function AppState.new(scope: Scope): AppState
 		selectedCharacterId = scope:Value(firstCharacter.id),
 		ownedCharacters = scope:Value(owned),
 		ownedArenas = scope:Value(arenas),
+		combosFound = scope:Value({}),
 		coins = scope:Value(0),
 		bossProgress = scope:Value(0),
 		bossClears = scope:Value({}),
@@ -242,6 +251,9 @@ function AppState.new(scope: Scope): AppState
 			banner = scope:Value(""),
 			bannerColor = scope:Value(Color3.new(1, 1, 1)),
 			bannerSerial = scope:Value(0),
+			comboName = scope:Value(""),
+			comboTeam = scope:Value(0),
+			comboSerial = scope:Value(0),
 		},
 		platform = scope:Value("Keyboard"),
 		controlsLayout = scope:Value(ControlsLayout.default()),
@@ -333,6 +345,15 @@ function AppState.applyProfile(state: AppState, profile: unknown)
 	end
 	if raw.controls ~= nil then
 		state.controlsLayout:set(ControlsLayout.sanitize(raw.controls))
+	end
+	if type(raw.combos) == "table" then
+		local found: { [string]: boolean } = {}
+		for id, value in raw.combos do
+			if type(id) == "string" and value == true and Combos.byId[id] then
+				found[id] = true
+			end
+		end
+		state.combosFound:set(found)
 	end
 end
 
@@ -524,6 +545,20 @@ function AppState.showBanner(state: AppState, text: string, seconds: number, col
 	task.delay(seconds, function()
 		if peek(hud.bannerSerial) == serial then
 			hud.banner:set("")
+		end
+	end)
+end
+
+-- Показать название комбо на стороне команды team на несколько секунд.
+function AppState.showCombo(state: AppState, team: number, name: string, seconds: number?)
+	local hud = state.hud
+	local serial = peek(hud.comboSerial) + 1
+	hud.comboSerial:set(serial)
+	hud.comboTeam:set(team)
+	hud.comboName:set(name)
+	task.delay(seconds or 1.6, function()
+		if peek(hud.comboSerial) == serial then
+			hud.comboName:set("")
 		end
 	end)
 end

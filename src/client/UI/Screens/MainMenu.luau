@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
+local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Format = require(script.Parent.Parent.Format)
@@ -134,7 +135,7 @@ local function TipBar(scope: Scope): Instance
 	return Panel(scope, {
 		Name = "Tips",
 		Position = UDim2.fromOffset(LEFT, TOP + TILE_H + 90),
-		Size = UDim2.fromOffset(TILE_W * 3 + GAP * 2, 58),
+		Size = UDim2.fromOffset(TILE_W * 2 + GAP, 58),
 		Transparency = 0.15,
 		Content = {
 			scope:New "TextLabel" {
@@ -347,6 +348,27 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 			}),
 			items,
 			TipBar(scope),
+			Button(scope, {
+				Name = "Combos",
+				Text = "Комбо",
+				Icon = "📜",
+				Color = Color3.fromHex("#C0439A"),
+				Badge = scope:Computed(function(use)
+					local count = 0
+					for id in use(state.combosFound) do
+						if Combos.byId[id] then
+							count += 1
+						end
+					end
+					return `{count}/{#Combos.list}`
+				end),
+				TextSize = 19,
+				Position = UDim2.fromOffset(LEFT + (TILE_W + GAP) * 2, TOP + TILE_H + 90),
+				Size = UDim2.fromOffset(TILE_W, 58),
+				OnClick = function()
+					AppState.navigate(state, "ComboList")
+				end,
+			}),
 			fighterPreview,
 		} :: { Fusion.Child },
 	}

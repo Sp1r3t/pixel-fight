@@ -388,6 +388,50 @@ local function ComboCounter(scope: Scope, state: AppState.AppState, attackerTeam
 	}
 end
 
+-- Название комбо («КЛАССИКА!») под счётчиком ударов у стороны того, кто его сделал.
+local function ComboTitle(scope: Scope, state: AppState.AppState, team: number): Instance
+	local hud = state.hud
+	local isLeft = team == 1
+	local scale = scope:Spring(scope:Value(1), 30, 0.5)
+	scope:Observer(hud.comboSerial):onChange(function()
+		if peek(hud.comboTeam) == team then
+			scale:setPosition(1.8)
+		end
+	end)
+	return scope:New "TextLabel" {
+		Name = `ComboTitle{team}`,
+		AnchorPoint = Vector2.new(if isLeft then 0 else 1, 0),
+		BackgroundTransparency = 1,
+		Font = Theme.Fonts.Title,
+		Position = if isLeft then UDim2.fromOffset(24, 198) else UDim2.new(1, -24, 0, 198),
+		Size = UDim2.fromOffset(320, 40),
+		Text = scope:Computed(function(use)
+			return use(hud.comboName) .. "!"
+		end),
+		TextColor3 = Theme.Colors.Accent,
+		TextSize = 34,
+		TextXAlignment = if isLeft then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right,
+		Visible = scope:Computed(function(use)
+			return use(hud.comboName) ~= "" and use(hud.comboTeam) == team
+		end),
+		ZIndex = 15,
+		[Children] = {
+			scope:New "UIScale" { Scale = scale },
+			scope:New "UIStroke" {
+				Color = Theme.Colors.Outline,
+				Thickness = 3,
+			},
+			scope:New "UIGradient" {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromHex("#FFF6B0")),
+					ColorSequenceKeypoint.new(1, Color3.fromHex("#FF9A3D")),
+				}),
+				Rotation = 90,
+			},
+		},
+	}
+end
+
 local function Timer(scope: Scope, state: AppState.AppState): Instance
 	return scope:New "TextLabel" {
 		Name = "Timer",
@@ -570,6 +614,8 @@ local function Battle(scope: Scope, state: AppState.AppState): Instance
 			Timer(scope, state),
 			ComboCounter(scope, state, 1),
 			ComboCounter(scope, state, 2),
+			ComboTitle(scope, state, 1),
+			ComboTitle(scope, state, 2),
 			Banner(scope, {
 				Text = state.hud.banner,
 				Color = state.hud.bannerColor,

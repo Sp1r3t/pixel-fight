@@ -17,7 +17,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 export type Props = {
 	Name: string?,
 	Text: UsedAs<string>,
-	Icon: string?,
+	Icon: UsedAs<string>?,
 	Color: UsedAs<Color3>?,
 	TextColor: UsedAs<Color3>?,
 	Height: number?,

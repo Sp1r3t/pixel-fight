@@ -190,3 +190,81 @@ describe("Каждое комбо выполнимо", function()
 		end
 	end)
 end)
+
+describe("Комбо в игре", function()
+	-- Тренировка: игрок жмёт «Рука» с клавиатуры (через сеть), как только прошлый удар попал.
+	local function jabCombo(game, client, match)
+		local attacker, dummy = match.sim.fighters[1], match.sim.fighters[2]
+		attacker.x, dummy.x = -0.8, 0.8
+		local function tapJ()
+			client.runtime.pressKey("J")
+			game.step(1)
+			client.runtime.releaseKey("J")
+		end
+		tapJ()
+		for _ = 1, 30 do
+			if attacker.moveConnected then
+				break
+			end
+			game.step(1)
+		end
+		for _ = 1, 20 do
+			if attacker.move == "Light2" then
+				break
+			end
+			tapJ()
+		end
+	end
+
+	it(
+		"комбо в тренировке: название на экране, монеты за первый раз, за повтор — нет",
+		function()
+			local game = Harness.new()
+			local client = game.addClient("Alice")
+			game.step(2)
+			client.click("Тренировка")
+			game.step(10)
+			if client.find("HowToPlay") then
+				client.press("GotIt")
+				game.step(1)
+			end
+			local MatchService = game.serverRequire("Services", "MatchService")
+			local DataService = game.serverRequire("Services", "DataService")
+			local match = MatchService.getMatchOf(client.player)
+			local coins = DataService.getCoins(client.player)
+
+			jabCombo(game, client, match)
+			local title = nil
+			for _ = 1, 120 do
+				game.step(1)
+				local label = client.find("ComboTitle1")
+				if label and label.Visible then
+					title = label.Text
+				end
+			end
+			-- Какое именно комбо вышло, зависит от задержки сети («Двойка» или «Тройка»).
+			local found = nil
+			for _, combo in ComboConfig.list do
+				if DataService.hasCombo(client.player, combo.id) then
+					expect(found).toBe(nil)
+					found = combo
+				end
+			end
+			expect(found ~= nil).toBeTruthy()
+			expect(found.character).toBe(nil)
+			-- Название заглавными (кириллица тоже) и уведомление о новом комбо.
+			local Format = client.require("UI", "Format")
+			expect(title).toBe(Format.upper(found.name) .. "!")
+			expect(Format.upper("Двойка")).toBe("ДВОЙКА")
+			expect(DataService.getCoins(client.player)).toBe(coins + found.reward)
+			expect(client.find("Notice").Text).toContainMatch(found.name)
+
+			-- Повтор того же комбо — монет больше не дают.
+			game.step(60)
+			jabCombo(game, client, match)
+			game.step(120)
+			expect(DataService.getCoins(client.player)).toBe(coins + found.reward)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+end)

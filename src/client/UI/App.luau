@@ -26,6 +26,7 @@ local BossMap = require(Screens.BossMap)
 local Shop = require(Screens.Shop)
 local ControlsSettings = require(Screens.ControlsSettings)
 local Draft = require(Screens.Draft)
+local ComboList = require(Screens.ComboList)
 local Battle = require(Screens.Battle)
 
 local Children, Out, peek = Fusion.Children, Fusion.Out, Fusion.peek
@@ -42,6 +43,7 @@ local SCREENS: { [string]: ScreenComponent } = {
 	ControlsSettings = ControlsSettings,
 	Draft = Draft,
 	Battle = Battle,
+	ComboList = ComboList,
 }
 
 -- Всплывающее уведомление внизу экрана: скруглённая плашка с золотым кантом.

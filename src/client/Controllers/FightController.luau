@@ -20,12 +20,14 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
 local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
 local CharacterLooks = require(ReplicatedStorage.Shared.Config.CharacterLooks)
+local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local Arena = require(script.Parent.Parent.Fight.Arena)
 local FighterView = require(script.Parent.Parent.Fight.FighterView)
 local SnapshotBuffer = require(script.Parent.Parent.Fight.SnapshotBuffer)
 local AppState = require(script.Parent.Parent.UI.AppState)
+local Format = require(script.Parent.Parent.UI.Format)
 local CameraController = require(script.Parent.CameraController)
 local EffectsController = require(script.Parent.EffectsController)
 local InputController = require(script.Parent.InputController)
@@ -554,6 +556,15 @@ local function playEvent(event: NetEvent)
 			if strong then
 				CameraController.shake(0.15, 0.1)
 			end
+		end
+	elseif kind == "Combo" then
+		-- Комбо: название у стороны того, кто его сделал, и россыпь звёзд над ним.
+		local combo = if event.v then Combos.list[event.v] else nil
+		local state = UIController.getState()
+		local fighterInfo = if battleInfo then AppState.fighterInSlot(battleInfo, event.s) else nil
+		if combo and state and fighterInfo then
+			AppState.showCombo(state, fighterInfo.team, Format.upper(combo.name))
+			EffectsController.starBurst(Vector3.new(x, y + 5.5, 0), Color3.fromRGB(255, 216, 77), 1.6, 0.35, 8)
 		end
 	elseif kind == "Mechanic" then
 		-- Механика босса сработала (ярость): красная вспышка и надпись.

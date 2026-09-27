@@ -19,6 +19,7 @@ local Players = game:GetService("Players")
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
+local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
@@ -169,6 +170,28 @@ function DataService.spendCoins(player: Player, amount: number): boolean
 	data.coins -= amount
 	DataService.publish(player)
 	return true
+end
+
+--[[
+	Засчитать выполненное комбо. Награда — только за первое выполнение.
+	Возвращает начисленные монеты (0 — уже было, неизвестное комбо или профиль не загружен).
+]]
+function DataService.recordCombo(player: Player, comboId: string): number
+	local data = DataService.get(player)
+	local combo = Combos.byId[comboId]
+	if data == nil or combo == nil or data.combos[comboId] then
+		return 0
+	end
+	data.combos[comboId] = true
+	local reward = math.max(0, math.floor(combo.reward))
+	data.coins = math.min(MAX_COINS, data.coins + reward)
+	DataService.publish(player)
+	return reward
+end
+
+function DataService.hasCombo(player: Player, comboId: string): boolean
+	local data = DataService.get(player)
+	return data ~= nil and data.combos[comboId] == true
 end
 
 -- Сколько боссов пройдено по порядку (открыт следующий за ним).

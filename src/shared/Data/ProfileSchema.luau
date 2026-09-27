@@ -13,6 +13,7 @@
 local CharacterRegistry = require(script.Parent.Parent.Characters.CharacterRegistry)
 local Arenas = require(script.Parent.Parent.Config.Arenas)
 local ControlsLayout = require(script.Parent.Parent.Config.ControlsLayout)
+local Combos = require(script.Parent.Parent.Config.Combos)
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
 
 export type PlayerData = {
@@ -29,6 +30,8 @@ export type PlayerData = {
 	controls: ControlsLayout.Layout,
 	-- Обработанные покупки Developer Products: PurchaseId → os.time(). Защита от повторной выдачи.
 	purchases: { [string]: number },
+	-- Найденные комбо (Config/Combos): за первое выполнение — награда.
+	combos: { [string]: boolean },
 }
 
 -- То, что видит клиент (без служебных полей).
@@ -39,9 +42,10 @@ export type PublicProfile = {
 	ownedCharacters: { [string]: boolean }, -- все доступные персонажи (бесплатные + купленные)
 	ownedArenas: { [string]: boolean }, -- все доступные карты (бесплатные + купленные)
 	controls: ControlsLayout.Layout,
+	combos: { [string]: boolean }, -- найденные комбо
 }
 
-local VERSION = 3
+local VERSION = 4
 local MAX_PURCHASES = 100 -- сколько последних покупок помнить (Roblox повторяет чек не дольше нескольких дней)
 local MAX_COINS = 1e9
 
@@ -60,6 +64,7 @@ function ProfileSchema.default(): PlayerData
 		ownedArenas = {},
 		controls = ControlsLayout.default(),
 		purchases = {},
+		combos = {},
 	}
 end
 
@@ -127,6 +132,17 @@ function ProfileSchema.migrate(raw: { [any]: any }): PlayerData
 	data.purchases = purchases
 	ProfileSchema.trimPurchases(data)
 
+	-- v3 → v4: найденные комбо (только существующие).
+	local combos: { [string]: boolean } = {}
+	if type(data.combos) == "table" then
+		for id, value in data.combos do
+			if type(id) == "string" and Combos.byId[id] and value == true then
+				combos[id] = true
+			end
+		end
+	end
+	data.combos = combos
+
 	-- Отбросить неизвестные поля (например, от будущих или удалённых версий).
 	local known = {
 		version = true,
@@ -137,6 +153,7 @@ function ProfileSchema.migrate(raw: { [any]: any }): PlayerData
 		ownedArenas = true,
 		controls = true,
 		purchases = true,
+		combos = true,
 	}
 	for key in table.clone(data) do
 		if not known[key] then
@@ -184,6 +201,7 @@ function ProfileSchema.toPublic(data: PlayerData): PublicProfile
 		ownedCharacters = owned,
 		ownedArenas = arenas,
 		controls = ControlsLayout.copy(data.controls),
+		combos = table.clone(data.combos),
 	}
 end
 
