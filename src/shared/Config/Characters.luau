@@ -38,9 +38,9 @@ local Characters: { CharacterDef } = {
 			description = "Выбрасывает сгусток энергии, летящий через всю арену.",
 			move = {
 				name = "Pulse Palm",
-				startup = 13,
+				startup = 16,
 				active = 2,
-				recovery = 22,
+				recovery = 26,
 				damage = 70,
 				chip = 10,
 				hitstun = 18,
@@ -193,9 +193,9 @@ local Characters: { CharacterDef } = {
 			description = "Бросает диск, который улетает вперёд и возвращается — может попасть дважды.",
 			move = {
 				name = "Orbit Disc",
-				startup = 14,
+				startup = 17,
 				active = 2,
-				recovery = 24,
+				recovery = 28,
 				damage = 55,
 				chip = 8,
 				hitstun = 16,
@@ -295,7 +295,7 @@ local Characters: { CharacterDef } = {
 			description = "Рывок с джебом, во время которого Dax выдерживает один удар, не прерываясь.",
 			move = {
 				name = "Bulldozer Jab",
-				startup = 18,
+				startup = 17,
 				active = 4,
 				recovery = 26,
 				damage = 95,
@@ -346,10 +346,10 @@ local Characters: { CharacterDef } = {
 			description = "Прыжок вверх и пике ногой по диагонали. Блокируется только стоя.",
 			move = {
 				name = "Talon Dive",
-				startup = 12,
+				startup = 15,
 				active = 12,
-				recovery = 28,
-				damage = 72,
+				recovery = 34,
+				damage = 70,
 				chip = 10,
 				hitstun = 18,
 				blockstun = 12,
@@ -390,7 +390,7 @@ local Characters: { CharacterDef } = {
 		style = "Спокойный монах, который выигрывает, ничего не делая первым. "
 			.. "Ловит атаку противника в стойке «Тихая вода» и отвечает контрударом.",
 		unlock = "Free",
-		stats = { health = 7, damage = 5, speed = 4, range = 4, superGain = 5 },
+		stats = { health = 6, damage = 6, speed = 4, range = 4, superGain = 5 },
 		palette = { primary = "#F39C12", secondary = "#7E3F12", accent = "#FFF3C4" },
 		cosmetics = { tier = "Standard", hitSpark = "Energy", superFlash = "#FFF3C4" },
 		special = {
@@ -398,9 +398,9 @@ local Characters: { CharacterDef } = {
 			description = "Стойка-парирование: если противник ударит в окне стойки — мгновенный контрудар.",
 			move = {
 				name = "Still Water",
-				startup = 4,
-				active = 30,
-				recovery = 12,
+				startup = 2,
+				active = 24,
+				recovery = 4,
 				damage = 120,
 				chip = 0,
 				hitstun = 24,
@@ -501,7 +501,7 @@ local Characters: { CharacterDef } = {
 			description = "Реактивный рывок через полэкрана с ударом плечом.",
 			move = {
 				name = "Rocket Rush",
-				startup = 9,
+				startup = 11,
 				active = 10,
 				recovery = 22,
 				damage = 90,
@@ -548,7 +548,7 @@ local Characters: { CharacterDef } = {
 		style = "Танцовщица с огненными веерами. Надёжный неуязвимый апперкот против прыжков "
 			.. "и зрелищные огненные комбо.",
 		unlock = "Paid",
-		stats = { health = 4, damage = 6, speed = 6, range = 4, superGain = 5 },
+		stats = { health = 5, damage = 6, speed = 6, range = 4, superGain = 4 },
 		palette = { primary = "#FF6B35", secondary = "#7A1E0B", accent = "#FFE66D" },
 		cosmetics = {
 			tier = "Deluxe",
@@ -563,9 +563,9 @@ local Characters: { CharacterDef } = {
 			description = "Огненный апперкот со спиралью пламени. Неуязвим на старте — сбивает прыжки.",
 			move = {
 				name = "Phoenix Rise",
-				startup = 5,
+				startup = 4,
 				active = 10,
-				recovery = 26,
+				recovery = 22,
 				damage = 106,
 				chip = 14,
 				hitstun = 22,
@@ -682,7 +682,7 @@ local Characters: { CharacterDef } = {
 			description = "Прыжок с рубящим ударом сверху, окутанным молнией. Блокируется только стоя.",
 			move = {
 				name = "Thunderfall",
-				startup = 17,
+				startup = 15,
 				active = 4,
 				recovery = 16,
 				damage = 90,
@@ -841,7 +841,7 @@ local Characters: { CharacterDef } = {
 		style = "Звёздная провидица. Бросает кометы по дуге, накрывая противника сверху, "
 			.. "и отвечает сверхновой на любую ошибку.",
 		unlock = "Paid",
-		stats = { health = 4, damage = 5, speed = 5, range = 6, superGain = 5 },
+		stats = { health = 6, damage = 5, speed = 5, range = 6, superGain = 3 },
 		palette = { primary = "#1A1446", secondary = "#F7F1E3", accent = "#C77DFF" },
 		cosmetics = {
 			tier = "Deluxe",
@@ -856,9 +856,9 @@ local Characters: { CharacterDef } = {
 			description = "Навесная комета, падающая на противника сверху по дуге.",
 			move = {
 				name = "Comet Lob",
-				startup = 13,
+				startup = 9,
 				active = 2,
-				recovery = 14,
+				recovery = 8,
 				damage = 78,
 				chip = 10,
 				hitstun = 18,

@@ -86,10 +86,10 @@ describe("Распознавание комбо", function()
 			end
 			expect(best("rook", { "L", "L" })).toBe("one_two")
 			expect(best("rook", { "L", "L", "H" })).toBe("classic")
-			expect(best("rook", { "L", "L", "S" })).toBe("rook_vanguard")
+			expect(best("rook", { "L", "H", "S" })).toBe("rook_vanguard")
 			expect(best("dax", { "L", "L", "H", "S" })).toBe("dax_knockout")
-			-- Чужое фирменное не засчитывается: у Рука «Рука, Рука, Нога, Приём» — это «Классика».
-			expect(best("rook", { "L", "L", "H", "S" })).toBe("classic")
+			-- Чужое фирменное не засчитывается: у Байта «Рука, Рука, Нога, Приём» — это «Классика».
+			expect(best("byte", { "L", "L", "H", "S" })).toBe("classic")
 			-- Комбо может быть внутри более длинной серии.
 			expect(best("mira", { "cL", "L", "H", "S", "L" })).toBe("mira_cyclone")
 			expect(best("rook", { "L" })).toBe(nil)

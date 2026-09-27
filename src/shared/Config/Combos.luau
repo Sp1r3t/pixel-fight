@@ -127,8 +127,8 @@ local LIST: { Combo } = {
 		id = "rook_vanguard",
 		name = "Ладонь авангарда",
 		character = "rook",
-		inputs = { "L", "L", "S" },
-		hint = "«Рука», «Рука», «Приём» — энергетическая ладонь в упор.",
+		inputs = { "L", "H", "S" },
+		hint = "«Рука», «Нога», «Приём» — энергетическая ладонь в упор.",
 		reward = SIGNATURE_REWARD,
 	},
 	{
@@ -151,8 +151,8 @@ local LIST: { Combo } = {
 		id = "juno_orbit",
 		name = "Орбита",
 		character = "juno",
-		inputs = { "L", "L", "L", "S" },
-		hint = "Три раза «Рука», потом «Приём» — диск летит по орбите.",
+		inputs = { "L", "L", "H", "S" },
+		hint = "«Рука», «Рука», «Нога», потом «Приём» — диск летит по орбите.",
 		reward = SIGNATURE_REWARD,
 	},
 	{
@@ -175,8 +175,8 @@ local LIST: { Combo } = {
 		id = "wren_talons",
 		name = "Когти сокола",
 		character = "wren",
-		inputs = { "jH", "L", "S" },
-		hint = "Прыгни: в воздухе «Нога», приземлился — «Рука», потом «Приём».",
+		inputs = { "jH", "H", "S" },
+		hint = "Прыгни: в воздухе «Нога», приземлился — снова «Нога», потом «Приём».",
 		reward = SIGNATURE_REWARD,
 	},
 	{

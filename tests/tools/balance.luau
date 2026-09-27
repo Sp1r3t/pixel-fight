@@ -1,7 +1,9 @@
 --[[
 	Турнир «ИИ против ИИ» для проверки баланса бойцов (без Roblox, в Lune):
 
-	    lune run tests/tools/balance.luau [уровень ИИ=15] [матчей на пару=2]
+	    lune run tests/tools/balance.luau [уровень ИИ=15] [матчей на пару=2] [боец,боец…]
+
+	Третий аргумент (необязательно) — играть только пары с этими бойцами (быстрая проверка правок).
 
 	Каждый боец играет с каждым (стороны меняются), оба под управлением ИИ одного уровня.
 	Матч — до одной победы. Печатает процент побед каждого бойца и худшие/лучшие пары.
@@ -27,6 +29,14 @@ local BossAI = server("AI", "BossAI")
 
 local level = tonumber(process.args[1]) or 15
 local perPair = tonumber(process.args[2]) or 2
+local focus: { [string]: boolean }? = nil
+if process.args[3] then
+	local set = {}
+	for id in string.gmatch(process.args[3], "[^,]+") do
+		set[id] = true
+	end
+	focus = set
+end
 
 local function duel(a: string, b: string, seed: number): number
 	local sim = Simulation.new({ characters = { a, b } })
@@ -58,7 +68,7 @@ local started = os.clock()
 local seed = 0
 for _, a in ids do
 	for _, b in ids do
-		if a < b then
+		if a < b and (focus == nil or focus[a] or focus[b]) then
 			local aWins = 0
 			for round = 1, perPair * 2 do
 				seed += 1
@@ -81,12 +91,15 @@ for _, a in ids do
 end
 
 table.sort(ids, function(x, y)
-	return (wins[x] or 0) / games[x] > (wins[y] or 0) / games[y]
+	return (wins[x] or 0) / (games[x] or 1) > (wins[y] or 0) / (games[y] or 1)
 end)
 print(
 	`Уровень ИИ {level}, матчей на пару {perPair * 2}, {string.format("%.1f", os.clock() - started)} с`
 )
 for _, id in ids do
+	if games[id] == nil then
+		continue
+	end
 	local rate = (wins[id] or 0) / games[id]
 	local def = CharacterRegistry.get(id)
 	print(

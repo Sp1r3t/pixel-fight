@@ -460,22 +460,32 @@ end
 -- Планы комбо
 ----------------------------------------------------------------------------------------------
 
+-- Стойка-контратака ничего не делает в комбо: противник уже в оглушении и не бьёт.
+local function isStance(brain: Brain, moveId: string): boolean
+	local behaviour = Specials.behaviour(brain.me, moveId)
+	return behaviour ~= nil and behaviour.kind == "Counter"
+end
+
 -- Цепочка после стартового удара в зависимости от мастерства.
 local function extendPlan(brain: Brain, starter: PlanStep): { PlanStep }
 	local skill = brain.profile.comboSkill
 	local plan: { PlanStep } = { starter }
+	local specialStep: PlanStep = if isStance(brain, "Special") then { button = "Heavy" } else { button = "Special" }
 	local function add(step: PlanStep)
 		table.insert(plan, step)
 	end
 	local roll = Rng.next(brain.rng)
 	local ender = skill >= 0.45 and roll < 0.35 + skill * 0.6
-	local superEnder = skill >= 0.7 and superReady(brain.me) and chance(brain, brain.profile.superUsage)
+	local superEnder = skill >= 0.7
+		and superReady(brain.me)
+		and not isStance(brain, "Super")
+		and chance(brain, brain.profile.superUsage)
 	if starter.button == "Light" and starter.down then
 		if skill >= 0.25 then
 			add({ button = "Light", down = true })
 		end
 		if skill >= 0.5 then
-			add(if chance(brain, 0.5) then { button = "Heavy", down = true } else { button = "Special" })
+			add(if chance(brain, 0.5) then { button = "Heavy", down = true } else specialStep)
 		end
 	elseif starter.button == "Light" then
 		if skill >= 0.2 then
@@ -485,15 +495,15 @@ local function extendPlan(brain: Brain, starter: PlanStep): { PlanStep }
 			add(if skill >= 0.6 and chance(brain, 0.5) then { button = "Heavy" } else { button = "Light" })
 		end
 		if ender then
-			add({ button = "Special" })
+			add(specialStep)
 		end
 	elseif starter.button == "Heavy" and not starter.down then
 		if ender then
-			add({ button = "Special" })
+			add(specialStep)
 		end
 	elseif starter.button == "Heavy" and starter.down then
 		if skill >= 0.6 and ender then
-			add({ button = "Special" })
+			add(specialStep)
 		end
 	end
 	if superEnder and plan[#plan].button ~= "Super" then
@@ -592,7 +602,7 @@ local function reactToThreat(brain: Brain): string?
 		and brain.me.specialCooldown == 0
 		and move.guard ~= "Unblockable"
 		and untilHit > mine.move.startup + 1
-		and chance(brain, profile.punishChance * 0.6)
+		and chance(brain, profile.punishChance * 0.9)
 	then
 		startPlan(brain, { { button = "Special" } })
 		return "Attack"
@@ -1127,7 +1137,12 @@ states.Defend = {
 					startPlan(brain, extendPlan(brain, starter))
 					return "Attack"
 				end
-			elseif window >= -2 and hasCounter(brain) and chance(brain, profile.readChance * 0.4) then
+			elseif
+				window >= -2
+				and hasCounter(brain)
+				and brain.dist < opponentReach(brain, "Light2")
+				and chance(brain, profile.readChance * 0.4)
+			then
 				-- После блока противник часто продолжает натиск — встречаем стойкой.
 				startPlan(brain, { { button = "Special" } })
 				return "Attack"

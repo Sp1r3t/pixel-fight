@@ -86,7 +86,7 @@ describe("Снаряды", function()
 
 	it("одновременно — только один свой снаряд", function()
 		local sim = duel("rook", "rook", 24)
-		run(sim, 16, tap(InputBits.Special))
+		run(sim, 20, tap(InputBits.Special))
 		expect(#sim.projectiles).toBe(1)
 		run(sim, 30, function(frame)
 			return { held = 0, pressed = if frame % 5 == 0 then InputBits.Special else 0 }
@@ -196,7 +196,7 @@ describe("Снаряды", function()
 
 	it("снаряды попадают в снапшот", function()
 		local sim = duel("rook", "rook", 30)
-		run(sim, 16, tap(InputBits.Special))
+		run(sim, 20, tap(InputBits.Special))
 		local projectiles = {}
 		for _, projectile in sim.projectiles do
 			table.insert(projectiles, {
