@@ -29,6 +29,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local BotNames = require(ReplicatedStorage.Shared.Config.BotNames)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -262,8 +263,7 @@ local function createFromDraft(
 	result: DraftService.DraftResult,
 	ranked: boolean,
 	private: boolean,
-	botLevel: number,
-	botTag: string
+	botLevel: number
 ): Match.Match?
 	local participants: { Player } = {}
 	local characters: { string } = {}
@@ -279,8 +279,7 @@ local function createFromDraft(
 		else
 			bots += 1
 			controllers[slot.slot] = botController(botLevel)
-			local def = CharacterRegistry.get(slot.characterId)
-			presentation[slot.slot] = { displayName = `{if def then def.displayName else slot.characterId} ({botTag})` }
+			presentation[slot.slot] = { displayName = slot.name }
 		end
 	end
 	if #participants == 0 then
@@ -318,7 +317,10 @@ function MatchmakingService.startMatch(
 ): DraftService.Draft
 	local size = Protocol.groupSize(mode) :: number
 	local slots: { DraftService.DraftSlot } = {}
+	local usedNames: { [string]: boolean } = {}
 	for index, entry in entries do
+		usedNames[string.lower(entry.player.DisplayName)] = true
+		usedNames[string.lower(entry.player.Name)] = true
 		removeFromQueue(entry.player, false)
 		send(entry.player, { status = "Found" })
 		table.insert(slots, {
@@ -332,11 +334,13 @@ function MatchmakingService.startMatch(
 	end
 	if fillBots then
 		for index = #entries + 1, size do
+			local botName = BotNames.pick(random, usedNames)
+			usedNames[string.lower(botName)] = true
 			table.insert(slots, {
 				slot = index,
 				team = teamOfSlot(index),
 				player = nil,
-				name = "BOT",
+				name = botName,
 				characterId = randomCharacter(),
 				ready = true,
 			})
@@ -347,7 +351,7 @@ function MatchmakingService.startMatch(
 		mode = mode,
 		slots = slots,
 		onDone = function(result: DraftService.DraftResult)
-			createFromDraft(mode, result, ranked, private == true, GameConfig.Matchmaking.BotLevel, "BOT")
+			createFromDraft(mode, result, ranked, private == true, GameConfig.Matchmaking.BotLevel)
 		end,
 	})
 end
@@ -372,12 +376,16 @@ function MatchmakingService.startCpu(
 			ready = false,
 		},
 	}
+	local usedNames = { [string.lower(player.DisplayName)] = true }
+	usedNames[string.lower(player.Name)] = true
 	for index = 2, size do
+		local botName = BotNames.pick(random, usedNames)
+		usedNames[string.lower(botName)] = true
 		table.insert(slots, {
 			slot = index,
 			team = teamOfSlot(index),
 			player = nil,
-			name = "CPU",
+			name = botName,
 			characterId = randomCharacter(),
 			ready = true,
 		})
@@ -386,7 +394,7 @@ function MatchmakingService.startCpu(
 		mode = "Cpu",
 		slots = slots,
 		onDone = function(result: DraftService.DraftResult)
-			createFromDraft("Cpu", result, false, false, level, "CPU")
+			createFromDraft("Cpu", result, false, false, level)
 		end,
 	})
 end
@@ -405,6 +413,16 @@ local function tryLocal(mode: Mode)
 	while #queue >= size do
 		local group = table.move(queue, 1, size, 1, {})
 		MatchmakingService.startMatch(mode, group, true)
+	end
+	-- В 2 на 2 трём найденным игрокам сразу добавляем четвёртого бойца.
+	if mode == "Team" and #queue == size - 1 then
+		-- Даём запросам, пришедшим в тот же кадр, собрать полный матч из четырёх людей.
+		task.delay(0.25, function()
+			if #queue == size - 1 then
+				local group = table.move(queue, 1, size - 1, 1, {})
+				MatchmakingService.startMatch(mode, group, false, true)
+			end
+		end)
 	end
 end
 
@@ -499,7 +517,7 @@ local function tryStartReserved()
 			end
 		end
 	end
-	MatchmakingService.startMatch(ticket.mode :: Mode, entries, true)
+	MatchmakingService.startMatch(ticket.mode :: Mode, entries, ticket.fillBots ~= true, ticket.fillBots)
 end
 
 local function readJoinData(player: Player): any

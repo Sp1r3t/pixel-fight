@@ -18,6 +18,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local Pill = require(script.Parent.Parent.Components.Pill)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
@@ -44,11 +45,11 @@ local ARCHETYPE_NAMES: { [Types.Archetype]: string } = {
 }
 
 local STAT_COLORS = table.freeze({
-	health = Color3.fromHex("#5BD17A"),
-	damage = Color3.fromHex("#FF4D6D"),
-	speed = Color3.fromHex("#4DC3FF"),
-	range = Color3.fromHex("#C77DFF"),
-	superGain = Color3.fromHex("#FFC845"),
+	health = Color3.fromHex("#859370"),
+	damage = Color3.fromHex("#AB6251"),
+	speed = Color3.fromHex("#7A9598"),
+	range = Color3.fromHex("#A596AE"),
+	superGain = Color3.fromHex("#C4A46A"),
 })
 
 local CARD = 102
@@ -82,21 +83,17 @@ local function Label(
 	}
 end
 
--- Круглая метка в углу карточки (✓ выбран, 🔒 закрыт).
+-- Круглая метка в углу карточки (выбран — галочка, закрыт — замок).
 local function CornerMark(
 	scope: Scope,
-	props: { Name: string, Text: string, Color: Color3, Visible: Fusion.UsedAs<boolean> }
+	props: { Name: string, Icon: string, Color: Color3, Visible: Fusion.UsedAs<boolean> }
 ): Instance
-	return scope:New "TextLabel" {
+	return scope:New "Frame" {
 		Name = props.Name,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = props.Color,
-		Font = Theme.Fonts.Title,
 		Position = UDim2.new(1, -8, 0, 8),
 		Size = UDim2.fromOffset(24, 24),
-		Text = props.Text,
-		TextColor3 = Theme.Colors.Outline,
-		TextSize = 15,
 		Visible = props.Visible,
 		ZIndex = 8,
 		[Children] = {
@@ -106,6 +103,12 @@ local function CornerMark(
 				Color = Theme.Colors.Outline,
 				Thickness = 2,
 			},
+			IconGlyph(scope, {
+				Id = props.Icon,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromOffset(16, 16),
+			}),
 		},
 	}
 end
@@ -237,13 +240,13 @@ local function RosterCard(
 			},
 			CornerMark(scope, {
 				Name = "ChosenMark",
-				Text = "✓",
+				Icon = "check",
 				Color = Theme.Colors.Accent,
 				Visible = isChosen,
 			}),
 			CornerMark(scope, {
 				Name = "LockMark",
-				Text = "🔒",
+				Icon = "lock",
 				Color = Theme.Colors.Paid,
 				Visible = scope:Computed(function(use)
 					return not use(isOwned)
@@ -396,7 +399,7 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 							}),
 							Pill(scope, {
 								Name = "Unlock",
-								Icon = if paid then "👑" else nil,
+								Icon = if paid then "crown" else nil,
 								Text = if paid then "Deluxe" else "Бесплатный",
 								Color = if paid then Theme.Colors.Paid else Theme.Colors.Success,
 								TextColor = Theme.Colors.Outline,
@@ -495,15 +498,15 @@ local function DetailsPanel(scope: Scope, def: CharacterDef, state: AppState.App
 				end),
 				Icon = scope:Computed(function(use)
 					if not use(isOwned) then
-						return "🔒"
+						return "lock"
 					end
-					return if use(isChosen) then "✅" else "👊"
+					return if use(isChosen) then "check" else "punch"
 				end),
 				Disabled = scope:Computed(function(use)
 					return use(isOwned) and use(isChosen)
 				end),
 				Color = scope:Computed(function(use)
-					return if use(isOwned) then Theme.Colors.ButtonPrimary else Color3.fromHex("#E08A1E")
+					return if use(isOwned) then Theme.Colors.ButtonPrimary else Color3.fromHex("#94784A")
 				end),
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -10),

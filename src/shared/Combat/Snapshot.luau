@@ -24,6 +24,7 @@ export type FighterSnapshot = {
 	moveFrame: number,
 	flags: number, -- биты Snapshot.Flags (LowBlock — боец присел: блок/атака сидя)
 	combo: number, -- сколько ударов подряд получил боец в текущем комбо
+	reaction: number?, -- Snapshot.Reactions; 0 means ordinary state animation
 }
 
 export type ProjectileSnapshot = {
@@ -46,7 +47,29 @@ export type Snapshot = {
 
 local Snapshot = {}
 
-Snapshot.VERSION = 1
+Snapshot.VERSION = 2
+
+Snapshot.Reactions = table.freeze({
+	Pulled = 1,
+	Grabbed = 2,
+	Lifted = 3,
+	Thrown = 4,
+	Launched = 5,
+	Slammed = 6,
+	Bound = 7,
+	Suspended = 8,
+})
+
+Snapshot.ReactionAnimations = table.freeze({
+	"Pulled",
+	"Grabbed",
+	"Lifted",
+	"Thrown",
+	"Launched",
+	"Slammed",
+	"Bound",
+	"Suspended",
+})
 
 Snapshot.Flags = table.freeze({
 	Invulnerable = 1,
@@ -55,9 +78,11 @@ Snapshot.Flags = table.freeze({
 	LowBlock = 8,
 	SuperReady = 16,
 	KO = 32,
+	AlternateHand = 64,
+	Pulled = 128,
 })
 
-local FIGHTER_BYTES = 4 + 4 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 2 + 1 + 1
+local FIGHTER_BYTES = 4 + 4 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 2 + 1 + 1 + 1
 local PROJECTILE_BYTES = 2 + 1 + 1 + 4 + 4 + 1 + 2
 local HEADER_BYTES = 1 + 4 + 1 + 2 + 1 + 1
 
@@ -67,6 +92,9 @@ end
 
 function Snapshot.fromFighter(fighter: Fighter.Fighter): FighterSnapshot
 	local flags = 0
+	if fighter.reaction == "Pulled" and fighter.stun > 0 then
+		flags = bit32.bor(flags, Snapshot.Flags.Pulled)
+	end
 	if fighter.invulnerable > 0 then
 		flags = bit32.bor(flags, Snapshot.Flags.Invulnerable)
 	end
@@ -85,6 +113,13 @@ function Snapshot.fromFighter(fighter: Fighter.Fighter): FighterSnapshot
 	if fighter.ko then
 		flags = bit32.bor(flags, Snapshot.Flags.KO)
 	end
+	if
+		fighter.state == "Attack"
+		and fighter.attackParity == 0
+		and (fighter.move == "Light1" or fighter.move == "Light2")
+	then
+		flags = bit32.bor(flags, Snapshot.Flags.AlternateHand)
+	end
 	return {
 		x = fighter.x,
 		y = fighter.y,
@@ -100,6 +135,7 @@ function Snapshot.fromFighter(fighter: Fighter.Fighter): FighterSnapshot
 		moveFrame = fighter.moveFrame,
 		flags = flags,
 		combo = fighter.comboHits,
+		reaction = if fighter.state == "Hitstun" then Snapshot.Reactions[fighter.reaction or ""] or 0 else 0,
 	}
 end
 
@@ -139,6 +175,7 @@ function Snapshot.encode(snapshot: Snapshot): buffer
 		buffer.writeu16(b, offset + 23, clampInt(f.moveFrame, 0, 65535))
 		buffer.writeu8(b, offset + 25, clampInt(f.flags, 0, 255))
 		buffer.writeu8(b, offset + 26, clampInt(f.combo, 0, 255))
+		buffer.writeu8(b, offset + 27, clampInt(f.reaction or 0, 0, 8))
 		offset += FIGHTER_BYTES
 	end
 
@@ -181,6 +218,10 @@ function Snapshot.decode(b: buffer): Snapshot?
 		if state == nil then
 			return nil
 		end
+		local reaction = buffer.readu8(b, offset + 27)
+		if reaction > 8 then
+			return nil
+		end
 		local fighter: FighterSnapshot = {
 			x = buffer.readf32(b, offset),
 			y = buffer.readf32(b, offset + 4),
@@ -196,6 +237,7 @@ function Snapshot.decode(b: buffer): Snapshot?
 			moveFrame = buffer.readu16(b, offset + 23),
 			flags = buffer.readu8(b, offset + 25),
 			combo = buffer.readu8(b, offset + 26),
+			reaction = reaction,
 		}
 		table.insert(fighters, fighter)
 		offset += FIGHTER_BYTES

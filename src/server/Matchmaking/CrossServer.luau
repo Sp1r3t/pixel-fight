@@ -50,6 +50,7 @@ export type Ticket = {
 	accessCode: string,
 	mode: string,
 	roster: { RosterEntry },
+	fillBots: boolean?,
 }
 
 export type Cross = {
@@ -144,7 +145,8 @@ function CrossServer.form(cross: Cross, mode: string, size: number): Ticket?
 			end
 		end
 	end
-	if #candidates < size then
+	local fillBots = mode == "Team" and size == 4 and #candidates == 3
+	if #candidates < size and not fillBots then
 		return nil
 	end
 
@@ -184,7 +186,13 @@ function CrossServer.form(cross: Cross, mode: string, size: number): Ticket?
 			team = if index % 2 == 1 then 1 else 2,
 		})
 	end
-	local ticket: Ticket = { matchKey = matchKey, accessCode = accessCode, mode = mode, roster = roster }
+	local ticket: Ticket = {
+		matchKey = matchKey,
+		accessCode = accessCode,
+		mode = mode,
+		roster = roster,
+		fillBots = if fillBots then true else nil,
+	}
 	for _, entry in roster do
 		try(function()
 			return ticketMap(cross):SetAsync(tostring(entry.userId), ticket, TICKET_SECONDS)

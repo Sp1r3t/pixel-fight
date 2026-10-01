@@ -19,6 +19,7 @@ local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Format = require(script.Parent.Parent.Format)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 
@@ -83,8 +84,8 @@ local function ItemButton(scope: Scope, state: AppState.AppState, item: Item, si
 		Color = scope:Computed(function(use)
 			if not use(owned) then
 				return if item.currency == "Crystals" or item.currency == "Vip"
-					then Color3.fromHex("#8E44E0")
-					else Color3.fromHex("#E08A1E")
+					then Color3.fromHex("#766C80")
+					else Color3.fromHex("#94784A")
 			end
 			return if use(equipped) then Theme.Colors.Success else Theme.Colors.Button
 		end),
@@ -117,15 +118,13 @@ local function ItemCard(scope: Scope, state: AppState.AppState, item: Item, orde
 		LayoutOrder = order,
 		Color = Theme.Colors.PanelLight,
 		Content = {
-			scope:New "TextLabel" {
+			IconGlyph(scope, {
 				Name = "Icon",
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Title,
-				Position = UDim2.fromOffset(0, 8),
-				Size = UDim2.new(1, 0, 0, 44),
-				Text = item.icon,
-				TextSize = 40,
-			},
+				Id = item.icon,
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 8),
+				Size = UDim2.fromOffset(40, 40),
+			}),
 			scope:New "TextLabel" {
 				Name = "Sample",
 				BackgroundTransparency = 1,
@@ -285,7 +284,7 @@ function ShopCosmetics.Skins(scope: Scope, state: AppState.AppState, visible: Fu
 							Font = Theme.Fonts.Title,
 							Position = UDim2.fromOffset(74, 8),
 							Size = UDim2.new(1, -80, 0, 22),
-							Text = `{skin.icon} {skin.name}`,
+							Text = skin.name,
 							TextColor3 = Theme.Colors.Text,
 							TextScaled = true,
 							TextXAlignment = Enum.TextXAlignment.Left,
@@ -389,7 +388,7 @@ function ShopCosmetics.Premium(scope: Scope, state: AppState.AppState, visible: 
 				Button(scope, {
 					Name = `Product_{product.key}`,
 					Text = `💎 {product.amount} — R$ {product.priceHint}`,
-					Color = Color3.fromHex("#8E44E0"),
+					Color = Color3.fromHex("#766C80"),
 					Position = UDim2.fromOffset(16, y),
 					Size = UDim2.new(1, -32, 0, 44),
 					TextSize = 17,
@@ -450,7 +449,7 @@ function ShopCosmetics.Premium(scope: Scope, state: AppState.AppState, visible: 
 						else `👑 VIP — R$ {Monetization.vipPriceHint}`
 				end),
 				Subtitle = `+{math.floor((Monetization.vipCoinMultiplier - 1) * 100 + 0.5)}% монет · удар «Радуга» · +{Monetization.vipDailyCrystals} 💎 к подарку дня`,
-				Color = Color3.fromHex("#E0A21E"),
+				Color = Color3.fromHex("#94784A"),
 				Disabled = state.vip,
 				Position = UDim2.fromOffset(16, y + 76),
 				Size = UDim2.new(1, -32, 0, 56),

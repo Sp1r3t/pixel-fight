@@ -65,6 +65,8 @@ export type Options = {
 
 function Harness.new(options: Options?): Game
 	local function withOverrides(base: { [string]: any }): { [string]: any }
+		-- Production access rules remain covered; feature tests explicitly enable test access.
+		base["src/shared/Config/TestMode.luau"] = { UnlockAllCharacters = false }
 		if options and options.overrides then
 			for path, value in options.overrides do
 				base[path] = value

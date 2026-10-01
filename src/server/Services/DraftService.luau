@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local BotNames = require(ReplicatedStorage.Shared.Config.BotNames)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -69,6 +70,14 @@ local draftOf: { [Player]: Draft } = {}
 local nextId = 0
 local random = Random.new()
 
+local function replacementName(draft: Draft): string
+	local used: { [string]: boolean } = {}
+	for _, slot in draft.slots do
+		used[string.lower(slot.name)] = true
+	end
+	return BotNames.pick(random, used)
+end
+
 function DraftService.draftOf(player: Player): Draft?
 	return draftOf[player]
 end
@@ -113,7 +122,8 @@ local function payloadFor(draft: Draft, player: Player): { [string]: any }
 			name = slot.name,
 			characterId = slot.characterId,
 			ready = slot.ready,
-			bot = slot.player == nil,
+			-- Не раскрываем клиенту тип контроллера: все участники выглядят одинаково.
+			bot = false,
 			vote = slot.vote,
 		})
 	end
@@ -268,7 +278,7 @@ function DraftService.leave(player: Player)
 	local slot = slotOf(draft, player)
 	if slot then
 		slot.player = nil
-		slot.name = "BOT"
+		slot.name = replacementName(draft)
 		slot.ready = true
 		slot.vote = nil
 	end

@@ -58,11 +58,27 @@ local function with(base: Pose, changes: { [string]: any }): Pose
 end
 
 local COMMON: { [string]: Keys } = {
+	-- Спокойное дыхание: почти не меняется, лёгкое покачивание — не «рывок» вперёд-назад.
 	Idle = {
 		GUARD,
-		with(GUARD, { lean = 7, drop = 0.006, sF = 42, sB = 27 }),
-		with(GUARD, { lean = 8, drop = 0.01, sF = 44, sB = 29, head = 2 }),
-		with(GUARD, { lean = 7, drop = 0.006, sF = 42, sB = 27 }),
+		with(GUARD, { lean = 6.3, drop = 0.003, sF = 41, sB = 26 }),
+		with(GUARD, { lean = 6.6, drop = 0.006, sF = 42, sB = 27, head = 1 }),
+		with(GUARD, { lean = 6.6, drop = 0.007, sF = 42, sB = 27, head = 1 }),
+		with(GUARD, { lean = 6.3, drop = 0.003, sF = 41, sB = 26 }),
+		GUARD,
+	},
+	-- Второй и третий удар — другая рука и другой угол корпуса, не повтор первого джеба.
+	Light2 = {
+		with(GUARD, { lean = -5, sF = 46, eF = 108, sB = -28, eB = 42 }),
+		with(GUARD, { lean = -2, sF = 34, eF = 112, sB = 88, eB = 0, x = 0.025, strike = "handB" }),
+		with(GUARD, { lean = -2, sF = 38, eF = 110, sB = 84, eB = 5, x = 0.02, strike = "handB" }),
+		with(GUARD, { lean = 4, sB = 40, eB = 92 }),
+	},
+	Light3 = {
+		with(GUARD, { lean = -12, sF = -24, eF = 78, sB = 44, eB = 100, hF = 36 }),
+		with(GUARD, { lean = 18, sF = 86, eF = 0, sB = -22, eB = 56, hF = 42, x = 0.04, strike = "handF" }),
+		with(GUARD, { lean = 14, sF = 82, eF = 4, sB = -18, eB = 60, hF = 38, x = 0.03, strike = "handF" }),
+		with(GUARD, { lean = 4 }),
 	},
 	Walk = {
 		with(GUARD, { hF = 30, kF = 10, hB = -22, kB = 20, sF = 34, sB = 30 }),
@@ -83,6 +99,12 @@ local COMMON: { [string]: Keys } = {
 		{ lean = 10, sF = 110, eF = 60, sB = 90, eB = 70, hF = 95, kF = 120, hB = 70, kB = 110, hip = 0.56 },
 		{ lean = 8, sF = 80, eF = 70, sB = 60, eB = 80, hF = 70, kF = 80, hB = 40, kB = 70, hip = 0.57 },
 		{ lean = 4, sF = 60, eF = 60, sB = 40, eB = 70, hF = 30, kF = 30, hB = -5, kB = 20, hip = 0.6 },
+	},
+	BackJump = {
+		with(GUARD, { lean = -12, hF = 52, kF = 70, hB = -40, kB = 72, x = -0.02, drop = 0.02 }),
+		{ lean = -22, sF = 130, eF = 25, sB = 120, eB = 35, hF = 52, kF = 112, hB = -48, kB = 105, hip = 0.58, x = -0.035 },
+		{ lean = -12, sF = 88, eF = 70, sB = 75, eB = 70, hF = 15, kF = 58, hB = -38, kB = 75, hip = 0.56, x = -0.03 },
+		with(GUARD, { lean = -4, hF = 30, kF = 45, hB = -22, kB = 40, hip = 0.6, x = -0.01 }),
 	},
 	Crouch = {
 		with(GUARD, { lean = 14, hF = 60, kF = 110, hB = -10, kB = 115, sF = 50, sB = 35 }),
@@ -800,6 +822,69 @@ local SUPERS: { [string]: Keys } = {
 	}),
 }
 
+-- Боссы получают собственную базовую стойку по силуэту, даже если используют
+-- набор приёмов обычного персонажа. Значения: lean, переднее/заднее плечо,
+-- переднее/заднее бедро. Это держит отличия в позе и в стартовых кадрах атак.
+local BOSS_STANCES: { [string]: { number } } = {
+	street_champion = { 7, 48, -58, 26, -22 }, iron_brute = { 2, 72, -48, 38, -30 },
+	swamp_mutant = { 16, 110, -88, 48, -42 }, alien_hunter = { 12, 30, -112, 16, -34 },
+	tree_ancient = { 0, 88, -36, 20, -18 }, bone_warlock = { 4, 20, -88, 12, -20 },
+	deep_kraken = { 14, 120, -48, 48, -14 }, siege_robot = { 0, 80, -80, 18, -18 },
+	horned_beast = { 20, 132, -100, 58, -48 }, tung_sahur = { 3, 14, -92, 15, -24 },
+	lava_titan = { 3, 95, -72, 35, -34 }, frost_golem = { 0, 62, -56, 14, -16 },
+	cyber_alien = { 13, 40, -124, 25, -38 }, abyss_kraken = { 12, 124, -62, 52, -20 },
+	arena_champion = { 8, 50, -102, 34, -28 }, void_oracle = { -2, 18, -78, 16, -24 },
+	 iron_brute_abbot = { 2, 82, -52, 42, -32 }, mirror_wraith = { -4, 36, -90, 22, -26 },
+	shadow_demon = { 11, 145, -110, 46, -48 }, null_emperor = { 5, 30, -70, 20, -20 },
+}
+
+local function bossGuard(style: string): Pose?
+	local values = BOSS_STANCES[style]
+	if values == nil then
+		return nil
+	end
+	return with(GUARD, { lean = values[1], sF = values[2], sB = values[3], hF = values[4], hB = values[5], kF = 24, kB = 20 })
+end
+
+local function bossKeys(animation: Types.AnimationName, base: Pose): Keys
+	if animation == "Idle" then
+		return { base, with(base, { lean = base.lean + 1.2, drop = 0.004 }), with(base, { lean = base.lean + 2, drop = 0.007 }), base }
+	elseif animation == "Light" then
+		return { with(base, { sF = base.sF - 18, eF = 92 }), with(base, { lean = base.lean + 13, sF = base.sF + 34, eF = 4, x = 0.025, strike = "handF" }), with(base, { lean = base.lean + 8, sF = base.sF + 30, eF = 8, strike = "handF" }), base }
+	elseif animation == "Light2" then
+		return { with(base, { sB = base.sB - 18, eB = 92 }), with(base, { lean = base.lean - 8, sB = 88, eB = 2, x = 0.03, strike = "handB" }), with(base, { lean = base.lean - 4, sB = 82, eB = 8, strike = "handB" }), base }
+	elseif animation == "Light3" then
+		return { with(base, { lean = base.lean - 15, sF = base.sF - 42, eF = 70, hF = base.hF + 16 }), with(base, { lean = base.lean + 20, sF = 95, eF = 0, hF = base.hF + 20, x = 0.045, strike = "handF" }), base }
+	elseif animation == "CrouchLight" then
+		return { with(base, { lean = base.lean + 18, hF = 68, kF = 110, hB = -12, kB = 112, sF = 52, eF = 88 }), with(base, { lean = base.lean + 24, hF = 70, kF = 108, sF = 88, eF = 0, x = 0.03, strike = "handF" }), base }
+	elseif animation == "AirLight" then
+		return { with(base, { lean = -4, hF = 72, kF = 82, hB = -14, kB = 45, hip = 0.56 }), with(base, { lean = 12, hF = 74, kF = 86, hB = -18, kB = 42, hip = 0.55, sF = 90, eF = 0, x = 0.03, strike = "handF" }), base }
+	elseif animation == "BackJump" then
+		return { with(base, { lean = -13, hF = 50, kF = 74, hB = -38, kB = 70, drop = 0.02, x = -0.02 }), with(base, { lean = -20, sF = 120, eF = 30, sB = 105, eB = 42, hF = 48, kF = 108, hB = -44, kB = 100, hip = 0.56, x = -0.03 }), base }
+	elseif animation == "Heavy" or animation == "CrouchHeavy" or animation == "AirHeavy" then
+		local low = animation == "CrouchHeavy"
+		local airborne = animation == "AirHeavy"
+		return {
+			with(base, { lean = -14, hF = low and 84 or 72, kF = low and 95 or 72, sF = 58, eF = 70, hip = if airborne then 0.56 else nil }),
+			with(base, { lean = -22, hF = 116, kF = 2, sF = 32, eF = 54, sB = 74, eB = 55, x = 0.025, hip = if airborne then 0.54 else nil, strike = "footF" }),
+			with(base, { lean = -12, hF = 92, kF = 36, sF = 46, eF = 72, sB = 60, eB = 70 }), base,
+		}
+	end
+	-- Preserve walking, hit reactions, knockdown, crouching and recovery for bosses.
+	-- Returning only the guard here used to freeze every unhandled boss state.
+	return COMMON[animation] or { base }
+end
+
+local function bossSuper(style: string, base: Pose): Keys
+	local weaponStyle = style == "bone_warlock" or style == "deep_kraken" or style == "siege_robot" or style == "abyss_kraken" or style == "shadow_demon"
+	local strike = if weaponStyle then "weapon" else "handF"
+	local crouch = style == "iron_brute" or style == "tree_ancient" or style == "lava_titan" or style == "frost_golem" or style == "iron_brute_abbot"
+	local wind = with(base, { lean = base.lean - 18, sF = base.sF + 106, eF = 18, sB = base.sB + 92, eB = 24, hF = base.hF + 18, kF = 52, glow = 0.7, aura = 0.7, open = true })
+	local reveal = with(base, { lean = base.lean + (crouch and 34 or 12), sF = crouch and 28 or 102, eF = 0, sB = crouch and 22 or 88, eB = 4, hF = crouch and 86 or base.hF + 32, kF = crouch and 112 or 20, hB = crouch and -12 or base.hB - 18, kB = crouch and 116 or 35, hip = if crouch then 0.72 else 0.52, x = 0.045, glow = 1, aura = 1, open = true, strike = strike })
+	local impact = with(reveal, { lean = reveal.lean + 7, sF = reveal.sF + (weaponStyle and 20 or -8), sB = reveal.sB + 8, x = 0.06, strike = strike })
+	return { wind, with(wind, { glow = 1, aura = 1, drop = 0.015 }), reveal, impact, with(base, { lean = base.lean + 3, glow = 0.3, aura = 0.25 }), base }
+end
+
 local RigPoses = {}
 
 RigPoses.GUARD = GUARD
@@ -809,6 +894,18 @@ RigPoses.SUPERS = SUPERS
 
 -- Ключевые позы анимации для персонажа: особый приём — по типу, супер — по способу доставки.
 function RigPoses.keys(animation: Types.AnimationName, def: Types.CharacterDef): Keys
+	local bossPose = if def.visualStyle then bossGuard(def.visualStyle) else nil
+	if bossPose then
+		if animation == "Super" then
+			return bossSuper(def.visualStyle :: string, bossPose)
+		elseif animation == "Special" then
+			return SPECIALS[def.special.kind] or SPECIALS.Projectile
+		end
+		return bossKeys(animation, bossPose)
+	end
+	if animation == "Light2" or animation == "Light3" then
+		return COMMON[animation] or COMMON.Light
+	end
 	if animation == "Special" then
 		return SPECIALS[def.special.kind] or SPECIALS.Projectile
 	elseif animation == "Super" then

@@ -32,13 +32,13 @@ local STATE_ANIMATIONS: { [string]: Types.AnimationName } = {
 	Air = "Jump",
 	Landing = "Crouch",
 	Dash = "Dash",
-	Backdash = "Dash",
+	Backdash = "BackJump",
 	Block = "Block",
 	Blockstun = "Block",
 	Hitstun = "Hit",
-	Juggle = "Hit",
+	Juggle = "Launched",
 	Knockdown = "Knockdown",
-	WakeUp = "Crouch",
+	WakeUp = "WakeUp",
 	Cinematic = "Hit",
 	KO = "Knockdown",
 	Win = "Win",
@@ -47,8 +47,8 @@ local STATE_ANIMATIONS: { [string]: Types.AnimationName } = {
 
 local MOVE_ANIMATIONS: { [string]: Types.AnimationName } = {
 	Light1 = "Light",
-	Light2 = "Light",
-	Light3 = "Light",
+	Light2 = "Light2",
+	Light3 = "Light3",
 	Heavy = "Heavy",
 	CrouchLight = "CrouchLight",
 	CrouchHeavy = "CrouchHeavy",
@@ -74,14 +74,31 @@ function AnimationSelect.phaseProgress(frame: number, startup: number, active: n
 	return math.min(1, 2 / 3 + (into / math.max(recovery, 1)) / 3)
 end
 
-function AnimationSelect.choose(fighter: Snapshot.FighterSnapshot, characterId: string): Choice
+function AnimationSelect.choose(fighter: Snapshot.FighterSnapshot, characterId: string, combatProfile: string?): Choice
 	local time = fighter.stateFrame / TICK
+	local reaction = Snapshot.ReactionAnimations[fighter.reaction or 0]
+	if fighter.state == "Hitstun" and reaction then
+		return {
+			name = reaction :: Types.AnimationName,
+			time = time,
+			progress = math.clamp(fighter.stateFrame / 18, 0, 1),
+		}
+	end
+	if fighter.state == "Hitstun" and bit32.band(fighter.flags, Snapshot.Flags.Pulled) ~= 0 then
+		return { name = "Pulled", time = time, progress = math.clamp(fighter.stateFrame / 18, 0, 1) }
+	end
 
 	if fighter.state == "Attack" then
 		local moveId = MoveBook.fromIndex(fighter.move)
-		local move = if moveId then MoveBook.get(characterId, moveId) else nil
+		local move = if moveId then MoveBook.get(characterId, moveId, combatProfile) else nil
 		if moveId and move then
 			local name: Types.AnimationName = MOVE_ANIMATIONS[moveId] or IDLE
+			local alternate = bit32.band(fighter.flags, Snapshot.Flags.AlternateHand) ~= 0
+			if alternate and moveId == "Light1" then
+				name = "Light2"
+			elseif alternate and moveId == "Light2" then
+				name = "Light"
+			end
 			local progress = AnimationSelect.phaseProgress(fighter.moveFrame, move.startup, move.active, move.recovery)
 			return { name = name, time = time, progress = progress }
 		end
@@ -99,6 +116,9 @@ function AnimationSelect.choose(fighter: Snapshot.FighterSnapshot, characterId: 
 	end
 
 	local name: Types.AnimationName = STATE_ANIMATIONS[fighter.state] or IDLE
+	if fighter.state == "Air" and fighter.vx * fighter.facing < -0.5 then
+		name = "BackJump"
+	end
 	return { name = name, time = time, progress = nil }
 end
 

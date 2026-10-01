@@ -81,7 +81,7 @@ local function SuperMeter(scope: Scope, props: Props): Instance
 	return scope:New "Frame" {
 		Name = "SuperMeter",
 		AnchorPoint = props.AnchorPoint,
-		BackgroundColor3 = Color3.fromHex("#1A1233"),
+		BackgroundColor3 = Color3.fromHex("#272B25"),
 		BorderSizePixel = 0,
 		Position = props.Position,
 		Size = props.Size,

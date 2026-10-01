@@ -81,7 +81,11 @@ function Protocol.readMatch(data: unknown): CrossServer.Ticket?
 	end
 	local mode = Protocol.readMode(raw.mode)
 	local size = if mode then Protocol.groupSize(mode) else nil
-	if mode == nil or size == nil or type(raw.roster) ~= "table" or #raw.roster ~= size then
+	if mode == nil or size == nil or type(raw.roster) ~= "table" then
+		return nil
+	end
+	local fillBots = raw.fillBots == true and mode == "Team" and #raw.roster == size - 1
+	if #raw.roster ~= size and not fillBots then
 		return nil
 	end
 	local roster: { CrossServer.RosterEntry } = {}
@@ -100,7 +104,13 @@ function Protocol.readMatch(data: unknown): CrossServer.Ticket?
 		seen[entry.userId] = true
 		table.insert(roster, { userId = entry.userId, characterId = entry.characterId, team = entry.team })
 	end
-	return { matchKey = raw.matchKey, accessCode = raw.accessCode, mode = mode, roster = roster }
+	return {
+		matchKey = raw.matchKey,
+		accessCode = raw.accessCode,
+		mode = mode,
+		roster = roster,
+		fillBots = if fillBots then true else nil,
+	}
 end
 
 function Protocol.encodeMatch(ticket: CrossServer.Ticket): { [string]: any }
@@ -110,6 +120,7 @@ function Protocol.encodeMatch(ticket: CrossServer.Ticket): { [string]: any }
 		accessCode = ticket.accessCode,
 		mode = ticket.mode,
 		roster = ticket.roster,
+		fillBots = ticket.fillBots,
 	}
 end
 

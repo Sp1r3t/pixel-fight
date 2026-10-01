@@ -118,6 +118,67 @@ local BACKDROPS: { [string]: BackdropStyle } = {
 	},
 }
 
+-- Every super has its own stage treatment. Deluxe backdrops still take
+-- precedence, while the standard roster no longer shares one flat colour wash.
+local CINEMATIC_BACKDROPS: { [string]: BackdropStyle } = {
+	RushCombo = {
+		top = Color3.fromRGB(12, 24, 54),
+		bottom = Color3.fromRGB(202, 134, 34),
+		sparkle = Color3.fromRGB(255, 230, 150),
+	},
+	KickFlurry = {
+		top = Color3.fromRGB(65, 8, 45),
+		bottom = Color3.fromRGB(238, 73, 126),
+		sparkle = Color3.fromRGB(255, 220, 90),
+	},
+	SkyPiledriver = {
+		top = Color3.fromRGB(35, 23, 18),
+		bottom = Color3.fromRGB(125, 74, 35),
+		sparkle = Color3.fromRGB(255, 178, 72),
+	},
+	DiscRain = {
+		top = Color3.fromRGB(4, 45, 58),
+		bottom = Color3.fromRGB(30, 177, 175),
+		sparkle = Color3.fromRGB(255, 166, 54),
+	},
+	ShadowCuts = {
+		top = Color3.fromRGB(7, 4, 19),
+		bottom = Color3.fromRGB(62, 26, 92),
+		sparkle = Color3.fromRGB(181, 121, 255),
+	},
+	BoxingRush = {
+		top = Color3.fromRGB(45, 5, 5),
+		bottom = Color3.fromRGB(158, 34, 27),
+		sparkle = Color3.fromRGB(255, 218, 72),
+	},
+	AerialRave = {
+		top = Color3.fromRGB(15, 47, 36),
+		bottom = Color3.fromRGB(52, 150, 93),
+		sparkle = Color3.fromRGB(210, 255, 150),
+	},
+	LotusPalms = {
+		top = Color3.fromRGB(58, 26, 5),
+		bottom = Color3.fromRGB(183, 105, 34),
+		sparkle = Color3.fromRGB(255, 221, 146),
+	},
+	LancePierce = {
+		top = Color3.fromRGB(15, 25, 38),
+		bottom = Color3.fromRGB(81, 106, 132),
+		sparkle = Color3.fromRGB(235, 220, 135),
+	},
+	RocketLoop = {
+		top = Color3.fromRGB(3, 30, 48),
+		bottom = Color3.fromRGB(0, 168, 210),
+		sparkle = Color3.fromRGB(255, 235, 84),
+	},
+	PhoenixAscension = BACKDROPS.PhoenixSky,
+	GlacierPrison = BACKDROPS.GlacierCavern,
+	LightningIai = BACKDROPS.StormClouds,
+	DroneSwarm = BACKDROPS.Cyberspace,
+	ReaperJudgement = BACKDROPS.SpiritRealm,
+	StarCollapse = BACKDROPS.DeepSpace,
+}
+
 local CosmeticStyles = {}
 
 function CosmeticStyles.aura(id: string?): AuraStyle?
@@ -129,10 +190,14 @@ function CosmeticStyles.trail(id: string?): TrailStyle?
 end
 
 -- Фон ролика супера: особый у Deluxe, иначе — затемнённый цвет вспышки супера.
-function CosmeticStyles.backdrop(id: string?, flashHex: string): BackdropStyle
+function CosmeticStyles.backdrop(id: string?, flashHex: string, cinematicStyle: string?): BackdropStyle
 	local special = if id then BACKDROPS[id] else nil
 	if special then
 		return special
+	end
+	local cinematic = if cinematicStyle then CINEMATIC_BACKDROPS[cinematicStyle] else nil
+	if cinematic then
+		return cinematic
 	end
 	local flash = Color3.fromHex(flashHex)
 	return {

@@ -73,7 +73,7 @@ local function Panel(scope: Scope, props: Props): Frame
 			scope:New "UICorner" { CornerRadius = UDim.new(0, radius) },
 			scope:New "UIStroke" {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = props.StrokeColor or Theme.Colors.Outline,
+				Color = props.StrokeColor or Theme.Colors.PanelEdge,
 				Thickness = props.StrokeThickness or Theme.Outline,
 			},
 			scope:New "UIGradient" {

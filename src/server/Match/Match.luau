@@ -42,6 +42,7 @@ export type NetEvent = {
 export type Presentation = {
 	displayName: string?,
 	palette: Types.Palette?,
+	visualStyle: string?,
 }
 
 -- Кого игрок встречает в режиме боссов (для экрана боя).
@@ -70,6 +71,7 @@ export type Match = {
 	framesSinceSnapshot: number,
 	pendingEvents: { NetEvent },
 	ended: boolean,
+	paused: boolean, -- серверная пауза одиночного боя во время окна покупки
 	flow: MatchFlow.Flow?, -- раунды (nil — без раундов, например тренировка)
 	presentation: { [number]: Presentation }, -- по слотам
 	boss: BossInfo?,
@@ -77,6 +79,7 @@ export type Match = {
 	ranked: boolean, -- матч из общей очереди (награда за победу)
 	-- Вызывается один раз, когда матч закончился (любым способом).
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
+	beforeFinish: ((match: Match, result: MatchResult) -> boolean)?, -- false откладывает завершение
 	data: { [string]: any }, -- данные режима (боссы, боты в матче и т.п.)
 }
 
@@ -89,6 +92,7 @@ export type MatchConfig = {
 	hpMultipliers: { number }?,
 	roundsToWin: number?, -- nil — без раундов
 	onFinished: ((match: Match, result: MatchResult) -> ())?,
+	beforeFinish: ((match: Match, result: MatchResult) -> boolean)?,
 	presentation: { [number]: Presentation }?,
 	boss: BossInfo?,
 	teams: { number }?, -- команда каждого слота (по умолчанию слоты 1, 3 — команда 1; 2, 4 — команда 2)
@@ -111,6 +115,22 @@ function Match.new(config: MatchConfig): Match
 		hpMultipliers = config.hpMultipliers,
 		stage = stage,
 	})
+	-- Apply concept body classes before the initial health totals are announced.
+	local CombatProfiles = require(ReplicatedStorage.Shared.Config.CombatProfiles)
+	for slot, presentation in config.presentation or {} do
+		local fighter = sim.fighters[slot]
+		local profile = if presentation.visualStyle then CombatProfiles.get(presentation.visualStyle) else nil
+		if fighter and profile then
+			fighter.combatProfile = profile.id
+			fighter.stats = table.clone(fighter.stats)
+			local healthScale = if profile.role == "tank" then 1.2 elseif profile.role == "agile" then 0.9 else 1
+			local speedScale = if profile.role == "tank" then 0.8 elseif profile.role == "agile" then 1.18 else 1
+			fighter.stats.maxHealth = math.floor(fighter.stats.maxHealth * healthScale + 0.5)
+			fighter.stats.walkSpeed *= speedScale
+			fighter.maxHealth = math.floor(fighter.stats.maxHealth * fighter.hpMultiplier + 0.5)
+			fighter.health = fighter.maxHealth
+		end
+	end
 	for slot, controller in controllers do
 		-- ИИ делает рывки кнопкой: двойное нажатие направления ему не нужно.
 		if controller.kind ~= "Player" and sim.fighters[slot] then
@@ -129,12 +149,14 @@ function Match.new(config: MatchConfig): Match
 		framesSinceSnapshot = 0,
 		pendingEvents = {},
 		ended = false,
+		paused = false,
 		flow = if config.roundsToWin then MatchFlow.new({ roundsToWin = config.roundsToWin }) else nil,
 		presentation = config.presentation or {},
 		boss = config.boss,
 		stage = stage,
 		ranked = config.ranked == true,
 		onFinished = config.onFinished,
+		beforeFinish = config.beforeFinish,
 		data = {},
 	}
 end

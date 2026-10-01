@@ -27,9 +27,9 @@ export type Props = {
 
 local DELAY = 0.7
 
-local HIGH = Color3.fromHex("#5BD17A")
-local MID = Color3.fromHex("#FFC845")
-local LOW = Color3.fromHex("#FF4D6D")
+local HIGH = Color3.fromHex("#859370")
+local MID = Color3.fromHex("#C4A46A")
+local LOW = Color3.fromHex("#AB6251")
 
 local function HealthBar(scope: Scope, props: Props): Instance
 	local ratio = scope:Computed(function(use)
@@ -66,7 +66,7 @@ local function HealthBar(scope: Scope, props: Props): Instance
 	return scope:New "Frame" {
 		Name = "HealthBar",
 		AnchorPoint = props.AnchorPoint,
-		BackgroundColor3 = Color3.fromHex("#2A1830"),
+		BackgroundColor3 = Color3.fromHex("#272B25"),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 		Position = props.Position,

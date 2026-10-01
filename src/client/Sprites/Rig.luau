@@ -274,7 +274,7 @@ end
 ----------------------------------------------------------------------------------------------
 
 function Rig.new(parent: Instance, def: Types.CharacterDef): Rig
-	local look = CharacterLooks.get(def.id)
+	local look = CharacterLooks.get(def.id, def.visualStyle)
 	local palette = def.palette
 	local dims = BUILDS[look.build] or BUILDS.Normal
 

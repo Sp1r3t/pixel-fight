@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Theme = require(script.Parent.Parent.Theme)
+local IconGlyph = require(script.Parent.IconGlyph)
 
 local Children = Fusion.Children
 
@@ -17,7 +18,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 export type Props = {
 	Name: string?,
 	Text: UsedAs<string>,
-	Icon: UsedAs<string>?,
+	Icon: UsedAs<string>?, -- id пиксельной иконки (UI/PixelIcons), не эмодзи; может быть реактивным
 	Color: UsedAs<Color3>?,
 	TextColor: UsedAs<Color3>?,
 	Height: number?,
@@ -46,17 +47,13 @@ local function Pill(scope: Scope, props: Props): Instance
 	if props.Icon then
 		table.insert(
 			items,
-			scope:New "TextLabel" {
+			IconGlyph(scope, {
 				Name = "Icon",
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Title,
+				Id = props.Icon :: UsedAs<string>,
 				LayoutOrder = 1,
-				Size = UDim2.fromOffset(textSize + 4, height),
-				Text = props.Icon,
-				TextSize = textSize + 2,
-				TextColor3 = Color3.new(1, 1, 1),
+				Size = UDim2.fromOffset(height - 4, height - 4),
 				ZIndex = zIndex + 1,
-			}
+			})
 		)
 	end
 	table.insert(

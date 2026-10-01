@@ -20,6 +20,8 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Snapshot = require(ReplicatedStorage.Shared.Combat.Snapshot)
 local MoveBook = require(ReplicatedStorage.Shared.Combat.MoveBook)
 local CharacterLooks = require(ReplicatedStorage.Shared.Config.CharacterLooks)
+local CharacterSprites = require(ReplicatedStorage.Shared.Config.CharacterSprites)
+local SignatureMoves = require(ReplicatedStorage.Shared.Config.SignatureMoves)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
@@ -151,12 +153,32 @@ local function readBoss(value: any): AppState.BattleBoss?
 end
 
 -- Описание персонажа для отрисовки с учётом своих цветов (боссы).
-local function viewDefinition(def: Types.CharacterDef, palette: Types.Palette?): Types.CharacterDef
-	if palette == nil then
+local function viewDefinition(
+	def: Types.CharacterDef,
+	palette: Types.Palette?,
+	visualStyle: string?
+): Types.CharacterDef
+	if palette == nil and visualStyle == nil then
 		return def
 	end
 	local copy = table.clone(def) :: any
-	copy.palette = palette
+	if palette then
+		copy.palette = palette
+		copy.cosmetics = table.clone(def.cosmetics)
+		copy.cosmetics.superFlash = palette.accent
+	end
+	copy.visualStyle = visualStyle
+	local signature = if visualStyle then SignatureMoves.get(visualStyle) else nil
+	if signature then
+		copy.super = table.clone(def.super)
+		copy.super.move = table.clone(def.super.move)
+		copy.super.move.name = signature.superName
+		copy.super.delivery = signature.delivery or def.super.delivery
+		copy.super.cinematic = table.clone(def.super.cinematic)
+		copy.super.cinematic.duration = signature.duration or def.super.cinematic.duration
+		copy.super.cinematic.hits = signature.hits or def.super.cinematic.hits
+	end
+	copy.sprites = if visualStyle then CharacterSprites.getConcept(visualStyle) else nil
 	return copy
 end
 
@@ -190,6 +212,9 @@ local function readSetup(payload: any): AppState.BattleInfo?
 					then string.sub(fighter.displayName, 1, 40)
 					else nil,
 				palette = readPalette(fighter.palette),
+				visualStyle = if type(fighter.visualStyle) == "string"
+					then string.sub(fighter.visualStyle, 1, 32)
+					else nil,
 				legendary = fighter.legendary == true,
 				hitEffect = cosmeticOf(fighter.hitEffect, "HitEffect"),
 				koEffect = cosmeticOf(fighter.koEffect, "KoEffect"),
@@ -252,7 +277,12 @@ local function onMatchStart(payload: any)
 	for _, fighter in info.fighters do
 		local def = CharacterRegistry.get(fighter.characterId)
 		if def then
-			local view = FighterView.new(built.folder, viewDefinition(def, fighter.palette), fighter.slot, info.stage)
+			local view = FighterView.new(
+				built.folder,
+				viewDefinition(def, fighter.palette, fighter.visualStyle),
+				fighter.slot,
+				info.stage
+			)
 			views[fighter.slot] = view
 			if teamMode then
 				view.setNameplate(nameplateText(info, fighter), TEAM_COLORS[fighter.team])
@@ -306,6 +336,10 @@ local function onBossResult(payload: any)
 		return
 	end
 	if payload.won ~= true then
+		if payload.returnToLobby == true then
+			table.clear(state.history)
+			state.screen:set("MainMenu")
+		end
 		AppState.notify(state, `{boss.name} оказался сильнее. Попробуйте ещё раз!`, 4)
 		return
 	end
@@ -533,6 +567,12 @@ local function playEvent(event: NetEvent)
 		local sample = lastSample
 		if attackerView and defenderView and arena and sample and sample.fighters[defenderSlot] then
 			local def = attackerView.def
+			local localSlot = if battleInfo then battleInfo.localSlot else nil
+			local focusCamera = localSlot == nil
+				or battleInfo == nil
+				or #battleInfo.fighters <= 2
+				or localSlot == event.s
+				or localSlot == defenderSlot
 			Cinematics.start({
 				folder = arena.folder,
 				attacker = attackerView,
@@ -541,6 +581,7 @@ local function playEvent(event: NetEvent)
 				defenderX = sample.fighters[defenderSlot].x,
 				duration = (event.v or 120) / TICK,
 				hits = def.super.cinematic.hits,
+				focusCamera = focusCamera,
 			})
 			-- Название супера уже было во вставке — здесь только вспышка и кольцо.
 			EffectsController.ring(
@@ -617,11 +658,11 @@ local function playEvent(event: NetEvent)
 		-- Смайлик над бойцом (сервер уже проверил, что эмоция есть и не спам).
 		local item = if event.t then Cosmetics.byId[event.t] else nil
 		local view = views[event.s]
-		if item and item.emoji and view then
+		if item and item.icon and view then
 			local position = view.anchor.CFrame.Position
 			local fighter = if lastSample then lastSample.fighters[event.s] else nil
 			local top = if fighter then fighter.y else position.Y
-			EffectsController.emote(Vector3.new(position.X, top + 7.2, 0), item.emoji)
+			EffectsController.emote(Vector3.new(position.X, top + 7.2, 0), item.icon)
 		end
 	elseif kind == "Combo" then
 		-- Комбо: название у стороны того, кто его сделал, и россыпь звёзд над ним.
@@ -750,7 +791,7 @@ end
 
 -- Цвет магии бойца (Config/CharacterLooks.element: слот палитры или свой цвет).
 local function elementColor(view: FighterView.FighterView): Color3
-	local element = CharacterLooks.get(view.def.id).element
+	local element = CharacterLooks.get(view.def.id, view.def.visualStyle).element
 	local palette = view.def.palette
 	if element == "primary" then
 		return Color3.fromHex(palette.primary)

@@ -273,4 +273,23 @@ function MatchFlow.timerSeconds(flow: Flow): number
 	return math.ceil(flow.timer / GameConfig.TickRate)
 end
 
+-- Отменить только результат последнего раунда и начать его заново.
+function MatchFlow.retryLastRound(flow: Flow, sim: Sim): boolean
+	if flow.phase ~= "RoundEnd" and (not flow.finished or flow.matchWinner == 0) then
+		return false
+	end
+	local winner = if flow.phase == "RoundEnd" then flow.roundWinner else flow.matchWinner
+	if winner == 0 then
+		flow.wins[1] = math.max(0, flow.wins[1] - 1)
+		flow.wins[2] = math.max(0, flow.wins[2] - 1)
+	else
+		flow.wins[winner] = math.max(0, flow.wins[winner] - 1)
+	end
+	flow.matchWinner = 0
+	flow.finished = false
+	table.clear(flow.events)
+	startRound(flow, sim)
+	return true
+end
+
 return MatchFlow

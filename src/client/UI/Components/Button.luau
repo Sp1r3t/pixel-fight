@@ -1,10 +1,10 @@
 --!strict
 --[[
-	Кнопка в стиле игры: цветное «тело» с бликом, толстая обводка и ступенька-тень снизу.
-	При наведении светлеет, при нажатии «проседает» на ступеньку (Spring-анимации).
+	Металлическая рамка, внутренняя гравировка и световой блик при наведении.
+	Лицевая часть приподнимается и возвращается при нажатии (Spring-анимации).
 
 	Варианты:
-	  • обычная — текст по центру, слева можно поставить иконку (эмодзи);
+	  • обычная — текст по центру, слева можно поставить пиксельную иконку (Icon — id из UI/PixelIcons);
 	  • Tile = true — большая плитка меню: крупная иконка сверху, название и подпись снизу;
 	  • Badge — наклейка в углу («NEW», «x2»).
 	Текст кнопки — это Text самой TextButton «Face» (по нему кнопку находят тесты и читалки).
@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Theme = require(script.Parent.Parent.Theme)
+local IconGlyph = require(script.Parent.IconGlyph)
 
 local Children, OnEvent, peek = Fusion.Children, Fusion.OnEvent, Fusion.peek
 
@@ -24,8 +25,9 @@ export type Props = {
 	Name: string?,
 	Text: UsedAs<string>,
 	OnClick: () -> (),
-	Icon: UsedAs<string>?,
+	Icon: UsedAs<string>?, -- id пиксельной иконки (UI/PixelIcons), не эмодзи; может быть реактивным
 	IconSize: number?,
+	IconOnly: boolean?, -- без текста рядом — иконка по центру кнопки (Text всё равно нужен тестам, можно "")
 	Subtitle: UsedAs<string>?,
 	Tile: boolean?,
 	Badge: UsedAs<string>?,
@@ -46,12 +48,22 @@ local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
 
 local function Button(scope: Scope, props: Props): Instance
-	local depth = Theme.ShadowDepth
+	local depth = math.max(3, Theme.ShadowDepth)
 	local hovering = scope:Value(false)
 	local pressing = scope:Value(false)
 	local disabled: UsedAs<boolean> = props.Disabled or false
 	local baseColor: UsedAs<Color3> = props.Color or Theme.Colors.Button
 	local zIndex = props.ZIndex or 1
+	local hover = scope:Spring(
+		scope:Computed(function(use)
+			return if use(hovering) and not use(disabled) then 1 else 0
+		end),
+		22,
+		1
+	)
+	local rimColor = scope:Computed(function(use)
+		return Theme.Colors.PanelEdge:Lerp(Theme.Colors.Accent, use(hover))
+	end)
 
 	local bodyColor = scope:Computed(function(use)
 		local color = use(baseColor)
@@ -60,7 +72,7 @@ local function Button(scope: Scope, props: Props): Instance
 		elseif use(pressing) then
 			return color:Lerp(BLACK, 0.12)
 		elseif use(hovering) then
-			return color:Lerp(WHITE, 0.14)
+			return color:Lerp(Theme.Colors.Accent, 0.15)
 		end
 		return color
 	end)
@@ -70,7 +82,7 @@ local function Button(scope: Scope, props: Props): Instance
 	end)
 	local press = scope:Spring(
 		scope:Computed(function(use)
-			return if use(pressing) and not use(disabled) then depth - 1 else 0
+			return if use(disabled) then 0 elseif use(pressing) then depth - 1 elseif use(hovering) then -2 else 0
 		end),
 		45,
 		1
@@ -105,21 +117,14 @@ local function Button(scope: Scope, props: Props): Instance
 		if hasIcon then
 			table.insert(
 				extras,
-				scope:New "TextLabel" {
+				IconGlyph(scope, {
 					Name = "Icon",
+					Color = Theme.Colors.Text,
+					Id = props.Icon :: UsedAs<string>,
 					AnchorPoint = Vector2.new(0.5, 0),
-					BackgroundTransparency = 1,
-					Font = Theme.Fonts.Title,
-					Position = UDim2.fromScale(0.5, 0.07),
-					Size = UDim2.fromScale(1, 0.38),
-					Text = props.Icon,
-					TextColor3 = WHITE,
-					TextScaled = true,
-					ZIndex = zIndex + 4,
-					[Children] = scope:New "UITextSizeConstraint" {
-						MaxTextSize = iconSize,
-					},
-				}
+					Position = UDim2.fromScale(0.5, 0.1),
+					Size = UDim2.fromOffset(iconSize, iconSize),
+				})
 			)
 		end
 		if props.Subtitle ~= nil then
@@ -144,8 +149,9 @@ local function Button(scope: Scope, props: Props): Instance
 			)
 		end
 	else
+		local iconOnly = props.IconOnly == true
 		padding = scope:New "UIPadding" {
-			PaddingLeft = UDim.new(0, if hasIcon then iconSize + 14 else 10),
+			PaddingLeft = UDim.new(0, if iconOnly then 0 elseif hasIcon then iconSize + 14 else 10),
 			PaddingRight = UDim.new(0, 10),
 			PaddingBottom = UDim.new(if props.Subtitle ~= nil then 0.4 else 0, 0),
 		}
@@ -174,18 +180,14 @@ local function Button(scope: Scope, props: Props): Instance
 		if hasIcon then
 			table.insert(
 				extras,
-				scope:New "TextLabel" {
+				IconGlyph(scope, {
 					Name = "Icon",
-					AnchorPoint = Vector2.new(0, 0.5),
-					BackgroundTransparency = 1,
-					Font = Theme.Fonts.Title,
-					Position = UDim2.new(0, 10, 0.5, 0),
+					Color = Theme.Colors.Text,
+					Id = props.Icon :: UsedAs<string>,
+					AnchorPoint = if iconOnly then Vector2.new(0.5, 0.5) else Vector2.new(0, 0.5),
+					Position = if iconOnly then UDim2.fromScale(0.5, 0.5) else UDim2.new(0, 10, 0.5, 0),
 					Size = UDim2.fromOffset(iconSize, iconSize),
-					Text = props.Icon,
-					TextColor3 = WHITE,
-					TextSize = iconSize,
-					ZIndex = zIndex + 4,
-				}
+				})
 			)
 		end
 	end
@@ -216,7 +218,7 @@ local function Button(scope: Scope, props: Props): Instance
 					},
 					scope:New "UIStroke" {
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Colors.Outline,
+						Color = Theme.Colors.PanelEdge,
 						Thickness = 2,
 					},
 				},
@@ -259,31 +261,78 @@ local function Button(scope: Scope, props: Props): Instance
 				BorderSizePixel = 0,
 				Position = facePosition,
 				Size = faceSize,
+				ClipsDescendants = true,
 				ZIndex = zIndex + 1,
 				[Children] = {
 					scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.ButtonRadius) },
 					scope:New "UIStroke" {
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Colors.Outline,
+						Color = rimColor,
 						Thickness = Theme.Outline,
 					},
 					scope:New "UIGradient" {
 						Color = ColorSequence.new({
 							ColorSequenceKeypoint.new(0, WHITE),
-							ColorSequenceKeypoint.new(0.5, WHITE),
-							ColorSequenceKeypoint.new(1, Color3.new(0.8, 0.8, 0.84)),
+							ColorSequenceKeypoint.new(0.35, Color3.new(0.94, 0.94, 0.94)),
+							ColorSequenceKeypoint.new(1, Color3.new(0.55, 0.58, 0.6)),
 						}),
 						Rotation = 90,
 					},
 					scope:New "Frame" {
 						Name = "Shine",
 						BackgroundColor3 = WHITE,
-						BackgroundTransparency = 0.72,
+						BackgroundTransparency = scope:Computed(function(use)
+							return 0.7 - use(hover) * 0.35
+						end),
 						BorderSizePixel = 0,
-						Position = UDim2.fromOffset(Theme.ButtonRadius, 3),
-						Size = UDim2.new(1, -Theme.ButtonRadius * 2, 0, 3),
+						Position = UDim2.fromOffset(6, 1),
+						Size = UDim2.new(1, -12, 0, 1),
 						ZIndex = zIndex + 2,
 						[Children] = scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+					},
+					scope:New "Frame" {
+						Name = "EngravedRim",
+						BackgroundTransparency = 1,
+						Position = UDim2.fromOffset(4, 4),
+						Size = UDim2.new(1, -8, 1, -8),
+						ZIndex = zIndex + 2,
+						[Children] = scope:New "UIStroke" {
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = rimColor,
+							Thickness = 1,
+							Transparency = scope:Computed(function(use)
+								return 0.72 - use(hover) * 0.38
+							end),
+						},
+					},
+					scope:New "Frame" {
+						Name = "HoverSweep",
+						BackgroundColor3 = Theme.Colors.Accent,
+						BackgroundTransparency = 0.82,
+						BorderSizePixel = 0,
+						Position = scope:Computed(function(use)
+							return UDim2.fromScale(-0.4 + use(hover) * 1.8, 0)
+						end),
+						Size = UDim2.fromScale(0.3, 1),
+						ZIndex = zIndex + 2,
+						[Children] = scope:New "UIGradient" {
+							Rotation = 20,
+							Transparency = NumberSequence.new({
+								NumberSequenceKeypoint.new(0, 1),
+								NumberSequenceKeypoint.new(0.5, 0),
+								NumberSequenceKeypoint.new(1, 1),
+							}),
+						},
+					},
+					scope:New "Frame" {
+						Name = "CornerInlay",
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.new(1, -6, 0, 6),
+						Size = UDim2.fromOffset(4, 4),
+						Rotation = 45,
+						BackgroundColor3 = rimColor,
+						BorderSizePixel = 0,
+						ZIndex = zIndex + 2,
 					},
 				},
 			},
@@ -305,6 +354,13 @@ local function Button(scope: Scope, props: Props): Instance
 
 				[OnEvent "MouseEnter"] = function()
 					hovering:set(true)
+				end,
+				[OnEvent "SelectionGained"] = function()
+					hovering:set(true)
+				end,
+				[OnEvent "SelectionLost"] = function()
+					hovering:set(false)
+					pressing:set(false)
 				end,
 				[OnEvent "MouseLeave"] = function()
 					hovering:set(false)
@@ -331,8 +387,8 @@ local function Button(scope: Scope, props: Props): Instance
 					scope:New "UIStroke" {
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
 						Color = Theme.Colors.Outline,
-						Thickness = 1.5,
-						Transparency = 0.35,
+						Thickness = 1,
+						Transparency = 0.8,
 					},
 				},
 			},

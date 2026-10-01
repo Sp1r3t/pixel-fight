@@ -37,6 +37,7 @@ export type Cinematic = {
 export type Projectile = {
 	id: number,
 	owner: number, -- слот бойца-владельца
+	attackSequence: number?, -- only its launching attack may receive a hit-confirm
 	kind: string, -- вид для отрисовки: "Orb" | "Comet" | "Disc" | "Wave" | "Mine"
 	x: number,
 	y: number, -- центр

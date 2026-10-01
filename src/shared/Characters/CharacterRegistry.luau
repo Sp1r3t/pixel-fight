@@ -8,6 +8,7 @@ local Types = require(script.Parent.Parent.Types)
 local Balance = require(script.Parent.Parent.Config.Balance)
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
 local CharactersConfig = require(script.Parent.Parent.Config.Characters)
+local CharacterSprites = require(script.Parent.Parent.Config.CharacterSprites)
 local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 
 type CharacterDef = Types.CharacterDef
@@ -32,6 +33,9 @@ table.sort(ordered, function(a: CharacterDef, b: CharacterDef): boolean
 	return a.order < b.order
 end)
 for _, def in ordered do
+	-- Пиксель-арт лист (Config/CharacterSprites), если для персонажа уже загружен в Roblox;
+	-- иначе def.sprites остаётся nil и SpriteAnimator рисует процедурного Rig, как раньше.
+	(def :: any).sprites = CharacterSprites.get(def.id)
 	byId[def.id] = def
 end
 deepFreeze(CharactersConfig)

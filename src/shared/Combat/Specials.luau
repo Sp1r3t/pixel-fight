@@ -26,6 +26,9 @@ local Fighter = require(script.Parent.Fighter)
 local SimState = require(script.Parent.SimState)
 local Projectiles = require(script.Parent.Projectiles)
 local Stage = require(script.Parent.Stage)
+local MoveBook = require(script.Parent.MoveBook)
+local CombatProfiles = require(script.Parent.Parent.Config.CombatProfiles)
+local SignatureMoves = require(script.Parent.Parent.Config.SignatureMoves)
 
 type Sim = SimState.Sim
 type Fighter = Fighter.Fighter
@@ -60,6 +63,19 @@ local PROJECTILE_KIND: { [string]: string } = {
 -- Поведение приёма бойца (nil — обычный удар).
 function Specials.behaviour(fighter: Fighter, moveId: string?): Behaviour?
 	if moveId ~= "Special" and moveId ~= "Super" then
+		local profile = CombatProfiles.get(fighter.combatProfile or fighter.characterId)
+		local move = if moveId then MoveBook.get(fighter.characterId, moveId, fighter.combatProfile) else nil
+		if profile and profile.projectile and move then
+			return {
+				kind = profile.projectile,
+				isSuper = false,
+				move = move,
+				params = { projectileSpeed = 23, projectileLifetime = 0.48, travelDistance = 8 },
+			}
+		end
+		if profile and profile.weapon == "ChainSickle" and move and (moveId == "Light3" or moveId == "Heavy") then
+			return { kind = "Hook", isSuper = false, move = move, params = { pullDistance = 2 } }
+		end
 		return nil
 	end
 	local def = CharacterRegistry.get(fighter.characterId)
@@ -67,11 +83,23 @@ function Specials.behaviour(fighter: Fighter, moveId: string?): Behaviour?
 		return nil
 	end
 	if moveId == "Special" then
-		local kind: string = def.special.kind
-		return { kind = kind, isSuper = false, move = def.special.move, params = def.special.params }
+		local signature = SignatureMoves.get(fighter.combatProfile or fighter.characterId)
+		local kind: string = if signature and signature.kind then signature.kind else def.special.kind
+		return {
+			kind = kind,
+			isSuper = false,
+			move = MoveBook.get(fighter.characterId, moveId, fighter.combatProfile) :: Types.MoveData,
+			params = if signature and signature.params then signature.params else def.special.params,
+		}
 	end
-	local delivery: string = def.super.delivery
-	return { kind = delivery, isSuper = true, move = def.super.move, params = def.super.params }
+	local signature = SignatureMoves.get(fighter.combatProfile or fighter.characterId)
+	local delivery: string = if signature and signature.delivery then signature.delivery else def.super.delivery
+	return {
+		kind = delivery,
+		isSuper = true,
+		move = MoveBook.get(fighter.characterId, moveId, fighter.combatProfile) :: Types.MoveData,
+		params = def.super.params,
+	}
 end
 
 -- Вид снаряда приёма (nil — приём без снаряда).
@@ -89,7 +117,8 @@ function Specials.canStart(sim: Sim, fighter: Fighter, moveId: string): boolean
 	if kind == nil or kind == "Mine" then
 		return true
 	end
-	return Projectiles.countOwned(sim, fighter.slot, kind) == 0
+	local limit = if moveId ~= "Special" and moveId ~= "Super" then 2 else 1
+	return Projectiles.countOwned(sim, fighter.slot, kind) < limit
 end
 
 -- Бьёт ли приём своим хитбоксом (у снарядов, ловушек и контратак — нет).
@@ -343,6 +372,11 @@ function Specials.afterHit(attacker: Fighter, defender: Fighter, behaviour: Beha
 		-- Отбрасывание затухает с PushFriction за кадр: подбираем скорость под нужное смещение.
 		local distance = behaviour.params.pullDistance or 5
 		defender.push = -side * distance * TICK * (1 - Combat.PushFriction)
+		defender.reaction = "Pulled"
+	elseif behaviour.kind == "CommandGrab" and not blocked and not defender.ko then
+		defender.reaction = "Grabbed"
+		defender.push = 0
+		defender.vx = 0
 	end
 end
 

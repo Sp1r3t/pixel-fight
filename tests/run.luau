@@ -30,7 +30,9 @@ local ComboPerformer = require("./lib/ComboPerformer")
 
 local SPEC_DIR = "tests/specs"
 
-local sharedLoader = RobloxRequire.new()
+local sharedLoader = RobloxRequire.new({
+	overrides = { ["src/shared/Config/TestMode.luau"] = { UnlockAllCharacters = false } },
+})
 
 local files = fs.readDir(SPEC_DIR)
 table.sort(files)

@@ -82,6 +82,7 @@ local function sendSetup(match: Match, player: Player)
 			maxHealth = match.sim.fighters[slot].maxHealth,
 			displayName = if look then look.displayName else nil,
 			palette = palette,
+			visualStyle = if look and look.visualStyle then look.visualStyle else if skin then skin.id else nil,
 			legendary = if skin and skin.legendary then true else nil,
 			hitEffect = loadout.hitEffect,
 			koEffect = loadout.koEffect,
@@ -222,6 +223,9 @@ local function broadcast(match: Match)
 end
 
 function MatchService.stepMatch(match: Match, now: number)
+	if match.paused then
+		return
+	end
 	Simulation.step(match.sim, gatherInputs(match, now))
 	for _, event in match.sim.events do
 		table.insert(match.pendingEvents, {
@@ -255,10 +259,22 @@ function MatchService.stepMatch(match: Match, now: number)
 				w = event.wins,
 				fin = event.final,
 			})
+			local onRoundEnd = match.data.onRoundEnd
+			if event.kind == "RoundEnd" and type(onRoundEnd) == "function" then
+				onRoundEnd(event)
+			end
 		end
 		if flow.finished then
+			local result: Match.MatchResult = {
+				winner = flow.matchWinner,
+				wins = table.clone(flow.wins),
+				reason = "Finished",
+			}
+			local mayFinish = match.beforeFinish == nil or match.beforeFinish(match, result)
 			broadcast(match)
-			MatchService.finish(match, "Finished", flow.matchWinner)
+			if mayFinish then
+				MatchService.finish(match, "Finished", flow.matchWinner)
+			end
 		end
 	end
 	if match.ended then
@@ -274,6 +290,10 @@ end
 local function onHeartbeat(dt: number)
 	local now = os.clock()
 	for _, match in matches do
+		if match.paused then
+			match.accumulator = 0
+			continue
+		end
 		match.accumulator = math.min(match.accumulator + dt, STEP * MAX_STEPS_PER_HEARTBEAT)
 		while match.accumulator >= STEP - 1e-9 and not match.ended do
 			match.accumulator -= STEP

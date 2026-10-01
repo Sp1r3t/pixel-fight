@@ -48,8 +48,8 @@ local function interpolateFighter(a: FighterSnapshot, b: FighterSnapshot, t: num
 	-- Кадры состояния интерполируются между снапшотами: во время хитстопа они стоят,
 	-- и анимация тоже «замирает».
 	if b.state == a.state and b.move == a.move and b.stateFrame >= a.stateFrame then
-		result.stateFrame = math.floor(lerp(a.stateFrame, b.stateFrame, t))
-		result.moveFrame = math.floor(lerp(a.moveFrame, b.moveFrame, t))
+		result.stateFrame = lerp(a.stateFrame, b.stateFrame, t)
+		result.moveFrame = lerp(a.moveFrame, b.moveFrame, t)
 	end
 	return result
 end
@@ -89,8 +89,8 @@ local function extrapolateFighter(a: FighterSnapshot, frames: number): FighterSn
 	end
 	result.x = a.x + (a.vx * frames) / TICK
 	result.y = math.max(0, a.y + (a.vy * frames) / TICK)
-	result.stateFrame = a.stateFrame + math.floor(frames)
-	result.moveFrame = a.moveFrame + math.floor(frames)
+	result.stateFrame = a.stateFrame + frames
+	result.moveFrame = a.moveFrame + frames
 	return result
 end
 

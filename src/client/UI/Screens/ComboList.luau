@@ -1,10 +1,10 @@
 --!strict
 --[[
-	Экран «Комбо»: все 28 комбо с кнопками-иконками (👊 👊 🦶), подсказкой и наградой.
+	Экран «Комбо»: все 28 комбо с кнопками-иконками (пиксельные значки ударов), подсказкой и наградой.
 
 	  • вкладки «Для всех» (12 общих — выходят у любого бойца) и «Фирменные» (16 — по одному
 	    на бойца, с портретом);
-	  • найденное комбо отмечено ✓, ненайденное показывает награду за первое выполнение;
+	  • найденное комбо отмечено галочкой, ненайденное показывает награду за первое выполнение;
 	  • «Попробовать» — сразу в тренировку; у фирменного комбо портрет — кнопка «попробовать этим
 	    бойцом» (закрытый боец ведёт в магазин).
 ]]
@@ -17,6 +17,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local Pill = require(script.Parent.Parent.Components.Pill)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
@@ -29,7 +30,27 @@ type Combo = Combos.Combo
 
 local ROW_HEIGHT = 70
 
--- Кнопки-иконки комбо: [👊] [👊] [🦶].
+-- Две пиксельные иконки в одном месте, переключаются по Visible (вместо реактивного Icon).
+local function SwapIcon(scope: Scope, onId: string, offId: string, on: Fusion.UsedAs<boolean>): { Instance }
+	return {
+		IconGlyph(scope, {
+			Name = "IconOn",
+			Id = onId,
+			Size = UDim2.fromScale(1, 1),
+			Visible = on,
+		}),
+		IconGlyph(scope, {
+			Name = "IconOff",
+			Id = offId,
+			Size = UDim2.fromScale(1, 1),
+			Visible = scope:Computed(function(use)
+				return not use(on)
+			end),
+		}),
+	}
+end
+
+-- Кнопки-иконки комбо: например [⬇][👊] — присед + «Рука».
 local function InputChips(scope: Scope, combo: Combo): Instance
 	local chips: { Instance } = {
 		scope:New "UIListLayout" {
@@ -41,30 +62,48 @@ local function InputChips(scope: Scope, combo: Combo): Instance
 		},
 	}
 	for index, token in combo.inputs do
+		local ids: { string } = Combos.tokenIcons[token] or {}
+		local glyphs: { Instance } = {
+			scope:New "UIListLayout" {
+				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Padding = UDim.new(0, 2),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+			},
+		}
+		for glyphIndex, id in ids do
+			table.insert(
+				glyphs,
+				IconGlyph(scope, {
+					Name = `Glyph{glyphIndex}`,
+					Id = id,
+					LayoutOrder = glyphIndex,
+					Size = UDim2.fromOffset(24, 24),
+				})
+			)
+		end
 		table.insert(
 			chips,
-			scope:New "TextLabel" {
+			scope:New "Frame" {
 				Name = `Input{index}`,
 				AutomaticSize = Enum.AutomaticSize.X,
 				BackgroundColor3 = Theme.Colors.PanelLight,
-				Font = Theme.Fonts.Title,
 				LayoutOrder = index,
 				Size = UDim2.fromOffset(40, 40),
-				Text = Combos.tokenIcons[token] or token,
-				TextColor3 = Color3.new(1, 1, 1),
-				TextSize = 22,
 				[Children] = {
 					scope:New "UICorner" { CornerRadius = UDim.new(0, 8) },
 					scope:New "UIPadding" {
-						PaddingLeft = UDim.new(0, 6),
-						PaddingRight = UDim.new(0, 6),
+						PaddingLeft = UDim.new(0, 5),
+						PaddingRight = UDim.new(0, 5),
 					},
 					scope:New "UIStroke" {
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						Color = Theme.Colors.Outline,
 						Thickness = 2,
 					},
-				},
+					glyphs,
+				} :: { Fusion.Child },
 			}
 		)
 	end
@@ -114,22 +153,25 @@ local function ComboRow(scope: Scope, state: AppState.AppState, combo: Combo, or
 				[Children] = {
 					scope:New "UICorner" { CornerRadius = UDim.new(0, 6) },
 					FighterPortrait(scope, { Character = def, Framing = "Bust" }),
-					scope:New "TextLabel" {
+					scope:New "Frame" {
 						Name = "Play",
 						AnchorPoint = Vector2.new(1, 1),
 						BackgroundColor3 = scope:Computed(function(use)
 							return if use(owned) then Theme.Colors.Success else Theme.Colors.Paid
 						end),
-						Font = Theme.Fonts.Title,
 						Position = UDim2.new(1, -1, 1, -1),
 						Size = UDim2.fromOffset(20, 20),
-						Text = scope:Computed(function(use)
-							return if use(owned) then "▶" else "🔒"
-						end),
-						TextColor3 = Theme.Colors.Outline,
-						TextSize = 12,
 						ZIndex = 3,
-						[Children] = scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+						[Children] = {
+							scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+							scope:New "UIPadding" {
+								PaddingLeft = UDim.new(0, 3),
+								PaddingRight = UDim.new(0, 3),
+								PaddingTop = UDim.new(0, 3),
+								PaddingBottom = UDim.new(0, 3),
+							},
+							SwapIcon(scope, "play", "lock", owned),
+						} :: { Fusion.Child },
 					},
 				},
 			}
@@ -137,20 +179,14 @@ local function ComboRow(scope: Scope, state: AppState.AppState, combo: Combo, or
 	else
 		table.insert(
 			left,
-			scope:New "TextLabel" {
+			scope:New "Frame" {
 				Name = "Status",
 				AnchorPoint = Vector2.new(0, 0.5),
 				BackgroundColor3 = scope:Computed(function(use)
 					return if use(found) then Theme.Colors.Success else Theme.Colors.PanelLight
 				end),
-				Font = Theme.Fonts.Title,
 				Position = UDim2.new(0, 10, 0.5, 0),
 				Size = UDim2.fromOffset(38, 38),
-				Text = scope:Computed(function(use)
-					return if use(found) then "✓" else "?"
-				end),
-				TextColor3 = Theme.Colors.Text,
-				TextSize = 20,
 				[Children] = {
 					scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
 					scope:New "UIStroke" {
@@ -158,7 +194,14 @@ local function ComboRow(scope: Scope, state: AppState.AppState, combo: Combo, or
 						Color = Theme.Colors.Outline,
 						Thickness = 2,
 					},
-				},
+					scope:New "UIPadding" {
+						PaddingLeft = UDim.new(0, 8),
+						PaddingRight = UDim.new(0, 8),
+						PaddingTop = UDim.new(0, 8),
+						PaddingBottom = UDim.new(0, 8),
+					},
+					SwapIcon(scope, "check", "question", found),
+				} :: { Fusion.Child },
 			}
 		)
 	end
@@ -203,23 +246,30 @@ local function ComboRow(scope: Scope, state: AppState.AppState, combo: Combo, or
 			},
 			InputChips(scope, combo),
 			Pill(scope, {
-				Name = "Reward",
-				Icon = scope:Computed(function(use): string
-					return if use(found) then "✅" else "🪙"
-				end),
-				Text = scope:Computed(function(use)
-					return if use(found) then "есть" else `+{combo.reward}`
-				end),
-				Color = scope:Computed(function(use)
-					return if use(found) then Theme.Colors.Success else Theme.Colors.Panel
-				end),
-				TextColor = scope:Computed(function(use)
-					return if use(found) then Theme.Colors.Text else Theme.Colors.Coins
-				end),
+				Name = "RewardFound",
+				Icon = "check",
+				Text = "есть",
+				Color = Theme.Colors.Success,
+				TextColor = Theme.Colors.Text,
 				Height = 30,
 				TextSize = 16,
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -12, 0.5, 0),
+				Visible = found,
+			}),
+			Pill(scope, {
+				Name = "RewardPending",
+				Icon = "coin",
+				Text = `+{combo.reward}`,
+				Color = Theme.Colors.Panel,
+				TextColor = Theme.Colors.Coins,
+				Height = 30,
+				TextSize = 16,
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				Visible = scope:Computed(function(use)
+					return not use(found)
+				end),
 			}),
 		} :: { Fusion.Child },
 	})
@@ -278,11 +328,11 @@ local function ComboList(scope: Scope, state: AppState.AppState): Instance
 					AppState.back(state)
 				end,
 			}),
-			TabButton("All", "Для всех", "👊", 24),
-			TabButton("Signature", "Фирменные", "⭐", 244),
+			TabButton("All", "Для всех", "punch", 24),
+			TabButton("Signature", "Фирменные", "star", 244),
 			Pill(scope, {
 				Name = "Found",
-				Icon = "📜",
+				Icon = "scroll",
 				Text = scope:Computed(function(use)
 					return `Найдено: {use(foundCount)} / {total}`
 				end),
@@ -332,7 +382,7 @@ local function ComboList(scope: Scope, state: AppState.AppState): Instance
 			Button(scope, {
 				Name = "TryCombos",
 				Text = "Попробовать",
-				Icon = "🥋",
+				Icon = "belt",
 				Color = Theme.Colors.Success,
 				AnchorPoint = Vector2.new(1, 1),
 				Position = UDim2.new(1, -24, 1, -12),

@@ -239,9 +239,13 @@ describe("Экран «Управление»", function()
 		local game = Harness.new()
 		local client = game.addClient("Alice")
 		game.step(2)
+		uis(client).LastInputTypeChanged:Fire(Enum.UserInputType.Touch)
+		game.step(1)
 		client.click("Управление")
 		game.step(3)
 		expect(client.find("ControlsSettings") ~= nil).toBeTruthy()
+		expect(client.find("KeyboardPanel")).toBe(nil)
+		expect(client.find("TouchTab")).toBe(nil)
 		expect(client.find("TouchControls") ~= nil).toBeTruthy()
 
 		-- Перетаскиваем «Ногу» на 100 пикселей влево и 50 вверх.

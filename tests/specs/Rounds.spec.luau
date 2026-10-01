@@ -173,6 +173,26 @@ describe("MatchFlow", function()
 	end)
 
 	it(
+		"переигровка отменяет только последнее очко и начинает тот же раунд заново",
+		function()
+			local sim, flow = newMatch(3)
+			flow.round = 5
+			flow.wins = { 2, 3 }
+			flow.matchWinner = 2
+			flow.finished = true
+			sim.fighters[1].health = 0
+			sim.fighters[1].ko = true
+			expect(MatchFlow.retryLastRound(flow, sim)).toBe(true)
+			expect(flow.wins[1]).toBe(2)
+			expect(flow.wins[2]).toBe(2)
+			expect(flow.round).toBe(5)
+			expect(flow.phase).toBe("RoundStart")
+			expect(flow.finished).toBe(false)
+			expect(sim.fighters[1].health).toBe(sim.fighters[1].maxHealth)
+		end
+	)
+
+	it(
 		"ничьи довели обоих до нужного числа побед — финальный раунд",
 		function()
 			local sim, flow = newMatch(2)

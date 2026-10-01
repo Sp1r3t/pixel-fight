@@ -91,7 +91,7 @@ local function EdgeLayer(scope: Scope, state: AppState.AppState): Instance
 		ZIndex = 5,
 		[Children] = scope:Computed(function(use, innerScope: Scope): Instance?
 			local screen = use(state.screen)
-			if screen == "ControlsSettings" then
+			if screen == "ControlsSettings" and use(state.controlsTab) == "Touch" then
 				return TouchControls.new(innerScope, {
 					Layout = state.controlsDraft,
 					UiScale = state.uiScale,
@@ -139,6 +139,9 @@ local function Overlay(scope: Scope, state: AppState.AppState): Instance
 		Size = UDim2.fromScale(1, 1),
 		ZIndex = 30,
 		[Children] = scope:Computed(function(use, innerScope: Scope): Instance?
+			if use(state.bossOffer) ~= nil then
+				return BattleOverlays.BossOffer(innerScope, state)
+			end
 			local modal = use(state.modal)
 			if modal == "Pause" then
 				return BattleOverlays.PauseMenu(innerScope, state)

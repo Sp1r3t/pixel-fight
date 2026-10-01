@@ -1,0 +1,27 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Проверка парных анимаций</title>
+<style>body{margin:0;background:#101622;color:#ecf1fa;font:16px/1.5 system-ui}main{max-width:900px;margin:auto;padding:24px}h1{font-size:26px}label{display:inline-block;margin:8px}select,button{font:inherit;background:#263651;color:inherit;border:1px solid #526b90;padding:8px;border-radius:7px}canvas{width:100%;image-rendering:pixelated;background:#1c2942;border-radius:12px}p{color:#b4c5df}#status{color:#ffd188}a{color:#a6c7ff}</style>
+<main><h1>Парные сцены: атакующий и жертва</h1><p>Черновой просмотр реакций на собственном скине. Положение рук и точки захвата ещё требуют проверки в игре.</p>
+<label>Атакующий <select id="attacker"></select></label><label>Противник <select id="victim"></select></label><button id="pause">Пауза</button><label>Скорость <select id="speed"><option value="1">Обычная</option><option value="0.5">×0.5</option><option value="0.25">×0.25</option></select></label>
+<p id="status"></p><canvas id="scene" width="768" height="560"></canvas><p id="phase"></p><a href="preview.html">Все отдельные анимации</a></main>
+<script src="manifest.js"></script><script>
+const M=window.SKIN_MANIFEST,$=id=>document.getElementById(id),ids=Object.keys(M.characters),images=new Map(),panels=['motion','defense','combat','situational','recovery','super','reactions-grab','reactions-control'];
+for(const id of ids)for(const selector of ['attacker','victim']){const o=document.createElement('option');o.value=id;o.textContent=id[0].toUpperCase()+id.slice(1);$(selector).append(o);}
+$('attacker').value='brakk';$('victim').value='rook';
+const names={Hit:'Ожидание удара',Pulled:'Притягивание',Grabbed:'Захват',Lifted:'Подъём',Thrown:'Бросок',Launched:'Подбрасывание',Slammed:'Удар о землю',Bound:'Сковывание',Suspended:'Зависание'};
+const timelines={brakk:[[.15,'Hit'],[.33,'Pulled'],[.45,'Grabbed'],[.65,'Lifted'],[.84,'Thrown'],[1,'Slammed']],morrow:[[.36,'Pulled'],[.68,'Suspended'],[.87,'Launched'],[1,'Slammed']],tidebreaker:[[.35,'Pulled'],[.49,'Grabbed'],[.75,'Lifted'],[1,'Slammed']],glacia:[[.48,'Bound'],[.79,'Suspended'],[1,'Slammed']],byte:[[.7,'Bound'],[1,'Launched']],kessa:[[.55,'Bound'],[1,'Suspended']]};
+timelines.hex=[[.68,'Bound'],[1,'Launched']];
+timelines.astra=[[.62,'Suspended'],[.85,'Launched'],[1,'Slammed']];
+timelines.nocturne=timelines.astra;
+timelines.sovereign=[[.44,'Bound'],[.8,'Suspended'],[1,'Slammed']];
+timelines.null=[[.6,'Suspended'],[.86,'Launched'],[1,'Slammed']];
+let time=0,last=performance.now(),paused=false;
+function frame(id,name,u){const c=M.characters[id],a=M.animations[name],p=a&&c.panels[panels[a.page-1]];if(!p?.file)return null;const i=Math.min(a.frames-1,Math.floor(Math.min(u,.9999)*a.frames)),row=a.row+Math.floor(i/4),box=p.boxes[row*4+i%4];if(!images.has(p.file)){const image=new Image();image.src=p.file;images.set(p.file,image);}return {image:images.get(p.file),x:i%4*256,y:row*256,box,scale:p.scale};}
+function draw(f,x,y,mirror,center=false){if(!f?.image.complete||!f.image.naturalWidth)return;const ctx=$('scene').getContext('2d');let top=y-246,left=x-128;if(center&&f.box)top=y-(246-f.box.height*f.scale/2);ctx.save();ctx.translate(left,top);if(mirror){ctx.translate(256,0);ctx.scale(-1,1);}ctx.drawImage(f.image,f.x,f.y,256,256,0,0,256,256);ctx.restore();}
+function tick(now){const dt=Math.min((now-last)/1000,.1);last=now;if(!paused)time+=dt*Number($('speed').value);const t=(time%3.4)/3.4,a=$('attacker').value,v=$('victim').value,ctx=$('scene').getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,768,560);ctx.fillStyle='#657c9e';ctx.fillRect(0,474,768,2);let start=0,state='Hit',u=t;for(const phase of timelines[a]||[[.35,'Hit'],[.85,'Launched'],[1,'Slammed']]){if(t<=phase[0]){state=phase[1];u=(t-start)/(phase[0]-start);break;}start=phase[0];}
+const af=frame(a,'Super',t),vf=frame(v,state,u);$('status').textContent=(!af?'У атакующего пока нет панели ульты. ':'')+(!vf?'У выбранного противника ещё нет этих кадров.':'')+(af&&vf?'Черновая пара; точное совпадение захватов ещё не утверждено.':'');$('phase').textContent=`${a} → ${v}: ${names[state]}`;
+let ax=240,ay=474,vx=535,vy=474,center=false;
+if(['Pulled','Grabbed','Lifted','Thrown'].includes(state)||a==='brakk'){vx=535-220*Math.min(1,Math.max(0,(t-.15)/.18));}
+if(state==='Lifted'){vx=300;vy=220;center=true;ay=474-35*u;}else if(state==='Thrown'){vx=300+130*u;vy=220+170*u;center=true;}else if(state==='Launched'||state==='Suspended'){vy=335-80*Math.sin(u*Math.PI);center=true;}else if(state==='Slammed'){vy=474;vx=a==='brakk'?445:vx;}
+draw(af,ax,ay,false);draw(vf,vx,vy,true,center);requestAnimationFrame(tick);}
+for(const selector of ['attacker','victim'])$(selector).onchange=()=>{time=0;};$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'Продолжить':'Пауза';};requestAnimationFrame(tick);
+</script></html>

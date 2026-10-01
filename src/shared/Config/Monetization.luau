@@ -11,7 +11,7 @@
 
 local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 
-export type ProductKind = "SkipBoss" | "Coins" | "Crystals" | "StarterPack"
+export type ProductKind = "SkipBoss" | "BossRetry" | "BossBoost" | "Coins" | "Crystals" | "StarterPack"
 
 export type Product = {
 	key: string,
@@ -77,6 +77,14 @@ local Monetization = {
 		},
 		-- Набор новичка: один раз на профиль (повторная покупка — только кристаллы).
 		{ key = "StarterPack", id = 0, kind = "StarterPack", name = "Набор новичка", priceHint = 99 },
+		{
+			key = "BossRetry",
+			id = 0,
+			kind = "BossRetry",
+			name = "Переиграть последний раунд",
+			priceHint = 5,
+		},
+		{ key = "BossBoost", id = 0, kind = "BossBoost", name = "Усиление", priceHint = 5 },
 	} :: { Product },
 
 	starterPack = {

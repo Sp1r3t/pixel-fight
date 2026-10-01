@@ -8,6 +8,7 @@ local InputBits = requireShared("Combat", "InputBits")
 local Stage = requireShared("Combat", "Stage")
 local GameConfig = requireShared("Config", "GameConfig")
 local Arenas = requireShared("Config", "Arenas")
+local BotNames = requireShared("Config", "BotNames")
 
 ----------------------------------------------------------------------------------------------
 -- 2 на 2: сцена с двумя этажами
@@ -673,7 +674,7 @@ describe("Боты", function()
 			openMultiplayer(game, { alice })
 			press(alice, "QueueTeam")
 			game.step(3)
-			expect(alice.find("Details").Text).toContainMatch("ботов")
+			expect(string.find(string.lower(alice.find("Details").Text), "бот", 1, true) == nil).toBeTruthy()
 			local s = services(game)
 			game.step(60 * (GameConfig.Matchmaking.BotFillSeconds - 2))
 			expect(s.match.getMatchOf(alice.player)).toBe(nil)
@@ -734,6 +735,24 @@ describe("Боты", function()
 			local ok, code = s.router.handle(alice.player, "RoomStart", nil, 99)
 			expect(ok).toBe(false)
 			expect(code).toBe("NotInRoom")
+		end
+	)
+
+	it(
+		"три игрока в очереди 2 на 2 сразу получают четвёртого участника с обычным ником",
+		function()
+			local game = Harness.new()
+			local clients = { game.addClient("Alice"), game.addClient("Bob"), game.addClient("Carol") }
+			openMultiplayer(game, clients)
+			for _, client in clients do
+				press(client, "QueueTeam")
+			end
+			game.step(20)
+			local draft = clientPeek(clients[1], appState(clients[1]).draft)
+			expect(draft ~= nil).toBeTruthy()
+			expect(#draft.slots).toBe(4)
+			expect(table.find(BotNames.list, draft.slots[4].name) ~= nil).toBeTruthy()
+			expect(draft.slots[4].bot).toBe(false)
 		end
 	)
 end)
@@ -836,7 +855,8 @@ describe("Подготовка к бою", function()
 			game.step(8)
 			game.removeClient(bob)
 			game.step(3)
-			expect(alice.find("Slot2"):FindFirstChild("Player").Text).toBe("BOT")
+			local replacement = alice.find("Slot2"):FindFirstChild("Player").Text
+			expect(table.find(BotNames.list, replacement) ~= nil).toBeTruthy()
 			finishDraft(game.step, { alice })
 			local s = services(game)
 			local match = s.match.getMatchOf(alice.player)
@@ -932,7 +952,8 @@ describe("Против компьютера", function()
 		expect(match.mode).toBe("Cpu")
 		expect(match.controllers[2].kind).toBe("AI")
 		expect(match.flow.roundsToWin).toBe(GameConfig.RoundsToWin.Versus)
-		expect(alice.find("FighterPanel2"):FindFirstChild("Name").Text).toContainMatch("%(CPU%)")
+		local opponentName = alice.find("FighterPanel2"):FindFirstChild("Name").Text
+		expect(table.find(BotNames.list, string.lower(opponentName)) ~= nil).toBeTruthy()
 		stepUntilPhase(game, match, "Fight")
 		game.step(300)
 		local player = match.sim.fighters[1]
@@ -1023,6 +1044,23 @@ local function crossPair()
 end
 
 describe("Межсерверная очередь", function()
+	it(
+		"три игрока с разных серверов получают матч 2 на 2 с заполнением четвёртого места",
+		function()
+			local _, a, b = crossPair()
+			CrossServer.join(a, "Team", 1, "rook", 1)
+			CrossServer.join(b, "Team", 2, "mira", 2)
+			CrossServer.join(b, "Team", 3, "zip", 3)
+			local ticket = CrossServer.form(a, "Team", 4)
+			expect(ticket ~= nil).toBeTruthy()
+			expect(#ticket.roster).toBe(3)
+			expect(ticket.fillBots).toBe(true)
+			local data = Protocol.encodeMatch(ticket)
+			expect(Protocol.readMatch(data).fillBots).toBe(true)
+			data.fillBots = nil
+			expect(Protocol.readMatch(data)).toBe(nil)
+		end
+	)
 	it(
 		"игроки с разных серверов попадают в один матч; билеты читаются один раз",
 		function()
@@ -1194,6 +1232,35 @@ describe("Мультиплеер между серверами (Harness)", funct
 end)
 
 describe("Сервер матча (зарезервированный)", function()
+	it(
+		"межсерверный состав 3/4 запускается с четвёртым бойцом и обычным ником",
+		function()
+			local data = Protocol.encodeMatch({
+				matchKey = "team-three",
+				accessCode = "team-access",
+				mode = "Team",
+				fillBots = true,
+				roster = {
+					{ userId = 1, characterId = "rook", team = 1 },
+					{ userId = 2, characterId = "mira", team = 2 },
+					{ userId = 3, characterId = "zip", team = 1 },
+				},
+			})
+			local game = Harness.new({ studio = false, placeId = 777, privateServerId = "team-ps" })
+			local clients =
+				{ game.addClient("Alice", data), game.addClient("Bob", data), game.addClient("Carol", data) }
+			game.step(5)
+			finishDraft(game.step, clients)
+			local match = game.serverRequire("Services", "MatchService").getMatchOf(clients[1].player)
+			expect(match ~= nil).toBeTruthy()
+			expect(#match.sim.fighters).toBe(4)
+			expect(match.controllers[4].kind).toBe("AI")
+			expect(match.sim.fighters[4].team).toBe(2)
+			expect(table.find(BotNames.list, match.presentation[4].displayName) ~= nil).toBeTruthy()
+			expect(match.ranked).toBe(false)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
 	local function ticketData()
 		return Protocol.encodeMatch({
 			matchKey = "match-1",

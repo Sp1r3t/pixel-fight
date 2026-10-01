@@ -21,6 +21,9 @@ export type AnimationName =
 	| "Crouch"
 	| "Block"
 	| "Light"
+	| "Light2"
+	| "Light3"
+	| "BackJump"
 	| "Heavy"
 	| "CrouchLight"
 	| "CrouchHeavy"
@@ -30,10 +33,20 @@ export type AnimationName =
 	| "Super"
 	| "Hit"
 	| "Knockdown"
+	| "WakeUp"
+	| "Pulled"
+	| "Grabbed"
+	| "Lifted"
+	| "Thrown"
+	| "Launched"
+	| "Slammed"
+	| "Bound"
+	| "Suspended"
 	| "Win"
 	| "Lose"
 
 export type SpriteAnimation = {
+	page: number?, -- v2 atlas page (1-based); row is local to that page
 	row: number, -- строка в спрайт-листе (с 0)
 	frames: number, -- количество кадров в строке
 	fps: number, -- частота кадров анимации
@@ -41,7 +54,15 @@ export type SpriteAnimation = {
 }
 
 export type SpriteSheet = {
+	pages: { string }?,
+	columns: number?, -- frames wrap onto the next row when present
+	stableIdle: boolean?, -- legacy sheets: replace old forward/back idle with anchored breathing
 	image: string, -- "rbxassetid://..."
+	-- Второй лист картинки (доп. ряды) — Roblox пересжимает/портит текстуры одной стороной
+	-- больше ~1024px, поэтому длинные листы режутся на два изображения. Ряды с индексом
+	-- >= splitRow берутся из image2 (номер ряда внутри image2 = row - splitRow).
+	image2: string?,
+	splitRow: number?,
 	frameWidth: number, -- размер одного кадра в пикселях
 	frameHeight: number,
 	rows: number?, -- сколько строк в листе (строки сверх этого берутся из запасных анимаций)
@@ -192,6 +213,7 @@ export type CharacterDef = {
 	special: SpecialMove,
 	super: SuperMove,
 	sprites: SpriteSheet?, -- nil → процедурный плейсхолдер
+	visualStyle: string?, -- клиентский вариант силуэта (боссы/полные облики)
 }
 
 -- Производные характеристики — то, что реально использует симуляция боя.
@@ -257,6 +279,7 @@ export type BossDef = {
 	mechanics: { BossMechanic },
 	ai: BossAi,
 	reward: number, -- монеты за первую победу
+	visualStyle: string?, -- отдельная форма босса, не обычный скин персонажа
 }
 
 -- Общий интерфейс сервисов (сервер) и контроллеров (клиент).

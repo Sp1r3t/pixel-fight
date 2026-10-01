@@ -22,6 +22,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local HealthBar = require(script.Parent.Parent.Components.HealthBar)
 local SuperMeter = require(script.Parent.Parent.Components.SuperMeter)
@@ -33,35 +34,35 @@ local Children, peek = Fusion.Children, Fusion.peek
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 -- Подсказка клавиш: клавиши-«кнопочки» и что они делают (иконка как на сенсорных кнопках).
-type Hint = { keys: { string }, text: string }
+type Hint = { keys: { string }, text: string, action: string, icon: string }
 
 local HINTS: { [string]: { Hint } } = {
 	Keyboard = {
-		{ keys = { "A", "D" }, text = "ходьба" },
-		{ keys = { "W" }, text = "прыжок" },
-		{ keys = { "S" }, text = "присед" },
-		{ keys = { "J" }, text = "👊 рука" },
-		{ keys = { "K" }, text = "🦶 нога" },
-		{ keys = { "L" }, text = "✨ приём" },
-		{ keys = { "I" }, text = "⚡ супер" },
-		{ keys = { "Q" }, text = "🛡️ блок" },
-		{ keys = { "Shift" }, text = "💨 рывок" },
+		{ keys = { "A", "D" }, action = "Move", icon = "dash", text = "ходьба" },
+		{ keys = { "W" }, action = "Jump", icon = "arrow_up", text = "прыжок" },
+		{ keys = { "S" }, action = "Crouch", icon = "arrow_down", text = "присед" },
+		{ keys = { "J" }, action = "Light", icon = "punch", text = "рука" },
+		{ keys = { "K" }, action = "Heavy", icon = "kick", text = "нога" },
+		{ keys = { "L" }, action = "Special", icon = "special", text = "приём" },
+		{ keys = { "I" }, action = "Super", icon = "lightning", text = "супер" },
+		{ keys = { "Q" }, action = "Block", icon = "shield", text = "блок" },
+		{ keys = { "Shift" }, action = "Dash", icon = "dash", text = "рывок" },
 	},
 	Gamepad = {
-		{ keys = { "Стик" }, text = "ходьба" },
-		{ keys = { "A" }, text = "прыжок" },
-		{ keys = { "X" }, text = "👊 рука" },
-		{ keys = { "Y" }, text = "🦶 нога" },
-		{ keys = { "B" }, text = "✨ приём" },
-		{ keys = { "RB" }, text = "⚡ супер" },
-		{ keys = { "LT" }, text = "🛡️ блок" },
-		{ keys = { "LB" }, text = "💨 рывок" },
+		{ keys = { "Стик" }, action = "Move", icon = "gamepad", text = "ходьба" },
+		{ keys = { "A" }, action = "Jump", icon = "arrow_up", text = "прыжок" },
+		{ keys = { "X" }, action = "Light", icon = "punch", text = "рука" },
+		{ keys = { "Y" }, action = "Heavy", icon = "kick", text = "нога" },
+		{ keys = { "B" }, action = "Special", icon = "special", text = "приём" },
+		{ keys = { "RB" }, action = "Super", icon = "lightning", text = "супер" },
+		{ keys = { "LT" }, action = "Block", icon = "shield", text = "блок" },
+		{ keys = { "LB" }, action = "Dash", icon = "dash", text = "рывок" },
 	},
 }
 -- Сколько секунд показывать подсказку в начале боя (в тренировке — всегда).
 local HINT_SECONDS = 12
 
-local TEAM_COLORS: { Color3 } = { Color3.fromHex("#4DB8FF"), Color3.fromHex("#FF5A6E") }
+local TEAM_COLORS: { Color3 } = { Color3.fromHex("#789AA8"), Color3.fromHex("#B27669") }
 -- 2 на 2: строки команды (слоты сверху вниз). Нижний этаж (1, 2) — первая строка.
 local TEAM_SLOTS: { { number } } = { { 1, 3 }, { 2, 4 } }
 local ROW_HEIGHT = 48
@@ -169,12 +170,14 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 			return ""
 		end
 		local def = CharacterRegistry.get(fighter.characterId)
-		local text = string.upper(fighter.displayName or (if def then def.displayName else fighter.characterId))
+		local multiplayer = battle.mode == "Versus" or battle.mode == "Team" or battle.mode == "Cpu"
+		local text = string.upper(
+			(if multiplayer then fighter.playerName else nil)
+				or fighter.displayName
+				or (if def then def.displayName else fighter.characterId)
+		)
 		if battle.localSlot == slot then
 			text ..= " (YOU)"
-		end
-		if fighter.vip then
-			text = "👑 " .. text
 		end
 		return text
 	end)
@@ -195,6 +198,17 @@ local function FighterPanel(scope: Scope, state: AppState.AppState, slot: number
 				size = PORTRAIT,
 				color = TEAM_COLORS[slot],
 				position = at(16, 8),
+			}),
+			IconGlyph(scope, {
+				Name = "VipIcon",
+				Id = "crown",
+				AnchorPoint = anchor,
+				Position = at(BAR_X - 24, 6),
+				Size = UDim2.fromOffset(20, 20),
+				Visible = scope:Computed(function(use)
+					local fighter = use(info)
+					return fighter ~= nil and fighter.vip == true
+				end),
 			}),
 			scope:New "TextLabel" {
 				Name = "Name",
@@ -427,8 +441,8 @@ local function ComboTitle(scope: Scope, state: AppState.AppState, team: number):
 			},
 			scope:New "UIGradient" {
 				Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(0, Color3.fromHex("#FFF6B0")),
-					ColorSequenceKeypoint.new(1, Color3.fromHex("#FF9A3D")),
+					ColorSequenceKeypoint.new(0, Color3.fromHex("#DDD0A6")),
+					ColorSequenceKeypoint.new(1, Color3.fromHex("#B6945F")),
 				}),
 				Rotation = 90,
 			},
@@ -476,6 +490,15 @@ local function HintChip(scope: Scope, hint: Hint, order: number): Instance
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		},
 	}
+	table.insert(
+		items,
+		IconGlyph(scope, {
+			Name = "ActionIcon",
+			Id = hint.icon,
+			Size = UDim2.fromOffset(20, 20),
+			LayoutOrder = 9,
+		})
+	)
 	for index, key in hint.keys do
 		table.insert(
 			items,
@@ -563,7 +586,15 @@ local function ControlsHint(scope: Scope, state: AppState.AppState, clock: Fusio
 				local chips: { Instance } = {}
 				local hints: { Hint } = HINTS[use(state.platform)] or {}
 				for index, hint in hints do
-					table.insert(chips, HintChip(innerScope, hint, index))
+					local boundHint = table.clone(hint)
+					local binding = use(state.inputBindings)[hint.action]
+					if binding then
+						boundHint.keys = {}
+						for _, direction in string.split(binding, " и ") do
+							table.insert(boundHint.keys, string.split(direction, " / ")[1])
+						end
+					end
+					table.insert(chips, HintChip(innerScope, boundHint, index))
 				end
 				return chips
 			end),
@@ -571,7 +602,7 @@ local function ControlsHint(scope: Scope, state: AppState.AppState, clock: Fusio
 	}
 end
 
--- Эмоции: кнопка 😀 справа от паузы раскрывает ряд доступных смайликов (только в своём бою).
+-- Эмоции: кнопка со смайликом справа от паузы раскрывает ряд доступных смайликов (только в своём бою).
 local function EmoteBar(scope: Scope, state: AppState.AppState): Instance
 	local open = scope:Value(false)
 	local emotes = scope:Computed(function(use, innerScope: Scope): { Instance }
@@ -589,10 +620,11 @@ local function EmoteBar(scope: Scope, state: AppState.AppState): Instance
 					list,
 					Button(innerScope, {
 						Name = `Emote_{item.id}`,
-						Text = item.emoji or item.icon,
+						Text = "",
+						Icon = item.icon,
+						IconOnly = true,
 						LayoutOrder = index,
 						Size = UDim2.fromOffset(44, 44),
-						TextSize = 24,
 						Color = Theme.Colors.PanelLight,
 						OnClick = function()
 							state.actions.emote(item.id)
@@ -615,11 +647,12 @@ local function EmoteBar(scope: Scope, state: AppState.AppState): Instance
 		[Children] = {
 			Button(scope, {
 				Name = "EmoteButton",
-				Text = "😀",
+				Text = "",
+				Icon = "face_smile",
+				IconOnly = true,
 				AnchorPoint = Vector2.new(0, 0),
 				Position = UDim2.new(0.5, 4, 0, 72),
 				Size = UDim2.fromOffset(48, 40),
-				TextSize = 22,
 				OnClick = function()
 					open:set(not peek(open))
 				end,

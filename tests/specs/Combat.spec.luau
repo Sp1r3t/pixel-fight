@@ -412,7 +412,7 @@ describe("Пространство и защита", function()
 				for index = 1, 12 do
 					-- Цель стоит в зоне удара, а прямо перед активными кадрами оказывается вне её:
 					-- атакующий с пингом видел её ещё в зоне удара.
-					if index == 6 then
+					if index == Moves.normals.Light1.data.startup + 1 then
 						sim.fighters[2].x = sim.fighters[1].x + 4
 					end
 					for _, event in frame(sim, { 0, if index == 1 then LIGHT else 0 }) do

@@ -8,11 +8,13 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Button)
+local IconGlyph = require(script.Parent.IconGlyph)
 local Panel = require(script.Parent.Panel)
 local TouchControls = require(script.Parent.TouchControls)
 
@@ -32,7 +34,7 @@ type HowItem = {
 local HOW_TO: { HowItem } = {
 	{
 		id = "Move",
-		icon = "🕹️",
+		icon = "joystick",
 		title = "Ходить",
 		text = "Джойстик влево и вправо, вниз — присесть",
 		keyboard = "A D",
@@ -40,7 +42,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Jump",
-		icon = "⬆️",
+		icon = "arrow_up",
 		title = "Прыжок",
 		text = "В 2 на 2 можно прыгнуть ещё раз в воздухе",
 		keyboard = "W",
@@ -48,7 +50,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Light",
-		icon = "👊",
+		icon = "punch",
 		title = "Рука",
 		text = "Быстрый удар",
 		keyboard = "J",
@@ -56,7 +58,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Heavy",
-		icon = "🦶",
+		icon = "kick",
 		title = "Нога",
 		text = "Сильный удар — дальше и больнее",
 		keyboard = "K",
@@ -64,7 +66,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Special",
-		icon = "✨",
+		icon = "special",
 		title = "Приём",
 		text = "Особый приём твоего бойца",
 		keyboard = "L",
@@ -72,7 +74,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Super",
-		icon = "⚡",
+		icon = "lightning",
 		title = "Супер",
 		text = "Шкала заполнилась — жми, будет мощно!",
 		keyboard = "I",
@@ -80,7 +82,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Block",
-		icon = "🛡️",
+		icon = "shield",
 		title = "Блок",
 		text = "Держи, чтобы удары не отнимали здоровье",
 		keyboard = "Q",
@@ -88,7 +90,7 @@ local HOW_TO: { HowItem } = {
 	},
 	{
 		id = "Dash",
-		icon = "💨",
+		icon = "dash",
 		title = "Рывок",
 		text = "Дважды быстро толкни джойстик в сторону",
 		keyboard = "Shift",
@@ -122,6 +124,142 @@ local function Dim(scope: Scope, name: string, content: { Fusion.Child }): Insta
 end
 
 local BattleOverlays = {}
+
+function BattleOverlays.BossOffer(scope: Scope, state: AppState.AppState): Instance
+	local initial = Fusion.peek(state.bossOffer)
+	local retry = initial ~= nil and initial.kind == "BossRetry"
+	local clock = scope:Value(os.clock())
+	table.insert(
+		scope,
+		RunService.RenderStepped:Connect(function()
+			clock:set(os.clock())
+		end)
+	)
+	local remaining = scope:Computed(function(use)
+		local offer = use(state.bossOffer)
+		if offer == nil or offer.pending then
+			return if offer then offer.duration else 0
+		end
+		return math.max(0, offer.duration - (use(clock) - offer.startedAt))
+	end)
+	local progress = scope:Computed(function(use)
+		local offer = use(state.bossOffer)
+		return if offer and offer.duration > 0 then math.clamp(use(remaining) / offer.duration, 0, 1) else 0
+	end)
+	local boxHeight = if retry then 286 else 300
+	return scope:New "Frame" {
+		Name = "BossOffer",
+		Active = retry,
+		BackgroundColor3 = Theme.Colors.Outline,
+		BackgroundTransparency = if retry then 0.35 else 1,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 45,
+		[Children] = Panel(scope, {
+			Name = "OfferBox",
+			AnchorPoint = Vector2.new(if retry then 0.5 else 0, 0.5),
+			Position = if retry then UDim2.fromScale(0.5, 0.5) else UDim2.new(0, 22, 0.5, 30),
+			Size = UDim2.fromOffset(if retry then 430 else 320, boxHeight),
+			ZIndex = 46,
+			Content = {
+				Button(scope, {
+					Name = "Close",
+					Text = "×",
+					Color = Theme.Colors.Danger,
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -10, 0, 10),
+					Size = UDim2.fromOffset(38, 38),
+					TextSize = 26,
+					ZIndex = 48,
+					OnClick = function()
+						state.actions.bossOffer("Dismiss")
+					end,
+				}),
+				scope:New "TextLabel" {
+					Name = "Title",
+					BackgroundTransparency = 1,
+					Font = Theme.Fonts.Title,
+					Position = UDim2.fromOffset(18, 16),
+					Size = UDim2.new(1, -72, 0, if retry then 58 else 38),
+					Text = if retry then "ПЕРЕИГРАТЬ ПОСЛЕДНИЙ РАУНД" else "УСИЛЕНИЕ",
+					TextColor3 = Theme.Colors.Accent,
+					TextSize = if retry then 25 else 32,
+					TextWrapped = true,
+					ZIndex = 47,
+				},
+				scope:New "TextLabel" {
+					Name = "Effects",
+					BackgroundTransparency = 1,
+					Font = Theme.Fonts.Body,
+					Position = UDim2.fromOffset(22, if retry then 82 else 64),
+					Size = UDim2.new(1, -44, 0, if retry then 44 else 92),
+					Text = if retry
+						then "Результат последнего раунда будет отменён"
+						else "+50% сила\n+50% скорость накопления супера\n−30% получаемого урона",
+					TextColor3 = Theme.Colors.Text,
+					TextSize = 19,
+					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					ZIndex = 47,
+				},
+				scope:New "TextLabel" {
+					Name = "Countdown",
+					BackgroundTransparency = 1,
+					Font = Theme.Fonts.Pixel,
+					Position = UDim2.new(0, 18, 1, -118),
+					Size = UDim2.new(1, -36, 0, 28),
+					Text = scope:Computed(function(use)
+						local offer = use(state.bossOffer)
+						return if offer and offer.pending
+							then "ПОКУПКА…"
+							else tostring(math.max(1, math.ceil(use(remaining))))
+					end),
+					TextColor3 = Theme.Colors.Text,
+					TextSize = 22,
+					ZIndex = 47,
+				},
+				scope:New "Frame" {
+					Name = "TimeBar",
+					BackgroundColor3 = Theme.Colors.PanelLight,
+					BorderSizePixel = 0,
+					Position = UDim2.new(0, 18, 1, -88),
+					Size = UDim2.new(1, -36, 0, 10),
+					ZIndex = 47,
+					[Children] = {
+						scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+						scope:New "Frame" {
+							Name = "Fill",
+							BackgroundColor3 = Theme.Colors.Accent,
+							BorderSizePixel = 0,
+							Size = scope:Computed(function(use)
+								return UDim2.fromScale(use(progress), 1)
+							end),
+							ZIndex = 48,
+							[Children] = scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
+						},
+					},
+				},
+				Button(scope, {
+					Name = "Buy",
+					Text = scope:Computed(function(use)
+						local offer = use(state.bossOffer)
+						return if offer and offer.pending
+							then "Ждём Roblox…"
+							else `Купить · {if offer then offer.price else 5} R$`
+					end),
+					Color = Theme.Colors.Success,
+					AnchorPoint = Vector2.new(0.5, 1),
+					Position = UDim2.new(0.5, 0, 1, -14),
+					Size = UDim2.new(1, -36, 0, 52),
+					ZIndex = 47,
+					OnClick = function()
+						state.actions.bossOffer("Buy")
+					end,
+				}),
+			},
+		}),
+	}
+end
 
 function BattleOverlays.PauseMenu(scope: Scope, state: AppState.AppState): Instance
 	local battle = Fusion.peek(state.battle)
@@ -166,7 +304,7 @@ function BattleOverlays.PauseMenu(scope: Scope, state: AppState.AppState): Insta
 				Button(scope, {
 					Name = "Resume",
 					Text = "Продолжить",
-					Icon = "▶️",
+					Icon = "play",
 					Color = Theme.Colors.Success,
 					AnchorPoint = Vector2.new(0.5, 0),
 					Position = UDim2.new(0.5, 0, 0, 106),
@@ -179,7 +317,7 @@ function BattleOverlays.PauseMenu(scope: Scope, state: AppState.AppState): Insta
 				Button(scope, {
 					Name = "HowToPlayButton",
 					Text = "Как играть",
-					Icon = "❓",
+					Icon = "question",
 					AnchorPoint = Vector2.new(0.5, 0),
 					Position = UDim2.new(0.5, 0, 0, 172),
 					Size = UDim2.fromOffset(270, 50),
@@ -192,7 +330,7 @@ function BattleOverlays.PauseMenu(scope: Scope, state: AppState.AppState): Insta
 				Button(scope, {
 					Name = "Leave",
 					Text = "Выйти",
-					Icon = "🚪",
+					Icon = "door",
 					Color = Theme.Colors.Danger,
 					AnchorPoint = Vector2.new(0.5, 0),
 					Position = UDim2.new(0.5, 0, 0, 236),
@@ -210,7 +348,7 @@ function BattleOverlays.PauseMenu(scope: Scope, state: AppState.AppState): Insta
 end
 
 local function HowRow(scope: Scope, item: HowItem, order: number, platform: string): Instance
-	local key = if platform == "Keyboard" then item.keyboard elseif platform == "Gamepad" then item.gamepad else nil
+	local key = if platform == "Touch" then nil else item.keyboard
 	local extras: { Instance } = {}
 	if key then
 		table.insert(
@@ -246,16 +384,12 @@ local function HowRow(scope: Scope, item: HowItem, order: number, platform: stri
 		ZIndex = 42,
 		[Children] = {
 			scope:New "UICorner" { CornerRadius = UDim.new(0, Theme.Radius) },
-			scope:New "TextLabel" {
+			scope:New "Frame" {
 				Name = "Icon",
 				AnchorPoint = Vector2.new(0, 0.5),
 				BackgroundColor3 = buttonColor(item.id),
-				Font = Theme.Fonts.Title,
 				Position = UDim2.new(0, 6, 0.5, 0),
 				Size = UDim2.fromOffset(50, 50),
-				Text = item.icon,
-				TextColor3 = Color3.new(1, 1, 1),
-				TextSize = 26,
 				ZIndex = 43,
 				[Children] = {
 					scope:New "UICorner" { CornerRadius = UDim.new(0.5, 0) },
@@ -264,6 +398,19 @@ local function HowRow(scope: Scope, item: HowItem, order: number, platform: stri
 						Color = Color3.new(1, 1, 1),
 						Thickness = 2,
 					},
+					scope:New "UIPadding" {
+						PaddingLeft = UDim.new(0, 10),
+						PaddingRight = UDim.new(0, 10),
+						PaddingTop = UDim.new(0, 10),
+						PaddingBottom = UDim.new(0, 10),
+					},
+					IconGlyph(scope, {
+						Id = item.icon,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.5, 0.5),
+						Size = UDim2.fromScale(1, 1),
+						ZIndex = 43,
+					}),
 				},
 			},
 			scope:New "TextLabel" {
@@ -302,7 +449,16 @@ function BattleOverlays.HowToPlay(scope: Scope, state: AppState.AppState): Insta
 		local platform = use(state.platform)
 		local items: { Instance } = {}
 		for index, item in HOW_TO do
-			table.insert(items, HowRow(innerScope, item, index, platform))
+			local boundItem = table.clone(item)
+			boundItem.keyboard = use(state.inputBindings)[item.id] or item.keyboard
+			if platform ~= "Touch" then
+				if item.id == "Move" then
+					boundItem.text = "Двигайся влево и вправо; вниз — присесть"
+				elseif item.id == "Dash" then
+					boundItem.text = `Рывок — {boundItem.keyboard} или дважды в сторону`
+				end
+			end
+			table.insert(items, HowRow(innerScope, boundItem, index, platform))
 		end
 		return items
 	end)
@@ -347,7 +503,7 @@ function BattleOverlays.HowToPlay(scope: Scope, state: AppState.AppState): Insta
 				Button(scope, {
 					Name = "GotIt",
 					Text = "Понятно!",
-					Icon = "👍",
+					Icon = "thumbs",
 					Color = Theme.Colors.ButtonPrimary,
 					AnchorPoint = Vector2.new(0.5, 1),
 					Position = UDim2.new(0.5, 0, 1, -14),

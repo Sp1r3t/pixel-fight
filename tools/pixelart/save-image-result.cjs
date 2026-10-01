@@ -1,0 +1,10 @@
+const fs=require('fs'),path=require('path');
+const [id,panel,source]=process.argv.slice(2);
+if(!/^[a-z]+$/.test(id)||!/^[a-z-]+$/.test(panel))throw Error('Invalid asset name');
+const root=path.resolve(__dirname,'../../art/sprites/rework/new-skins');
+const dest=path.resolve(root,id+'-'+panel+'.png');
+if(!dest.startsWith(root+path.sep))throw Error('Invalid destination');
+const record={id,panel,source,destination:dest,savedAt:new Date().toISOString()};
+fs.appendFileSync(path.join(root,'generation-log.ndjson'),JSON.stringify(record)+'\n');
+if(!fs.existsSync(dest))fs.copyFileSync(source,dest);
+console.log(JSON.stringify({saved:id+'-'+panel}));

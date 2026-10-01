@@ -318,4 +318,32 @@ local Bosses: { BossDef } = {
 	},
 }
 
+-- A separate boss form for every tower floor. These drive the procedural
+-- silhouette on the client; palette, mechanics and moves remain data-driven.
+local VISUAL_STYLES = {
+	"street_champion",
+	"iron_brute",
+	"swamp_mutant",
+	"alien_hunter",
+	"tree_ancient",
+	"bone_warlock",
+	"deep_kraken",
+	"siege_robot",
+	"horned_beast",
+	"tung_sahur",
+	"lava_titan",
+	"frost_golem",
+	"cyber_alien",
+	"abyss_kraken",
+	"arena_champion",
+	"void_oracle",
+	"iron_brute_abbot",
+	"mirror_wraith",
+	"shadow_demon",
+	"null_emperor",
+}
+for index, boss in Bosses do
+	boss.visualStyle = VISUAL_STYLES[index]
+end
+
 return Bosses

@@ -20,6 +20,7 @@ local Workspace = game:GetService("Workspace")
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Rig = require(script.Parent.Parent.Sprites.Rig)
+local PixelIcons = require(script.Parent.Parent.UI.PixelIcons)
 
 export type BurstOptions = {
 	count: number,
@@ -434,23 +435,41 @@ local function getFlashFrame(): Frame?
 	return frame
 end
 
--- Эмоция: пузырь со смайликом над бойцом — подпрыгивает, висит и тает (2 с).
-function EffectsController.emote(position: Vector3, emoji: string)
+-- Эмоция: пузырь с пиксельной иконкой над бойцом — подпрыгивает, висит и тает (2 с).
+function EffectsController.emote(position: Vector3, iconId: string)
 	local anchor, gui = billboard(position, 3)
 	local bubble = centered(gui, Color3.new(1, 1, 1), 1, true)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(20, 16, 34)
 	stroke.Thickness = 3
 	stroke.Parent = bubble
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(0.8, 0.8)
-	label.AnchorPoint = Vector2.new(0.5, 0.5)
-	label.Position = UDim2.fromScale(0.5, 0.5)
-	label.Text = emoji
-	label.TextScaled = true
-	label.ZIndex = 2
-	label.Parent = bubble
+	local art = Instance.new("Frame")
+	art.BackgroundTransparency = 1
+	art.AnchorPoint = Vector2.new(0.5, 0.5)
+	art.Position = UDim2.fromScale(0.5, 0.5)
+	art.Size = UDim2.fromScale(0.8, 0.8)
+	art.ZIndex = 2
+	art.Parent = bubble
+	local def = PixelIcons.icons[iconId]
+	if def then
+		local grid = PixelIcons.Size
+		local cell = 1 / grid
+		for row = 1, grid do
+			local rowText = def.rows[row]
+			for col = 1, grid do
+				local color = def.palette[rowText:sub(col, col)]
+				if color then
+					local pixel = Instance.new("Frame")
+					pixel.BorderSizePixel = 0
+					pixel.BackgroundColor3 = color
+					pixel.Position = UDim2.fromScale((col - 1) * cell, (row - 1) * cell)
+					pixel.Size = UDim2.fromScale(cell, cell)
+					pixel.ZIndex = 2
+					pixel.Parent = art
+				end
+			end
+		end
+	end
 	addEffect(2, function(t: number)
 		-- Выскакивает с перелётом, в конце тает и чуть поднимается.
 		local pop = if t < 0.12 then t / 0.12 * 1.15 elseif t < 0.2 then 1.15 - (t - 0.12) / 0.08 * 0.15 else 1
@@ -458,7 +477,12 @@ function EffectsController.emote(position: Vector3, emoji: string)
 		local fade = math.clamp((t - 0.8) / 0.2, 0, 1)
 		bubble.BackgroundTransparency = fade
 		stroke.Transparency = fade
-		label.TextTransparency = fade
+		art.BackgroundTransparency = 1
+		for _, child in art:GetChildren() do
+			if child:IsA("Frame") then
+				child.BackgroundTransparency = fade
+			end
+		end
 		bubble.Position = UDim2.fromScale(0.5, 0.5 - t * 0.12)
 	end, function()
 		anchor:Destroy()

@@ -1,0 +1,3375 @@
+{
+  "date": "2026-10-01",
+  "status": "blocked-usage-limit",
+  "actors": 36,
+  "generatedPanels": 147,
+  "completeDraftSets": [
+    "rook",
+    "mira",
+    "brakk",
+    "juno",
+    "sable",
+    "dax",
+    "wren",
+    "sorren",
+    "pike",
+    "zip",
+    "ashka",
+    "glacia",
+    "tempest"
+  ],
+  "missingPanels": [
+    {
+      "id": "byte",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "morrow",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "astra",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "pip",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "ned",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "tally",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "farrow",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "kessa",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "vane",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "grist",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "juniper",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "oru",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "lise",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "cinder",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "rime",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "hex",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "mae",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "nocturne",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "abbot",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "wraith",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "sovereign",
+      "panel": "reactions-control",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "motion",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "defense",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "combat",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "situational",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "recovery",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "reactions-grab",
+      "missing": true
+    },
+    {
+      "id": "null",
+      "panel": "reactions-control",
+      "missing": true
+    }
+  ],
+  "cropReview": [
+    {
+      "id": "rook",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        }
+      ]
+    },
+    {
+      "id": "rook",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 73
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 75
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "panel": "reactions-grab",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        }
+      ]
+    },
+    {
+      "id": "mira",
+      "panel": "reactions-control",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "brakk",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 100
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 91
+        }
+      ]
+    },
+    {
+      "id": "brakk",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 49
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 46
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 46
+        }
+      ]
+    },
+    {
+      "id": "brakk",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        }
+      ]
+    },
+    {
+      "id": "brakk",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "brakk",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 47
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        }
+      ]
+    },
+    {
+      "id": "juno",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        }
+      ]
+    },
+    {
+      "id": "juno",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        }
+      ]
+    },
+    {
+      "id": "juno",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        }
+      ]
+    },
+    {
+      "id": "sable",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        }
+      ]
+    },
+    {
+      "id": "sable",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        }
+      ]
+    },
+    {
+      "id": "sable",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        }
+      ]
+    },
+    {
+      "id": "sable",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        }
+      ]
+    },
+    {
+      "id": "dax",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "dax",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        }
+      ]
+    },
+    {
+      "id": "dax",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        }
+      ]
+    },
+    {
+      "id": "dax",
+      "panel": "reactions-grab",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        }
+      ]
+    },
+    {
+      "id": "wren",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        }
+      ]
+    },
+    {
+      "id": "wren",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 46
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        }
+      ]
+    },
+    {
+      "id": "wren",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 31
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 47
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "defense",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 32
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 35
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 0,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 19
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 69
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 76
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 32
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 77
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 173
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 122
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        }
+      ]
+    },
+    {
+      "id": "sorren",
+      "panel": "reactions-grab",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "defense",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 19
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 46
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 83
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 74
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 32
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        }
+      ]
+    },
+    {
+      "id": "pike",
+      "panel": "reactions-control",
+      "flags": [
+        {
+          "frame": 0,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        }
+      ]
+    },
+    {
+      "id": "zip",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        }
+      ]
+    },
+    {
+      "id": "zip",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        }
+      ]
+    },
+    {
+      "id": "zip",
+      "panel": "recovery",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        }
+      ]
+    },
+    {
+      "id": "zip",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 67
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        }
+      ]
+    },
+    {
+      "id": "ashka",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 76
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 89
+        }
+      ]
+    },
+    {
+      "id": "ashka",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        }
+      ]
+    },
+    {
+      "id": "ashka",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 19
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 75
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "defense",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "glacia",
+      "panel": "reactions-control",
+      "flags": [
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "tempest",
+      "panel": "motion",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "tempest",
+      "panel": "defense",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        }
+      ]
+    },
+    {
+      "id": "tempest",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 31
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "tempest",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 60
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 37
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        }
+      ]
+    },
+    {
+      "id": "tempest",
+      "panel": "reactions-grab",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        }
+      ]
+    },
+    {
+      "id": "byte",
+      "panel": "defense",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        }
+      ]
+    },
+    {
+      "id": "byte",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        }
+      ]
+    },
+    {
+      "id": "byte",
+      "panel": "situational",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        }
+      ]
+    },
+    {
+      "id": "byte",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        }
+      ]
+    },
+    {
+      "id": "morrow",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        }
+      ]
+    },
+    {
+      "id": "morrow",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 63
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 37
+        }
+      ]
+    },
+    {
+      "id": "astra",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        }
+      ]
+    },
+    {
+      "id": "astra",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        }
+      ]
+    },
+    {
+      "id": "pip",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        }
+      ]
+    },
+    {
+      "id": "pip",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 66
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 65
+        }
+      ]
+    },
+    {
+      "id": "ned",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 36
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        }
+      ]
+    },
+    {
+      "id": "ned",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 0,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 85
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 78
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 51
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 80
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 73
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 109
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 86
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 22
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        }
+      ]
+    },
+    {
+      "id": "tally",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 40
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 45
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 13
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 59
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 32
+        }
+      ]
+    },
+    {
+      "id": "farrow",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        }
+      ]
+    },
+    {
+      "id": "farrow",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 19
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        },
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 31
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 95
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 107
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        }
+      ]
+    },
+    {
+      "id": "kessa",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "kessa",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 90
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 71
+        }
+      ]
+    },
+    {
+      "id": "vane",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        }
+      ]
+    },
+    {
+      "id": "vane",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 41
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        }
+      ]
+    },
+    {
+      "id": "grist",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 54
+        },
+        {
+          "frame": 3,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 47
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 48
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 12
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        }
+      ]
+    },
+    {
+      "id": "grist",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 51
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 107
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 94
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        }
+      ]
+    },
+    {
+      "id": "juniper",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 53
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 54
+        }
+      ]
+    },
+    {
+      "id": "juniper",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 45
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 91
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 48
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 43
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 38
+        }
+      ]
+    },
+    {
+      "id": "oru",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 23
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 24
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 39
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 45
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 15
+        }
+      ]
+    },
+    {
+      "id": "oru",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 32
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 103
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 295
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 75
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 33
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 100
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 255
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        }
+      ]
+    },
+    {
+      "id": "lise",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 18
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 21
+        },
+        {
+          "frame": 14,
+          "reason": "occupied crop boundary",
+          "pixels": 54
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 52
+        }
+      ]
+    },
+    {
+      "id": "cinder",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 26
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        }
+      ]
+    },
+    {
+      "id": "cinder",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 40
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 62
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 19
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 28
+        }
+      ]
+    },
+    {
+      "id": "rime",
+      "panel": "combat",
+      "flags": [
+        {
+          "frame": 1,
+          "reason": "occupied crop boundary",
+          "pixels": 51
+        },
+        {
+          "frame": 2,
+          "reason": "occupied crop boundary",
+          "pixels": 50
+        }
+      ]
+    },
+    {
+      "id": "rime",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 14
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 56
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        }
+      ]
+    },
+    {
+      "id": "hex",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 11
+        }
+      ]
+    },
+    {
+      "id": "tidebreaker",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 44
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 87
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 52
+        },
+        {
+          "frame": 12,
+          "reason": "occupied crop boundary",
+          "pixels": 31
+        },
+        {
+          "frame": 13,
+          "reason": "occupied crop boundary",
+          "pixels": 37
+        }
+      ]
+    },
+    {
+      "id": "mae",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 61
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 27
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 46
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 42
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 62
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 25
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 47
+        },
+        {
+          "frame": 15,
+          "reason": "occupied crop boundary",
+          "pixels": 37
+        }
+      ]
+    },
+    {
+      "id": "wraith",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 17
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 16
+        },
+        {
+          "frame": 8,
+          "reason": "occupied crop boundary",
+          "pixels": 29
+        },
+        {
+          "frame": 9,
+          "reason": "occupied crop boundary",
+          "pixels": 30
+        },
+        {
+          "frame": 10,
+          "reason": "occupied crop boundary",
+          "pixels": 40
+        },
+        {
+          "frame": 11,
+          "reason": "occupied crop boundary",
+          "pixels": 37
+        }
+      ]
+    },
+    {
+      "id": "sovereign",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 54
+        },
+        {
+          "frame": 5,
+          "reason": "occupied crop boundary",
+          "pixels": 57
+        }
+      ]
+    },
+    {
+      "id": "null",
+      "panel": "super",
+      "flags": [
+        {
+          "frame": 4,
+          "reason": "occupied crop boundary",
+          "pixels": 20
+        },
+        {
+          "frame": 6,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        },
+        {
+          "frame": 7,
+          "reason": "occupied crop boundary",
+          "pixels": 34
+        }
+      ]
+    }
+  ],
+  "uploadedToRoblox": false,
+  "blocking": {
+    "code": "usage_limit_reached",
+    "provider": "built-in-image-generation",
+    "resetsAtEpochSeconds": 1790878509,
+    "resetsAtUtc": "2026-10-01T18:15:09Z",
+    "resetsAtMoscow": "2026-10-01T21:15:09+03:00",
+    "interruptedPanels": [
+      "byte-recovery",
+      "morrow-motion"
+    ]
+  }
+}

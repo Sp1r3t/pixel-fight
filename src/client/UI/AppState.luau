@@ -19,6 +19,7 @@ local BossRegistry = require(ReplicatedStorage.Shared.Characters.BossRegistry)
 local Arenas = require(ReplicatedStorage.Shared.Config.Arenas)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
+local TestMode = require(ReplicatedStorage.Shared.Config.TestMode)
 
 local peek = Fusion.peek
 
@@ -43,6 +44,7 @@ export type BattleFighter = {
 	maxHealth: number,
 	displayName: string?, -- своё имя (боссы)
 	palette: Types.Palette?, -- свои цвета (боссы, облики игроков)
+	visualStyle: string?, -- отдельный силуэт босса/полного облика
 	legendary: boolean?, -- легендарный облик: искры вокруг бойца
 	hitEffect: string?, -- эффект ударов (Config/Cosmetics)
 	koEffect: string?, -- финишер
@@ -66,6 +68,16 @@ export type BattleInfo = {
 	stage: string, -- геометрия сцены (Combat/Stage): "Duel" | "TwoFloors"
 	roundsToWin: number, -- 0 — без раундов (тренировка)
 	boss: BattleBoss?,
+}
+
+export type BossOffer = {
+	kind: string,
+	token: number,
+	duration: number,
+	price: number,
+	productId: number,
+	startedAt: number,
+	pending: boolean,
 }
 
 -- Состояние поиска матча / приватной комнаты (присылает MatchmakingService).
@@ -148,6 +160,7 @@ export type Actions = {
 	promptArenaPass: (arenaId: string) -> (), -- премиальная карта за Robux
 	promptPass: (characterId: string) -> (), -- Game Pass за Robux
 	promptProduct: (key: string) -> (), -- Developer Product (пропуск босса, монеты, кристаллы, наборы)
+	bossOffer: (action: string) -> (), -- купить или закрыть временное предложение босса
 	promptVip: () -> (), -- VIP-пропуск за Robux
 	buyItem: (itemId: string) -> (), -- косметика за монеты или кристаллы
 	equip: (slot: string, itemId: string?) -> (), -- "Skin:<боец>" | "HitEffect" | "KoEffect"
@@ -195,16 +208,19 @@ export type AppState = {
 	draft: Fusion.Value<DraftInfo?>,
 	-- Текущий бой (nil — не в бою).
 	battle: Fusion.Value<BattleInfo?>,
+	bossOffer: Fusion.Value<BossOffer?>,
 	-- Короткое уведомление внизу экрана ("" — нет уведомления).
 	notice: Fusion.Value<string>,
 	noticeId: number,
 	hud: Hud,
 	-- Платформа ввода: "Keyboard" | "Touch" | "Gamepad" (обновляет UIController).
 	platform: Fusion.Value<string>,
+	inputBindings: Fusion.Value<{ [string]: string }>,
 	-- Раскладка сенсорного управления и черновик для экрана настройки.
 	controlsLayout: Fusion.Value<ControlsLayout.Layout>,
 	controlsDraft: Fusion.Value<ControlsLayout.Layout>,
 	controlsSelected: Fusion.Value<string>,
+	controlsTab: Fusion.Value<string>,
 	-- Текущий масштаб интерфейса (логические пиксели → пиксели экрана).
 	uiScale: Fusion.Value<number>,
 	-- Окно поверх экрана: "" — нет, "Pause" — пауза в бою, "HowToPlay" — памятка по кнопкам.
@@ -223,7 +239,7 @@ local function noop() end
 function AppState.new(scope: Scope): AppState
 	local owned: { [string]: boolean } = {}
 	for _, def in CharacterRegistry.list() do
-		if def.unlock == "Free" then
+		if TestMode.UnlockAllCharacters or def.unlock == "Free" then
 			owned[def.id] = true
 		end
 	end
@@ -238,6 +254,7 @@ function AppState.new(scope: Scope): AppState
 	local firstCharacter = CharacterRegistry.list()[1]
 	local noBattle: BattleInfo? = nil
 	local noDraft: DraftInfo? = nil
+	local noBossOffer: BossOffer? = nil
 
 	local hudFighters: { HudFighter } = {}
 	for _ = 1, AppState.MAX_FIGHTERS do
@@ -269,6 +286,7 @@ function AppState.new(scope: Scope): AppState
 		queue = scope:Value({ status = "Idle", since = 0 } :: QueueStatus),
 		draft = scope:Value(noDraft),
 		battle = scope:Value(noBattle),
+		bossOffer = scope:Value(noBossOffer),
 		notice = scope:Value(""),
 		noticeId = 0,
 		hud = {
@@ -285,9 +303,11 @@ function AppState.new(scope: Scope): AppState
 			comboSerial = scope:Value(0),
 		},
 		platform = scope:Value("Keyboard"),
+		inputBindings = scope:Value({} :: { [string]: string }),
 		controlsLayout = scope:Value(ControlsLayout.default()),
 		controlsDraft = scope:Value(ControlsLayout.default()),
 		controlsSelected = scope:Value("Light"),
+		controlsTab = scope:Value("Keyboard"),
 		uiScale = scope:Value(1),
 		modal = scope:Value(""),
 		howToSeen = false,
@@ -310,6 +330,7 @@ function AppState.new(scope: Scope): AppState
 			promptArenaPass = function(_arenaId: string) end,
 			promptPass = function(_characterId: string) end,
 			promptProduct = function(_key: string) end,
+			bossOffer = function(_action: string) end,
 			promptVip = noop,
 			buyItem = function(_itemId: string) end,
 			equip = function(_slot: string, _itemId: string?) end,
@@ -359,6 +380,11 @@ function AppState.applyProfile(state: AppState, profile: unknown)
 		for id, value in raw.ownedCharacters do
 			if type(id) == "string" and value == true and CharacterRegistry.get(id) then
 				owned[id] = true
+			end
+		end
+		for _, def in CharacterRegistry.list() do
+			if TestMode.UnlockAllCharacters or def.unlock == "Free" then
+				owned[def.id] = true
 			end
 		end
 		state.ownedCharacters:set(owned)
@@ -456,6 +482,7 @@ local IDLE_QUEUE: QueueStatus = { status = "Idle", since = 0 }
 
 -- Бой начался: показать экран боя (экран подготовки заменяется — после боя вернёмся в меню).
 function AppState.enterBattle(state: AppState, info: BattleInfo)
+	state.bossOffer:set(nil)
 	state.battle:set(info)
 	state.queue:set(table.clone(IDLE_QUEUE))
 	local screen = peek(state.screen)
@@ -544,6 +571,7 @@ end
 
 -- Бой закончился: вернуться туда, откуда пришли.
 function AppState.exitBattle(state: AppState)
+	state.bossOffer:set(nil)
 	state.battle:set(nil)
 	if peek(state.screen) == "Battle" then
 		AppState.back(state)

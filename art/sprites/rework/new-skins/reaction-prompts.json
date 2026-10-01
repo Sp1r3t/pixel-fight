@@ -1,0 +1,866 @@
+[
+  {
+    "id": "rook",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of rook, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact blond martial artist in detailed blue gi, red headband and crossed red trim, white wrapped fists. Preserve original weapon Wraps; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "rook",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of rook, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact blond martial artist in detailed blue gi, red headband and crossed red trim, white wrapped fists. Preserve original weapon Wraps; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "mira",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of mira, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact athletic woman purple high ponytail, pink crop top, black shorts pink edging, knee pads, pink ankle wraps bare feet. Preserve original weapon Kickboxer; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "mira",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of mira, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact athletic woman purple high ponytail, pink crop top, black shorts pink edging, knee pads, pink ankle wraps bare feet. Preserve original weapon Kickboxer; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "brakk",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of brakk, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact huge muscular bearded man, mohawk, dark open fur-trimmed vest, brown trousers, heavy knee plates, wrapped hands boots. Preserve original weapon Grappler; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "brakk",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of brakk, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact huge muscular bearded man, mohawk, dark open fur-trimmed vest, brown trousers, heavy knee plates, wrapped hands boots. Preserve original weapon Grappler; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "juno",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of juno, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact dark-haired woman in white teal orange futuristic fitted suit, high bun and orange headband, gloves boots, orange ring disc. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "juno",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-01-rook-mira-brakk-juno.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of juno, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact dark-haired woman in white teal orange futuristic fitted suit, high bun and orange headband, gloves boots, orange ring disc. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "sable",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sable, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact hooded masked purple black ninja woman with two curved silver purple daggers and sash. Preserve original weapon DualKnives; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "sable",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sable, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact hooded masked purple black ninja woman with two curved silver purple daggers and sash. Preserve original weapon DualKnives; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "dax",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of dax, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact muscular male boxer in red white singlet shorts, red boxing gloves, short dark hair, red boxing boots. Preserve original weapon Boxing; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "dax",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of dax, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact muscular male boxer in red white singlet shorts, red boxing gloves, short dark hair, red boxing boots. Preserve original weapon Boxing; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "wren",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of wren, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact small agile fair-haired woman in green hood scarf layered tunic, pale green trousers, green wrapped boots, two short green batons. Preserve original weapon DualBatons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "wren",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of wren, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact small agile fair-haired woman in green hood scarf layered tunic, pale green trousers, green wrapped boots, two short green batons. Preserve original weapon DualBatons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "sorren",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sorren, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact bearded dark-haired man with topknot, navy golden long lamellar coat and armor, long wooden spear silver head yellow tassel. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "sorren",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-02-sable-dax-wren-sorren.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sorren, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact bearded dark-haired man with topknot, navy golden long lamellar coat and armor, long wooden spear silver head yellow tassel. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "pike",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of pike, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact navy gold armored lancer wearing crested enclosed helmet, long spear with pale metal tip, split tabard armored boots. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "pike",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of pike, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact navy gold armored lancer wearing crested enclosed helmet, long spear with pale metal tip, split tabard armored boots. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "zip",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of zip, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact small teal yellow robot with glowing yellow visor, antenna, yellow scarf, wheel feet, two electric cyan short blades/batons. Preserve original weapon DualBatons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "zip",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of zip, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact small teal yellow robot with glowing yellow visor, antenna, yellow scarf, wheel feet, two electric cyan short blades/batons. Preserve original weapon DualBatons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "ashka",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of ashka, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact red-haired woman in flowing red gold fire dancer outfit, golden wrist jewelry, two orange yellow open fire fans. Preserve original weapon Fans; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "ashka",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of ashka, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact red-haired woman in flowing red gold fire dancer outfit, golden wrist jewelry, two orange yellow open fire fans. Preserve original weapon Fans; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "glacia",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of glacia, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact pale blue-haired woman in navy white fur-trimmed long coat, ice armored boots gauntlets, crystal staff and small ice shield. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "glacia",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-03-pike-zip-ashka-glacia.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of glacia, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact pale blue-haired woman in navy white fur-trimmed long coat, ice armored boots gauntlets, crystal staff and small ice shield. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "tempest",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tempest, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact dark-haired blue gold armored samurai with yellow scarf, topknot, navy split hakama, katana and sheath. Preserve original weapon Katana; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "tempest",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tempest, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact dark-haired blue gold armored samurai with yellow scarf, topknot, navy split hakama, katana and sheath. Preserve original weapon Katana; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class balanced: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "byte",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of byte, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slim white black friendly humanoid robot with cyan magenta joints, rectangular black face cyan eyes, floating small white drone and holographic ring. Preserve original weapon Drone; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "byte",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of byte, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slim white black friendly humanoid robot with cyan magenta joints, rectangular black face cyan eyes, floating small white drone and holographic ring. Preserve original weapon Drone; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "morrow",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of morrow, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact black hooded skeletal green skull reaper in tattered black coat, spectral green wisps, curved sickle attached to metal CHAIN held between both hands. Preserve original weapon ChainSickle; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "morrow",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of morrow, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact black hooded skeletal green skull reaper in tattered black coat, spectral green wisps, curved sickle attached to metal CHAIN held between both hands. Preserve original weapon ChainSickle; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "astra",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of astra, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact lavender-skinned elven celestial woman with long pale lavender hair, gold crescent crown, deep purple gold star-patterned flowing gown, floating golden star. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "astra",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\characters-04-tempest-byte-morrow-astra.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of astra, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact lavender-skinned elven celestial woman with long pale lavender hair, gold crescent crown, deep purple gold star-patterned flowing gown, floating golden star. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "pip",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of pip, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact small green goblin bandit with large pointed ears, red head cloth scarf, brown long coat, wrapped fists, patched dark trousers boots. Preserve original weapon Wraps; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "pip",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of pip, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact small green goblin bandit with large pointed ears, red head cloth scarf, brown long coat, wrapped fists, patched dark trousers boots. Preserve original weapon Wraps; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "ned",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of ned, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact huge moss-covered tree ogre with bark shoulders leafy beard, green stone wood skin, loincloth, massive uprooted wooden CLUB. Preserve original weapon Club; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "ned",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of ned, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact huge moss-covered tree ogre with bark shoulders leafy beard, green stone wood skin, loincloth, massive uprooted wooden CLUB. Preserve original weapon Club; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "tally",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tally, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact small green goblin courier wearing cyan helmet goggles vest, backpack, cyan roller skates, two cream red parcel boomerangs. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "tally",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tally, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact small green goblin courier wearing cyan helmet goggles vest, backpack, cyan roller skates, two cream red parcel boomerangs. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "farrow",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of farrow, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact elderly white-haired white-bearded human spear veteran in tattered gray cloak, brown gray armor, long spear red ribbon. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "farrow",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-01-pip-ned-tally-farrow.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of farrow, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact elderly white-haired white-bearded human spear veteran in tattered gray cloak, brown gray armor, long spear red ribbon. Preserve original weapon Spear; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "kessa",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of kessa, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact gold teal armored automaton with cyan visor and circular cyan chest core, two golden teal ring shields on arms shoulders, teal tabard. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "kessa",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of kessa, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact gold teal armored automaton with cyan visor and circular cyan chest core, two golden teal ring shields on arms shoulders, teal tabard. Preserve original weapon Disc; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "vane",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of vane, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact black purple raven humanoid assassin with beak red eyes red scarf feather cloak, clawed feet, two red silver knives. Preserve original weapon DualKnives; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "vane",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of vane, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact black purple raven humanoid assassin with beak red eyes red scarf feather cloak, clawed feet, two red silver knives. Preserve original weapon DualKnives; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "grist",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of grist, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact massive charcoal blacksmith stone golem with lava fissures, furnace-slit helmet, leather apron bracers, gigantic lava HAMMER. Preserve original weapon Hammer; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "grist",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of grist, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact massive charcoal blacksmith stone golem with lava fissures, furnace-slit helmet, leather apron bracers, gigantic lava HAMMER. Preserve original weapon Hammer; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "juniper",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of juniper, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact green-winged eagle harpy warrior with eagle head, tan feather body, green sashes, golden clawed feet and hand talons. Preserve original weapon Talons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "juniper",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-02-kessa-vane-grist-juniper.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of juniper, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact green-winged eagle harpy warrior with eagle head, tan feather body, green sashes, golden clawed feet and hand talons. Preserve original weapon Talons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "oru",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of oru, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact stocky elderly turtle monk with shell, white beard, beads, cream gray robe red gold sash, spiral wooden staff red ribbon. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "oru",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of oru, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact stocky elderly turtle monk with shell, white beard, beads, cream gray robe red gold sash, spiral wooden staff red ribbon. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "lise",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of lise, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slender blue gold insectoid alien with long golden antennae, huge ring shoulders blue lightning, glowing cyan electricity between hands. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "lise",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of lise, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slender blue gold insectoid alien with long golden antennae, huge ring shoulders blue lightning, glowing cyan electricity between hands. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "cinder",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of cinder, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact slender black orange red dragon humanoid with small horns yellow eyes, long flaming tail, lava robes, fire crescents on both claws. Preserve original weapon Talons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "cinder",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of cinder, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact slender black orange red dragon humanoid with small horns yellow eyes, long flaming tail, lava robes, fire crescents on both claws. Preserve original weapon Talons; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "rime",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of rime, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact giant bulky icy blue crystal golem with angular glowing ice plates, massive ice shield on arm, ice fist and crystal feet. Preserve original weapon Shield; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "rime",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-03-oru-lise-cinder-rime.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of rime, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact giant bulky icy blue crystal golem with angular glowing ice plates, massive ice shield on arm, ice fist and crystal feet. Preserve original weapon Shield; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "hex",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of hex, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact purple black cybernetic raven alien with beak green eye mechanical limbs sharp hand claws, cape and purple green drone. Preserve original weapon Drone; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "hex",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of hex, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact purple black cybernetic raven alien with beak green eye mechanical limbs sharp hand claws, cape and purple green drone. Preserve original weapon Drone; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "tidebreaker",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tidebreaker, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact huge teal kraken humanoid with tentacle beard, coral shell armor, multiple tentacles instead of legs, large coral hooked weapon. Preserve original weapon ChainSickle; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "tidebreaker",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of tidebreaker, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact huge teal kraken humanoid with tentacle beard, coral shell armor, multiple tentacles instead of legs, large coral hooked weapon. Preserve original weapon ChainSickle; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "mae",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of mae, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact massive blue horned oni woman/ogre with white cloud mane, gold lightning tattoos and jewelry, spiked black gold lightning CLUB. Preserve original weapon Club; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "mae",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of mae, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact massive blue horned oni woman/ogre with white cloud mane, gold lightning tattoos and jewelry, spiked black gold lightning CLUB. Preserve original weapon Club; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "nocturne",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of nocturne, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact floating skeletal void oracle with horned bone mask violet eye, purple torn star cloak, ribcage gold chains, violet star orb, no visible feet. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "nocturne",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-04-hex-tidebreaker-mae-nocturne.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of nocturne, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact floating skeletal void oracle with horned bone mask violet eye, purple torn star cloak, ribcage gold chains, violet star orb, no visible feet. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "abbot",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of abbot, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact bulky bronze stone armored robot monk, orange eye, giant bronze bell gauntlets, wooden beads, burgundy gold religious sash. Preserve original weapon Bells; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "abbot",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of abbot, the VICTIM of an outside attack. Reference ONLY top left figure. Preserve exact bulky bronze stone armored robot monk, orange eye, giant bronze bell gauntlets, wooden beads, burgundy gold religious sash. Preserve original weapon Bells; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class tank: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "wraith",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of wraith, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slim faceted mirror glass humanoid with cyan interior lines, angular blank face, floating broken mirror shards. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "wraith",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of wraith, the VICTIM of an outside attack. Reference ONLY top right figure. Preserve exact slim faceted mirror glass humanoid with cyan interior lines, angular blank face, floating broken mirror shards. Preserve original weapon Magic; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class agile: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "sovereign",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sovereign, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact tall black purple gold armored lich king with horned crown green face crystal, long cape, gold crescent STAFF with green gem. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "sovereign",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of sovereign, the VICTIM of an outside attack. Reference ONLY bottom left figure. Preserve exact tall black purple gold armored lich king with horned crown green face crystal, long cape, gold crescent STAFF with green gem. Preserve original weapon Staff; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  },
+  {
+    "id": "null",
+    "panel": "reactions-grab",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of null, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact floating black gold armored emperor, immense golden bladed crown, red chest core, red gold tabard, four floating gold red blade plates. Preserve original weapon OrbitBlades; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Pulled: Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack.\nROW 2 Grabbed: Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned.\nROW 3 Lifted: Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders.\nROW 4 Thrown: Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact.",
+    "states": [
+      "Pulled",
+      "Grabbed",
+      "Lifted",
+      "Thrown"
+    ]
+  },
+  {
+    "id": "null",
+    "panel": "reactions-control",
+    "reference": "D:\\Repositories\\pixel-fight\\art\\sprites\\rework\\bosses-05-abbot-wraith-sovereign-null.png",
+    "prompt": "Use case: stylized-concept. Pixel-art GAME REACTION animation atlas of null, the VICTIM of an outside attack. Reference ONLY bottom right figure. Preserve exact floating black gold armored emperor, immense golden bladed crown, red chest core, red gold tabard, four floating gold red blade plates. Preserve original weapon OrbitBlades; hold loosely or let hang beside body without attacking. Match crisp chunky outlined pixel art from reference. Transparent square canvas. EXACT FOUR equal columns and FOUR equal rows, four successive frames per row. ONE complete character per cell; full body, head, hair, clothing, appendages and weapon all fit within the cell with generous empty margins. Same scale across sixteen cells. No attacker, victim silhouette, duplicate body, text, borders, scenery or baked-in hook/chain/cage. Attacker and connecting effects will be separate synchronized layers. Natural head-neck-torso rotation, joints, grounded toes and weight distribution. Adapt to this actual anatomy: robots keep mechanical joints, krakens coil and extend tentacles instead of invented human legs, floating spirits keep cloak/ribcage, golems keep heavy plates, winged creatures fold wings while held. Body class ranged: show its actual bulk and inertia, never replace its anatomy. Face LEFT toward outside attacker, except head rotates naturally in falls.\nROW 1 Launched: Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose.\nROW 2 Slammed: Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso.\nROW 3 Bound: An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage.\nROW 4 Suspended: Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn.",
+    "states": [
+      "Launched",
+      "Slammed",
+      "Bound",
+      "Suspended"
+    ]
+  }
+]

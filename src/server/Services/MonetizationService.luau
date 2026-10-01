@@ -96,6 +96,11 @@ local function grantProduct(player: Player, product: Monetization.Product)
 	if product.kind == "SkipBoss" then
 		local skipped = BossService.grantSkip(player)
 		notify(player, { kind = "SkipBoss", bossId = if skipped then skipped.id else nil })
+	elseif product.kind == "BossRetry" or product.kind == "BossBoost" then
+		assert(
+			BossService.grantOffer(player, product.kind),
+			"предложение босса уже недоступно"
+		)
 	elseif product.kind == "Coins" then
 		local amount = product.amount or 0
 		assert(DataService.addCoins(player, amount), "профиль не загружен")

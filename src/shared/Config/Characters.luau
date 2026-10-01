@@ -287,7 +287,7 @@ local Characters: { CharacterDef } = {
 		style = "Боксёр-тяжеловес. Короткие руки, но каждый удар — как кувалда. "
 			.. "Проламывает атаки противника рывком с бронёй.",
 		unlock = "Free",
-		stats = { health = 6, damage = 7, speed = 5, range = 2, superGain = 5 },
+		stats = { health = 7, damage = 7, speed = 4, range = 2, superGain = 5 },
 		palette = { primary = "#C0392B", secondary = "#F5E6CA", accent = "#F1C40F" },
 		cosmetics = { tier = "Standard", hitSpark = "Impact", superFlash = "#F1C40F" },
 		special = {
@@ -385,12 +385,12 @@ local Characters: { CharacterDef } = {
 		id = "sorren",
 		order = 8,
 		displayName = "Sorren",
-		title = "Still Water Monk",
+		title = "Horizon Spearwarden",
 		archetype = "Counter",
-		style = "Спокойный монах, который выигрывает, ничего не делая первым. "
-			.. "Ловит атаку противника в стойке «Тихая вода» и отвечает контрударом.",
+		style = "Копейщик в тяжёлых доспехах. Держит длинную дистанцию выпадами, "
+			.. "парирует древком и отвечает остриём копья.",
 		unlock = "Free",
-		stats = { health = 6, damage = 6, speed = 4, range = 4, superGain = 5 },
+		stats = { health = 5, damage = 5, speed = 3, range = 8, superGain = 4 },
 		palette = { primary = "#F39C12", secondary = "#7E3F12", accent = "#FFF3C4" },
 		cosmetics = { tier = "Standard", hitSpark = "Energy", superFlash = "#FFF3C4" },
 		special = {
@@ -722,10 +722,10 @@ local Characters: { CharacterDef } = {
 		displayName = "Byte",
 		title = "Glitch Operator",
 		archetype = "Trapper",
-		style = "Хакер с дронами. Минирует арену глитч-ловушками и заставляет противника "
+		style = "Ловкий робот с дронами. Минирует арену глитч-ловушками и заставляет противника "
 			.. "играть по своим правилам.",
 		unlock = "Paid",
-		stats = { health = 5, damage = 5, speed = 5, range = 5, superGain = 5 },
+		stats = { health = 4, damage = 5, speed = 6, range = 5, superGain = 5 },
 		palette = { primary = "#00F5A0", secondary = "#141A2E", accent = "#FF3CAC" },
 		cosmetics = {
 			tier = "Deluxe",
@@ -891,5 +891,14 @@ local Characters: { CharacterDef } = {
 		},
 	},
 }
+
+local SignatureMoves = require(script.Parent.SignatureMoves)
+for _, character in Characters do
+	local signature = SignatureMoves.get(character.id)
+	if signature then
+		character.special.move.name = signature.specialName
+		character.super.move.name = signature.superName
+	end
+end
 
 return Characters

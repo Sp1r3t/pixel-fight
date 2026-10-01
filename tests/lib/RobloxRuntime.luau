@@ -77,6 +77,8 @@ for _, name in
 		"Activated",
 		"MouseEnter",
 		"MouseLeave",
+		"SelectionGained",
+		"SelectionLost",
 		"MouseMoved",
 		"MouseButton1Down",
 		"MouseButton1Up",
@@ -383,7 +385,9 @@ function RobloxRuntime.newWorld(options: WorldOptions?): World
 			return true, override
 		end
 		local real = data.real
-		if key == "AbsoluteSize" then
+		if key == "IsLoaded" and (real:IsA("ImageLabel") or real:IsA("ImageButton")) then
+			return true, true
+		elseif key == "AbsoluteSize" then
 			return true, if real:IsA("LayerCollector") then world.screenSize else roblox.Vector2.zero
 		elseif key == "AbsolutePosition" then
 			return true, roblox.Vector2.zero
@@ -398,6 +402,7 @@ function RobloxRuntime.newWorld(options: WorldOptions?): World
 	end
 
 	local WRITABLE_OVERRIDES: { [string]: boolean } = {
+		IsLoaded = true, -- controllable texture loading for sprite regression tests
 		NetworkPing = true,
 		Kicked = true,
 		CurrentCamera = true,
@@ -681,6 +686,9 @@ function RobloxRuntime.newWorld(options: WorldOptions?): World
 		}
 
 		runtime.services = {
+			ContentProvider = {
+				PreloadAsync = function(_self: any, _assets: { any }) end,
+			},
 			Players = {
 				LocalPlayer = localPlayer,
 				PlayerAdded = playerAdded,

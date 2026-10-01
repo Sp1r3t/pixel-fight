@@ -65,6 +65,7 @@ export type Observation = {
 	move: string?,
 	moveFrame: number,
 	characterId: string,
+	combatProfile: string?,
 	crouching: boolean,
 	airborne: boolean,
 	hurt: Hitbox.HurtKind,
@@ -188,6 +189,7 @@ local function record(brain: Brain, fighter: Fighter, frame: number)
 	obs.move = fighter.move
 	obs.moveFrame = fighter.moveFrame
 	obs.characterId = fighter.characterId
+	obs.combatProfile = fighter.combatProfile
 	obs.crouching = Fighter.isCrouching(fighter)
 	obs.airborne = Fighter.isAirborne(fighter)
 	obs.hurt = Fighter.hurtKind(fighter)
@@ -223,7 +225,7 @@ local function updateHabits(brain: Brain)
 			if brain.dist < 6 then
 				habits.nearAttacks += 1
 			end
-			local move = MoveBook.get(seen.characterId, seen.move)
+			local move = MoveBook.get(seen.characterId, seen.move, seen.combatProfile)
 			if move and move.guard == "Low" then
 				habits.lows += 1
 			elseif move and move.guard == "Overhead" then
@@ -266,7 +268,7 @@ local function moveData(brain: Brain, moveId: string): Types.MoveData?
 	if cached then
 		return cached
 	end
-	local move = MoveBook.get(brain.me.characterId, moveId)
+	local move = MoveBook.get(brain.me.characterId, moveId, brain.me.combatProfile)
 	if move then
 		brain.moveCache[moveId] = move
 	end
@@ -419,7 +421,7 @@ end
 -- Дальность приёма противника (насколько близко опасно стоять).
 local function opponentReach(brain: Brain, moveId: string): number
 	local seen = brain.seen
-	local move = MoveBook.get(seen.characterId, moveId)
+	local move = MoveBook.get(seen.characterId, moveId, seen.combatProfile)
 	if move == nil then
 		return 0
 	end
@@ -442,7 +444,7 @@ local function opponentAttackPhase(brain: Brain): (string, number, Types.MoveDat
 	if seen.state ~= "Attack" or seen.move == nil then
 		return "None", 0, nil
 	end
-	local move = MoveBook.get(seen.characterId, seen.move :: string)
+	local move = MoveBook.get(seen.characterId, seen.move :: string, seen.combatProfile)
 	if move == nil then
 		return "None", 0, nil
 	end
@@ -1119,7 +1121,7 @@ states.Defend = {
 			-- Блок «чувствуется» сразу: зная фреймдату, боец понимает, насколько противник открыт.
 			local opponent = Simulation.opponentOf(brain.sim, me)
 			local blockedMove = if opponent.state == "Attack" and opponent.move
-				then MoveBook.get(opponent.characterId, opponent.move :: string)
+				then MoveBook.get(opponent.characterId, opponent.move :: string, opponent.combatProfile)
 				else nil
 			brain.punishWindow = if blockedMove
 				then MoveBook.totalFrames(blockedMove) - opponent.moveFrame - me.stun

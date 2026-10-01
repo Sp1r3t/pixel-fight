@@ -18,6 +18,7 @@ local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterR
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
 local ArenaArt = require(script.Parent.Parent.Parent.Fight.ArenaArt)
 
@@ -25,8 +26,8 @@ local Children, OnEvent, peek = Fusion.Children, Fusion.OnEvent, Fusion.peek
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local TEAM_COLORS: { Color3 } = { Color3.fromHex("#4DB8FF"), Color3.fromHex("#FF5A6E") }
-local LOCK_SHADE = Color3.fromHex("#05030B")
+local TEAM_COLORS: { Color3 } = { Color3.fromHex("#789AA8"), Color3.fromHex("#B27669") }
+local LOCK_SHADE = Color3.fromHex("#090B09")
 
 local PHASE_TITLES: { [string]: string } = {
 	Character = "ВЫБЕРИ БОЙЦА",
@@ -46,8 +47,32 @@ local function label(
 		Font: Enum.Font?,
 		Align: Enum.TextXAlignment?,
 		ZIndex: number?,
+		Icon: string?,
 	}
 ): Instance
+	if props.Icon then
+		local textProps = table.clone(props)
+		textProps.Icon = nil
+		textProps.Position = UDim2.fromOffset(26, 0)
+		textProps.Size = UDim2.new(1, -26, 1, 0)
+		return scope:New "Frame" {
+			Name = props.Name or "Label",
+			BackgroundTransparency = 1,
+			Position = props.Position,
+			Size = props.Size,
+			ZIndex = props.ZIndex or 1,
+			[Children] = {
+				IconGlyph(scope, {
+					Id = props.Icon,
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.fromScale(0, 0.5),
+					Size = UDim2.fromOffset(20, 20),
+					ZIndex = props.ZIndex or 1,
+				}),
+				label(scope, textProps),
+			},
+		}
+	end
 	return scope:New "TextLabel" {
 		Name = props.Name or "Label",
 		BackgroundTransparency = 1,
@@ -70,7 +95,7 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 	local isLocal = slot.slot == info.localSlot
 	local status = ""
 	if info.phase == "Character" then
-		status = if slot.ready then "✓ Готов" else "Выбирает…"
+		status = if slot.ready then "Готов" else "Выбирает…"
 	else
 		local arena = if slot.vote then Arenas.byId[slot.vote] else nil
 		status = if arena then arena.name elseif slot.bot then "" else "Голосует…"
@@ -122,6 +147,7 @@ local function SlotCard(scope: Scope, slot: AppState.DraftSlotInfo, info: AppSta
 			}),
 			label(scope, {
 				Name = "Status",
+				Icon = if info.phase == "Character" and slot.ready then "check" else nil,
 				Text = status,
 				Position = UDim2.fromOffset(72, 47),
 				Size = UDim2.fromOffset(122, 18),
@@ -240,20 +266,23 @@ local function CharacterPhase(scope: Scope, state: AppState.AppState): Instance
 							MaxTextSize = 15,
 						},
 					},
-					scope:New "TextLabel" {
+					scope:New "Frame" {
 						Name = "Locked",
 						BackgroundColor3 = LOCK_SHADE,
 						BackgroundTransparency = 0.45,
 						BorderSizePixel = 0,
-						Font = Theme.Fonts.Body,
 						Size = UDim2.fromScale(1, 1),
-						Text = "🔒",
-						TextSize = 26,
-						TextColor3 = Theme.Colors.Text,
 						Visible = scope:Computed(function(use)
 							return not use(owned)
 						end),
 						ZIndex = 3,
+						[Children] = IconGlyph(scope, {
+							Id = "lock",
+							AnchorPoint = Vector2.new(0.5, 0.5),
+							Position = UDim2.fromScale(0.5, 0.5),
+							Size = UDim2.fromOffset(28, 28),
+							ZIndex = 3,
+						}),
 					},
 				} :: { Fusion.Child },
 			}
@@ -363,17 +392,31 @@ local function MapCard(scope: Scope, state: AppState.AppState, arena: Arenas.Are
 	if arena.premium then
 		table.insert(
 			badges,
-			scope:New "TextLabel" {
+			scope:New "Frame" {
 				Name = "Premium",
 				BackgroundColor3 = Theme.Colors.Paid,
 				BorderSizePixel = 0,
-				Font = Theme.Fonts.Pixel,
 				Position = UDim2.fromOffset(4, 4),
 				Size = UDim2.fromOffset(74, 18),
-				Text = "👑 PREMIUM",
-				TextColor3 = Theme.Colors.Outline,
-				TextSize = 13,
 				ZIndex = 4,
+				[Children] = {
+					IconGlyph(scope, {
+						Id = "crown",
+						Position = UDim2.fromOffset(3, 2),
+						Size = UDim2.fromOffset(14, 14),
+						ZIndex = 5,
+					}),
+					scope:New "TextLabel" {
+						BackgroundTransparency = 1,
+						Font = Theme.Fonts.Pixel,
+						Position = UDim2.fromOffset(19, 0),
+						Size = UDim2.fromOffset(53, 18),
+						Text = "PREMIUM",
+						TextColor3 = Theme.Colors.Outline,
+						TextSize = 11,
+						ZIndex = 5,
+					},
+				},
 			}
 		)
 	end
@@ -429,7 +472,7 @@ local function MapCard(scope: Scope, state: AppState.AppState, arena: Arenas.Are
 				Position = UDim2.new(1, -4, 0, 4),
 				Size = UDim2.fromOffset(44, 22),
 				Text = scope:Computed(function(use)
-					return `★ {use(votes)}`
+					return `   {use(votes)}`
 				end),
 				TextColor3 = Theme.Colors.Outline,
 				TextSize = 15,
@@ -437,6 +480,12 @@ local function MapCard(scope: Scope, state: AppState.AppState, arena: Arenas.Are
 					return use(votes) > 0
 				end),
 				ZIndex = 4,
+				[Children] = IconGlyph(scope, {
+					Id = "star",
+					Position = UDim2.fromOffset(3, 3),
+					Size = UDim2.fromOffset(16, 16),
+					ZIndex = 5,
+				}),
 			},
 			scope:New "TextLabel" {
 				Name = "Locked",
@@ -445,7 +494,7 @@ local function MapCard(scope: Scope, state: AppState.AppState, arena: Arenas.Are
 				BorderSizePixel = 0,
 				Font = Theme.Fonts.Body,
 				Size = UDim2.new(1, 0, 0, 92),
-				Text = "🔒\nТолько для владельцев",
+				Text = "\n\nТолько для владельцев",
 				TextColor3 = Theme.Colors.Text,
 				TextSize = 14,
 				TextWrapped = true,
@@ -453,6 +502,13 @@ local function MapCard(scope: Scope, state: AppState.AppState, arena: Arenas.Are
 					return not use(owned)
 				end),
 				ZIndex = 3,
+				[Children] = IconGlyph(scope, {
+					Id = "lock",
+					AnchorPoint = Vector2.new(0.5, 0),
+					Position = UDim2.fromScale(0.5, 0.12),
+					Size = UDim2.fromOffset(28, 28),
+					ZIndex = 4,
+				}),
 			},
 		} :: { Fusion.Child },
 	}
@@ -471,7 +527,8 @@ local function MapPhase(scope: Scope, state: AppState.AppState): Instance
 			cards,
 			label(scope, {
 				Name = "Hint",
-				Text = "👑 Премиальную карту выбирает тот, кто её купил, — и если она победит, на ней играют все!",
+				Icon = "crown",
+				Text = "Премиальную карту выбирает тот, кто её купил, — и если она победит, на ней играют все!",
 				Position = UDim2.fromOffset(40, 424),
 				Size = UDim2.fromOffset(880, 22),
 				TextSize = 15,
@@ -517,7 +574,8 @@ local function RevealPhase(scope: Scope, arenaId: string): Instance
 			picture,
 			label(scope, {
 				Name = "ChosenName",
-				Text = (if arena.premium then "👑 " else "") .. arena.name,
+				Icon = if arena.premium then "crown" else nil,
+				Text = arena.name,
 				Position = UDim2.fromOffset(80, 420),
 				Size = UDim2.fromOffset(800, 36),
 				TextSize = 30,
@@ -597,7 +655,7 @@ local function Draft(scope: Scope, state: AppState.AppState): Instance
 				TextColor3 = scope:Computed(function(use)
 					local info = use(state.draft)
 					local left = if info then info.deadline - use(now) else 99
-					return if left <= 5 then Color3.fromHex("#FF4D6D") else Theme.Colors.Text
+					return if left <= 5 then Color3.fromHex("#AB6251") else Theme.Colors.Text
 				end),
 				TextSize = 40,
 				[Children] = {

@@ -67,7 +67,7 @@ local SHOWCASE: { Beat } = {
 	{ animation = "Win", duration = 1.8, attack = false },
 }
 
-local SILHOUETTE = Color3.fromHex("#140F22")
+local SILHOUETTE = Color3.fromHex("#211E17")
 local STEP = 1 / 30
 
 ----------------------------------------------------------------------------------------------

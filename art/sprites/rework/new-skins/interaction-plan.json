@@ -1,0 +1,320 @@
+{
+  "architecture": "Victim-specific reaction frames, attacker-specific timing and attachment paths; no baked-in victim silhouettes.",
+  "victims": [
+    {
+      "id": "rook",
+      "bodyClass": "balanced",
+      "appearance": "blond martial artist in detailed blue gi, red headband and crossed red trim, white wrapped fists"
+    },
+    {
+      "id": "mira",
+      "bodyClass": "agile",
+      "appearance": "athletic woman purple high ponytail, pink crop top, black shorts pink edging, knee pads, pink ankle wraps bare feet"
+    },
+    {
+      "id": "brakk",
+      "bodyClass": "tank",
+      "appearance": "huge muscular bearded man, mohawk, dark open fur-trimmed vest, brown trousers, heavy knee plates, wrapped hands boots"
+    },
+    {
+      "id": "juno",
+      "bodyClass": "ranged",
+      "appearance": "dark-haired woman in white teal orange futuristic fitted suit, high bun and orange headband, gloves boots, orange ring disc"
+    },
+    {
+      "id": "sable",
+      "bodyClass": "agile",
+      "appearance": "hooded masked purple black ninja woman with two curved silver purple daggers and sash"
+    },
+    {
+      "id": "dax",
+      "bodyClass": "tank",
+      "appearance": "muscular male boxer in red white singlet shorts, red boxing gloves, short dark hair, red boxing boots"
+    },
+    {
+      "id": "wren",
+      "bodyClass": "agile",
+      "appearance": "small agile fair-haired woman in green hood scarf layered tunic, pale green trousers, green wrapped boots, two short green batons"
+    },
+    {
+      "id": "sorren",
+      "bodyClass": "ranged",
+      "appearance": "bearded dark-haired man with topknot, navy golden long lamellar coat and armor, long wooden spear silver head yellow tassel"
+    },
+    {
+      "id": "pike",
+      "bodyClass": "ranged",
+      "appearance": "navy gold armored lancer wearing crested enclosed helmet, long spear with pale metal tip, split tabard armored boots"
+    },
+    {
+      "id": "zip",
+      "bodyClass": "agile",
+      "appearance": "small teal yellow robot with glowing yellow visor, antenna, yellow scarf, wheel feet, two electric cyan short blades/batons"
+    },
+    {
+      "id": "ashka",
+      "bodyClass": "balanced",
+      "appearance": "red-haired woman in flowing red gold fire dancer outfit, golden wrist jewelry, two orange yellow open fire fans"
+    },
+    {
+      "id": "glacia",
+      "bodyClass": "ranged",
+      "appearance": "pale blue-haired woman in navy white fur-trimmed long coat, ice armored boots gauntlets, crystal staff and small ice shield"
+    },
+    {
+      "id": "tempest",
+      "bodyClass": "balanced",
+      "appearance": "dark-haired blue gold armored samurai with yellow scarf, topknot, navy split hakama, katana and sheath"
+    },
+    {
+      "id": "byte",
+      "bodyClass": "agile",
+      "appearance": "slim white black friendly humanoid robot with cyan magenta joints, rectangular black face cyan eyes, floating small white drone and holographic ring"
+    },
+    {
+      "id": "morrow",
+      "bodyClass": "ranged",
+      "appearance": "black hooded skeletal green skull reaper in tattered black coat, spectral green wisps, curved sickle attached to metal CHAIN held between both hands"
+    },
+    {
+      "id": "astra",
+      "bodyClass": "ranged",
+      "appearance": "lavender-skinned elven celestial woman with long pale lavender hair, gold crescent crown, deep purple gold star-patterned flowing gown, floating golden star"
+    },
+    {
+      "id": "pip",
+      "bodyClass": "agile",
+      "appearance": "small green goblin bandit with large pointed ears, red head cloth scarf, brown long coat, wrapped fists, patched dark trousers boots"
+    },
+    {
+      "id": "ned",
+      "bodyClass": "tank",
+      "appearance": "huge moss-covered tree ogre with bark shoulders leafy beard, green stone wood skin, loincloth, massive uprooted wooden CLUB"
+    },
+    {
+      "id": "tally",
+      "bodyClass": "agile",
+      "appearance": "small green goblin courier wearing cyan helmet goggles vest, backpack, cyan roller skates, two cream red parcel boomerangs"
+    },
+    {
+      "id": "farrow",
+      "bodyClass": "ranged",
+      "appearance": "elderly white-haired white-bearded human spear veteran in tattered gray cloak, brown gray armor, long spear red ribbon"
+    },
+    {
+      "id": "kessa",
+      "bodyClass": "tank",
+      "appearance": "gold teal armored automaton with cyan visor and circular cyan chest core, two golden teal ring shields on arms shoulders, teal tabard"
+    },
+    {
+      "id": "vane",
+      "bodyClass": "agile",
+      "appearance": "black purple raven humanoid assassin with beak red eyes red scarf feather cloak, clawed feet, two red silver knives"
+    },
+    {
+      "id": "grist",
+      "bodyClass": "tank",
+      "appearance": "massive charcoal blacksmith stone golem with lava fissures, furnace-slit helmet, leather apron bracers, gigantic lava HAMMER"
+    },
+    {
+      "id": "juniper",
+      "bodyClass": "agile",
+      "appearance": "green-winged eagle harpy warrior with eagle head, tan feather body, green sashes, golden clawed feet and hand talons"
+    },
+    {
+      "id": "oru",
+      "bodyClass": "tank",
+      "appearance": "stocky elderly turtle monk with shell, white beard, beads, cream gray robe red gold sash, spiral wooden staff red ribbon"
+    },
+    {
+      "id": "lise",
+      "bodyClass": "agile",
+      "appearance": "slender blue gold insectoid alien with long golden antennae, huge ring shoulders blue lightning, glowing cyan electricity between hands"
+    },
+    {
+      "id": "cinder",
+      "bodyClass": "agile",
+      "appearance": "slender black orange red dragon humanoid with small horns yellow eyes, long flaming tail, lava robes, fire crescents on both claws"
+    },
+    {
+      "id": "rime",
+      "bodyClass": "tank",
+      "appearance": "giant bulky icy blue crystal golem with angular glowing ice plates, massive ice shield on arm, ice fist and crystal feet"
+    },
+    {
+      "id": "hex",
+      "bodyClass": "agile",
+      "appearance": "purple black cybernetic raven alien with beak green eye mechanical limbs sharp hand claws, cape and purple green drone"
+    },
+    {
+      "id": "tidebreaker",
+      "bodyClass": "tank",
+      "appearance": "huge teal kraken humanoid with tentacle beard, coral shell armor, multiple tentacles instead of legs, large coral hooked weapon"
+    },
+    {
+      "id": "mae",
+      "bodyClass": "tank",
+      "appearance": "massive blue horned oni woman/ogre with white cloud mane, gold lightning tattoos and jewelry, spiked black gold lightning CLUB"
+    },
+    {
+      "id": "nocturne",
+      "bodyClass": "ranged",
+      "appearance": "floating skeletal void oracle with horned bone mask violet eye, purple torn star cloak, ribcage gold chains, violet star orb, no visible feet"
+    },
+    {
+      "id": "abbot",
+      "bodyClass": "tank",
+      "appearance": "bulky bronze stone armored robot monk, orange eye, giant bronze bell gauntlets, wooden beads, burgundy gold religious sash"
+    },
+    {
+      "id": "wraith",
+      "bodyClass": "agile",
+      "appearance": "slim faceted mirror glass humanoid with cyan interior lines, angular blank face, floating broken mirror shards"
+    },
+    {
+      "id": "sovereign",
+      "bodyClass": "ranged",
+      "appearance": "tall black purple gold armored lich king with horned crown green face crystal, long cape, gold crescent STAFF with green gem"
+    },
+    {
+      "id": "null",
+      "bodyClass": "ranged",
+      "appearance": "floating black gold armored emperor, immense golden bladed crown, red chest core, red gold tabard, four floating gold red blade plates"
+    }
+  ],
+  "reactions": {
+    "reactions-grab": [
+      [
+        "Pulled",
+        "Chest catches a tether impact, torso recoils toward attacker on LEFT, feet skid LEFT while body still faces LEFT, stop near attacker. Hands react rather than attack."
+      ],
+      [
+        "Grabbed",
+        "Arms and torso tense as held around waist by an external attacker; four distinct struggling poses, head neck and shoulders anatomically aligned."
+      ],
+      [
+        "Lifted",
+        "Waist grip lifts body, feet lose ground, body arches horizontally face up, settle into overhead held horizontal pose. Entire head rotates with shoulders."
+      ],
+      [
+        "Thrown",
+        "Horizontal held pose transitions into forward tumbling, rotating head torso together, full body airborne fall ready for ground impact."
+      ]
+    ],
+    "reactions-control": [
+      [
+        "Launched",
+        "Incoming uppercut launches whole body, spine recoils, knees trail then tuck, airborne peak and falling pose."
+      ],
+      [
+        "Slammed",
+        "Falling body rotates into back-first impact, natural bent knees, fully horizontal stunned ground pose and settled lying pose. Head lies with torso."
+      ],
+      [
+        "Bound",
+        "An outside cage restrains the character: start recoil, hands pushing invisible restraint, full-body struggling pose, released backward stagger. No cage drawn into sprite; separate effect layer supplies cage."
+      ],
+      [
+        "Suspended",
+        "Outside magic lifts the character: start ankle lift, limbs trail with center of mass suspended, curved weightless recoil, falling recovery. No attacker, magic or second body drawn."
+      ]
+    ]
+  },
+  "pairAdjustments": [
+    "waist/center-of-mass attachment",
+    "head and shoulder orientation",
+    "weapon clearance",
+    "wing/shell/tentacle clearance",
+    "ground contact and scale"
+  ],
+  "abilities": {
+    "brakk": {
+      "Super": [
+        "Pulled",
+        "Grabbed",
+        "Lifted",
+        "Thrown",
+        "Slammed"
+      ],
+      "Special": [
+        "Grabbed"
+      ]
+    },
+    "morrow": {
+      "Special": [
+        "Pulled"
+      ],
+      "Super": [
+        "Pulled",
+        "Suspended",
+        "Launched",
+        "Slammed"
+      ]
+    },
+    "tidebreaker": {
+      "Special": [
+        "Pulled"
+      ],
+      "Super": [
+        "Pulled",
+        "Grabbed",
+        "Lifted",
+        "Slammed"
+      ]
+    },
+    "glacia": {
+      "Super": [
+        "Bound",
+        "Suspended",
+        "Slammed"
+      ]
+    },
+    "byte": {
+      "Super": [
+        "Bound",
+        "Launched"
+      ]
+    },
+    "kessa": {
+      "Super": [
+        "Bound",
+        "Suspended"
+      ]
+    },
+    "astra": {
+      "Super": [
+        "Suspended",
+        "Launched",
+        "Slammed"
+      ]
+    },
+    "nocturne": {
+      "Super": [
+        "Suspended",
+        "Launched",
+        "Slammed"
+      ]
+    },
+    "sovereign": {
+      "Super": [
+        "Bound",
+        "Suspended",
+        "Slammed"
+      ]
+    },
+    "null": {
+      "Super": [
+        "Suspended",
+        "Launched",
+        "Slammed"
+      ]
+    },
+    "hex": {
+      "Super": [
+        "Bound",
+        "Launched"
+      ]
+    }
+  },
+  "status": "Reaction selection and movement are integrated in the game code. Artwork generation, sprite upload and paired visual review remain pending."
+}

@@ -253,16 +253,17 @@ local LIST: { Combo } = {
 	},
 }
 
--- Иконки жетонов (для экрана комбо и подсказок).
-local TOKEN_ICONS: { [string]: string } = {
-	L = "👊",
-	H = "🦶",
-	cL = "⬇️👊",
-	cH = "⬇️🦶",
-	jL = "⬆️👊",
-	jH = "⬆️🦶",
-	S = "✨",
-	SU = "⚡",
+-- Иконки жетонов (для экрана комбо и подсказок): id пиксельных иконок (Client/UI/PixelIcons),
+-- 1 — для простого удара/приёма, 2 — стрелка (присед/прыжок) + удар.
+local TOKEN_ICONS: { [string]: { string } } = {
+	L = { "punch" },
+	H = { "kick" },
+	cL = { "arrow_down", "punch" },
+	cH = { "arrow_down", "kick" },
+	jL = { "arrow_up", "punch" },
+	jH = { "arrow_up", "kick" },
+	S = { "special" },
+	SU = { "lightning" },
 }
 
 local byId: { [string]: Combo } = {}

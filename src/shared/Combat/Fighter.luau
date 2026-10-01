@@ -72,6 +72,7 @@ export type Fighter = {
 	-- Слот текущего противника (ближайший, предпочтительно на своём этаже; 0 — нет).
 	target: number,
 	characterId: string,
+	combatProfile: string?, -- approved boss identity; player profiles use characterId
 	stats: Types.DerivedStats,
 	hpMultiplier: number, -- умеренный бонус HP боссов (1 у игроков)
 
@@ -109,6 +110,9 @@ export type Fighter = {
 	-- Атака.
 	move: string?, -- текущий приём ("Light1", "Heavy", "Special", "Super", ...)
 	moveFrame: number, -- кадр внутри приёма (с 0)
+	attackParity: number, -- alternating lead/rear attacks without changing cancel rules
+	reaction: string?, -- victim pose while the current hitstun lasts
+	attackSequence: number, -- ties projectiles to the attack which actually launched them
 	moveConnected: boolean, -- попал или был заблокирован (открывает отмены в следующий удар)
 	moveHits: number, -- сколько ударов приёма уже засчитано (для многоударных)
 	moveBaseY: number, -- высота опоры в начале приёма (дуги прыжковых приёмов считаются от неё)
@@ -200,6 +204,8 @@ function Fighter.new(slot: number, characterId: string, hpMultiplier: number?, t
 		invulnerable = 0,
 		move = nil,
 		moveFrame = 0,
+		attackParity = 0,
+		attackSequence = 0,
 		moveConnected = false,
 		moveHits = 0,
 		moveBaseY = 0,

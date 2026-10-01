@@ -10,6 +10,7 @@ sourcemap.json
 roblox.yml
 globalTypes*.d.luau
 /build/
+/art/ui/campaign/screens.json
 
 # Wally (сервер/девтулзы). Packages/ намеренно хранится в репозитории — см. README.
 ServerPackages/

@@ -3,8 +3,8 @@
 local BossRegistry = requireShared("Characters", "BossRegistry")
 local GameConfig = requireShared("Config", "GameConfig")
 
-local function setup()
-	local game = Harness.new()
+local function setup(options)
+	local game = Harness.new(options)
 	local client = game.addClient("Alice")
 	game.step(3)
 	return game, client
@@ -101,6 +101,158 @@ end)
 
 describe("Режим боссов: бой", function()
 	it(
+		"смерть в первом раунде: переигровка сохраняет прошлый счёт и восстанавливает обоих бойцов",
+		function()
+			local game, client = setup()
+			local s = services(game)
+			local match = startBossViaUi(game, client)
+			stepUntilPhase(game, match, "Fight")
+			match.flow.wins = { 1, 1 }
+			match.sim.fighters[1].health = 0
+			match.sim.fighters[1].ko = true
+			game.step(2)
+			expect(match.flow.phase).toBe("RoundEnd")
+			expect(match.paused).toBe(true)
+			expect(peek(client, appState(client).bossOffer).duration).toBe(5)
+			expect(s.boss.grantOffer(client.player, "BossRetry")).toBe(true)
+			expect(match.flow.wins[1]).toBe(1)
+			expect(match.flow.wins[2]).toBe(1)
+			expect(match.flow.round).toBe(1)
+			for _, fighter in match.sim.fighters do
+				expect(fighter.health).toBe(fighter.maxHealth)
+				expect(fighter.ko).toBe(false)
+			end
+			expect(match.flow.phase).toBe("RoundStart")
+			expect(match.paused).toBe(false)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+
+	for _, dismiss in { false, true } do
+		it(
+			if dismiss
+				then "крестик переигровки возвращает в лобби сразу"
+				else "через 5 секунд переигровка возвращает в лобби",
+			function()
+				local game, client = setup()
+				local s = services(game)
+				local match = startBossViaUi(game, client)
+				stepUntilPhase(game, match, "Fight")
+				match.sim.fighters[1].health = 0
+				match.sim.fighters[1].ko = true
+				game.step(2)
+				if dismiss then
+					client.press("Close")
+					game.step(3)
+				else
+					game.step(290)
+					expect(match.ended).toBe(false)
+					game.step(15)
+				end
+				expect(match.ended).toBe(true)
+				expect(client.find("MainMenu") ~= nil).toBeTruthy()
+				expect(s.data.getBossProgress(client.player)).toBe(0)
+				expect(client.find("BossOffer")).toBe(nil)
+				expect(game.errors()).toBeEmpty()
+			end
+		)
+	end
+
+	it(
+		"усиление: пауза при покупке, чек выдаёт бонус один раз и продолжает бой",
+		function()
+			local monetization = table.clone(requireShared("Config", "Monetization"))
+			monetization.products = {
+				{ key = "BossBoost", kind = "BossBoost", id = 9001, priceHint = 5, name = "Усиление" },
+				{ key = "BossRetry", kind = "BossRetry", id = 9002, priceHint = 5, name = "Переигровка" },
+			}
+			local game, client = setup({ overrides = { ["src/shared/Config/Monetization.luau"] = monetization } })
+			local match = startBossViaUi(game, client)
+			stepUntilPhase(game, match, "Fight")
+			local fighter = match.sim.fighters[1]
+			fighter.health = math.floor(fighter.maxHealth * 0.29)
+			game.step(2)
+			expect(match.paused).toBe(false)
+			client.press("Buy")
+			game.step(3)
+			expect(match.paused).toBe(true)
+			local frame = match.sim.frame
+			game.step(450)
+			expect(match.sim.frame).toBe(frame)
+			expect(match.data.bossOffer.pending).toBe(true)
+			local monetizationService = game.serverRequire("Services", "MonetizationService")
+			local receipt = { PlayerId = client.player.UserId, ProductId = 9001, PurchaseId = "boost-one" }
+			expect(monetizationService.processReceipt(receipt)).toBe(Enum.ProductPurchaseDecision.PurchaseGranted)
+			expect(monetizationService.processReceipt(receipt)).toBe(Enum.ProductPurchaseDecision.PurchaseGranted)
+			expect(fighter.modifiers.damageDealt).toBe(1.5)
+			expect(fighter.modifiers.meterGain).toBe(1.5)
+			expect(fighter.modifiers.damageTaken).toBe(0.7)
+			expect(match.paused).toBe(false)
+			game.step(3)
+			expect(client.find("BossOffer")).toBe(nil)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+
+	it("усиление исчезает через 7 секунд, не останавливая бой", function()
+		local game, client = setup()
+		local match = startBossViaUi(game, client)
+		stepUntilPhase(game, match, "Fight")
+		match.controllers[2] = { kind = "Dummy" }
+		match.sim.fighters[1].health = math.floor(match.sim.fighters[1].maxHealth * 0.29)
+		game.step(2)
+		expect(client.find("BossOffer") ~= nil).toBeTruthy()
+		local frame = match.sim.frame
+		game.step(425)
+		expect(client.find("BossOffer")).toBe(nil)
+		expect(match.sim.frame > frame).toBeTruthy()
+		expect(match.paused).toBe(false)
+		expect(match.sim.fighters[1].modifiers.damageDealt).toBe(1)
+		expect(game.errors()).toBeEmpty()
+	end)
+
+	it("отмена покупки усиления снимает паузу без бонуса", function()
+		local monetization = table.clone(requireShared("Config", "Monetization"))
+		monetization.products = {
+			{ key = "BossBoost", kind = "BossBoost", id = 9001, priceHint = 5, name = "Усиление" },
+		}
+		local game, client = setup({ overrides = { ["src/shared/Config/Monetization.luau"] = monetization } })
+		local match = startBossViaUi(game, client)
+		stepUntilPhase(game, match, "Fight")
+		match.sim.fighters[1].health = math.floor(match.sim.fighters[1].maxHealth * 0.29)
+		game.step(2)
+		client.press("Buy")
+		game.step(3)
+		expect(match.paused).toBe(true)
+		client.runtime.services.MarketplaceService.PromptProductPurchaseFinished:Fire(client.player.UserId, 9001, false)
+		game.step(3)
+		expect(match.paused).toBe(false)
+		expect(match.sim.fighters[1].modifiers.damageDealt).toBe(1)
+		expect(client.find("BossOffer")).toBe(nil)
+		expect(game.errors()).toBeEmpty()
+	end)
+
+	it(
+		"крестик усиления закрывает окно, а смерть заменяет его переигровкой",
+		function()
+			local game, client = setup()
+			local match = startBossViaUi(game, client)
+			stepUntilPhase(game, match, "Fight")
+			match.sim.fighters[1].health = math.floor(match.sim.fighters[1].maxHealth * 0.29)
+			game.step(2)
+			client.press("Close")
+			game.step(3)
+			expect(client.find("BossOffer")).toBe(nil)
+			expect(match.paused).toBe(false)
+			match.sim.fighters[1].health = 0
+			match.sim.fighters[1].ko = true
+			game.step(2)
+			expect(peek(client, appState(client).bossOffer).kind).toBe("BossRetry")
+			expect(match.paused).toBe(true)
+			expect(game.errors()).toBeEmpty()
+		end
+	)
+	it(
 		"кнопка «В БОЙ»: бой до 3 побед против ИИ с именем и цветами босса",
 		function()
 			local game, client = setup()
@@ -144,6 +296,54 @@ describe("Режим боссов: бой", function()
 		local rook = match.sim.fighters[1]
 		expect(match.sim.fighters[2].maxHealth).toBe(math.floor(rook.maxHealth * boss.hpMultiplier + 0.5))
 	end)
+
+	it(
+		"предлагает усиление при HP <30% против босса с HP >60% и применяет все три бонуса",
+		function()
+			local game, client = setup()
+			local s = services(game)
+			local match = startBossViaUi(game, client)
+			stepUntilPhase(game, match, "Fight")
+			local player = match.sim.fighters[1]
+			local boss = match.sim.fighters[2]
+			player.health = math.floor(player.maxHealth * 0.29)
+			boss.health = math.floor(boss.maxHealth * 0.61)
+			game.step(2)
+			expect(client.find("BossOffer") ~= nil).toBeTruthy()
+			expect(client.find("OfferBox") ~= nil).toBeTruthy()
+			expect(match.paused).toBe(false)
+			expect(s.boss.grantOffer(client.player, "BossBoost")).toBe(true)
+			expect(player.modifiers.damageDealt).toBeCloseTo(1.5)
+			expect(player.modifiers.meterGain).toBeCloseTo(1.5)
+			expect(player.modifiers.damageTaken).toBeCloseTo(0.7)
+			expect(match.paused).toBe(false)
+		end
+	)
+
+	it(
+		"после поражения предлагает 5-секундную переигровку и откатывает только последнее очко босса",
+		function()
+			local game, client = setup()
+			local s = services(game)
+			local match = startBossViaUi(game, client)
+			match.flow.round = 4
+			match.flow.wins = { 1, 3 }
+			match.flow.matchWinner = 2
+			match.flow.phase = "MatchEnd"
+			match.flow.phaseFrame = 179
+			game.step(2)
+			expect(match.ended).toBe(false)
+			expect(match.paused).toBe(true)
+			expect(client.find("BossOffer") ~= nil).toBeTruthy()
+			expect(client.findText("ПЕРЕИГРАТЬ ПОСЛЕДНИЙ РАУНД", "TextLabel") ~= nil).toBeTruthy()
+			expect(s.boss.grantOffer(client.player, "BossRetry")).toBe(true)
+			expect(match.flow.wins[1]).toBe(1)
+			expect(match.flow.wins[2]).toBe(2)
+			expect(match.flow.round).toBe(4)
+			expect(match.flow.phase).toBe("RoundStart")
+			expect(match.paused).toBe(false)
+		end
+	)
 end)
 
 describe("Режим боссов: прогресс", function()
@@ -303,18 +503,62 @@ describe("Экран «Башня боссов»", function()
 				end
 			end
 			expect(cards).toBe(20)
+			expect(tower.ClassName).toBe("ScrollingFrame")
+			expect(tower.ScrollingDirection).toBe(Enum.ScrollingDirection.X)
+			expect(tower.Size.X.Offset >= 900).toBeTruthy()
+			expect(client.find("Route") ~= nil).toBeTruthy()
+			local firstArt = client.find("ChapterArt_1")
+			expect(firstArt ~= nil).toBeTruthy()
+			client.press("MapNext")
+			game.step(30)
+			expect(tower.CanvasPosition.X).toBe(tower.Size.X.Offset)
+			expect(client.find("ChapterArt_1")).toBe(firstArt)
+			expect(client.find("ChapterArt_3") ~= nil).toBeTruthy()
+			local secondArt = client.find("ChapterArt_2")
+			tower.CanvasPosition = Vector2.new(tower.CanvasPosition.X + 100, 0)
+			game.step(1)
+			expect(client.find("ChapterArt_2")).toBe(secondArt)
+			game.step(40)
+			expect(tower.CanvasPosition.X).toBe(tower.Size.X.Offset)
+			for _ = 1, 8 do
+				client.press("MapNext")
+			end
+			game.step(30)
+			expect(tower.CanvasPosition.X).toBe(tower.CanvasSize.X.Offset - tower.Size.X.Offset)
+			expect(client.find("ChapterArt_5") ~= nil).toBeTruthy()
+			expect(client.find("ChapterArt_1")).toBe(nil)
+			for _ = 1, 8 do
+				client.press("MapPrevious")
+			end
+			game.step(30)
+			expect(tower.CanvasPosition.X).toBe(0)
 			expect(client.find("BossTitle").Text).toBe(string.upper(BossRegistry.get("pip").name))
 
 			client.runtime.fire(client.find("Boss_ned"), "Activated")
 			game.step(2)
 			expect(client.find("BossTitle").Text).toBe(string.upper(BossRegistry.get("ned").name))
+			expect(tower.CanvasPosition.X).toBe(0)
 			expect(client.find("Status").Text).toContainMatch("Закрыт")
+			local lockedButton = client.find("FightBoss")
+			client.runtime.fire(lockedButton:FindFirstChild("Face"), "MouseEnter")
+			game.step(30)
+			expect(lockedButton:FindFirstChild("Body").Position.Y.Offset).toBe(0)
 			client.click("В БОЙ")
 			game.step(4)
 			expect(services(game).match.getMatchOf(client.player)).toBe(nil)
 			expect(client.find("BossMap") ~= nil).toBeTruthy()
 			expect(game.errors()).toBeEmpty()
 			expect(game.warnings()).toBeEmpty()
+			-- Selecting a boss and returning from fighter selection retain the entire chapter.
+			local later = BossRegistry.list()[11]
+			client.runtime.fire(client.find(`Boss_{later.id}`), "Activated")
+			game.step(2)
+			expect(tower.CanvasPosition.X).toBe(tower.Size.X.Offset * 2)
+			client.click("Сменить")
+			game.step(2)
+			client.click("← Назад")
+			game.step(2)
+			expect(client.find("Tower").CanvasPosition.X).toBe(tower.Size.X.Offset * 2)
 		end
 	)
 

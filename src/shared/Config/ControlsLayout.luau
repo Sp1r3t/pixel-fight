@@ -10,6 +10,7 @@
 ]]
 
 local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
+local KeyboardBindings = require(script.Parent.KeyboardBindings)
 
 export type ControlId = "Joystick" | "Light" | "Heavy" | "Special" | "Super" | "Dash" | "Jump" | "Block"
 export type ShowMode = "Auto" | "Always" | "Never"
@@ -26,6 +27,7 @@ export type Layout = {
 	opacity: number, -- непрозрачность кнопок 0.2..0.9
 	dashButton: boolean,
 	controls: { [string]: Placement },
+	keyboard: KeyboardBindings.Bindings,
 }
 
 local CONTROL_IDS: { string } = { "Joystick", "Light", "Heavy", "Special", "Super", "Dash", "Jump", "Block" }
@@ -67,6 +69,7 @@ local DEFAULT: Layout = {
 	mode = "Auto",
 	opacity = 0.6,
 	dashButton = false,
+	keyboard = KeyboardBindings.default(),
 	controls = {
 		Joystick = { x = 135, y = 130, size = 1 },
 		Light = { x = 175, y = 75, size = 1 },
@@ -107,6 +110,7 @@ local function copyLayout(layout: Layout): Layout
 		opacity = layout.opacity,
 		dashButton = layout.dashButton,
 		controls = controls,
+		keyboard = KeyboardBindings.sanitize(layout.keyboard),
 	}
 end
 
@@ -136,6 +140,7 @@ function ControlsLayout.sanitize(data: unknown): Layout
 		return result
 	end
 	local raw = data :: { [any]: any }
+	result.keyboard = KeyboardBindings.sanitize(raw.keyboard)
 	if type(raw.version) == "number" and raw.version < DEFAULT.version then
 		-- Старая раскладка (до компактной дуги) — берём новую по умолчанию, режим показа сохраняем.
 		if raw.mode == "Auto" or raw.mode == "Always" or raw.mode == "Never" then

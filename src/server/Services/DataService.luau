@@ -23,6 +23,7 @@ local Combos = require(ReplicatedStorage.Shared.Config.Combos)
 local Cosmetics = require(ReplicatedStorage.Shared.Config.Cosmetics)
 local Monetization = require(ReplicatedStorage.Shared.Config.Monetization)
 local ProfileSchema = require(ReplicatedStorage.Shared.Data.ProfileSchema)
+local TestMode = require(ReplicatedStorage.Shared.Config.TestMode)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
 
 local RequestRouter = require(script.Parent.Parent.Net.RequestRouter)
@@ -108,6 +109,9 @@ function DataService.ownsCharacter(player: Player, characterId: string): boolean
 		return false
 	end
 	if def.unlock == "Free" then
+		return true
+	end
+	if TestMode.UnlockAllCharacters then
 		return true
 	end
 	local data = DataService.get(player)

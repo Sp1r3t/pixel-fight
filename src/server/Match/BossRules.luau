@@ -33,6 +33,8 @@ BossRules.ENRAGE_THRESHOLD = 0.35
 BossRules.ENRAGE_DAMAGE = 1.2
 BossRules.LIFESTEAL = 0.2
 BossRules.MOMENTUM_METER = 1.35
+BossRules.BOOST_PLAYER_HEALTH = 0.30
+BossRules.BOOST_BOSS_HEALTH = 0.60
 
 export type BossState = {
 	slot: number,
@@ -140,6 +142,21 @@ function BossRules.step(match: Match.Match)
 	end
 
 	state.lastHealth = fighter.health
+
+	-- Один раз за бой предлагаем усиление только в действительно тяжёлой ситуации.
+	local player = sim.fighters[if state.slot == 1 then 2 else 1]
+	local offerBoost = match.data.offerBossBoost
+	if
+		fighting
+		and not match.data.bossBoostOffered
+		and not player.ko
+		and player.health < player.maxHealth * BossRules.BOOST_PLAYER_HEALTH
+		and fighter.health > fighter.maxHealth * BossRules.BOOST_BOSS_HEALTH
+		and type(offerBoost) == "function"
+	then
+		match.data.bossBoostOffered = true
+		offerBoost()
+	end
 end
 
 return BossRules

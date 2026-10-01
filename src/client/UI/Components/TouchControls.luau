@@ -24,6 +24,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ControlsLayout = require(ReplicatedStorage.Shared.Config.ControlsLayout)
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Theme = require(script.Parent.Parent.Theme)
+local IconGlyph = require(script.Parent.IconGlyph)
 
 local Children, OnEvent, peek = Fusion.Children, Fusion.OnEvent, Fusion.peek
 
@@ -53,13 +54,25 @@ local ZONE_TOP = 0.26
 type ButtonDef = { id: string, icon: string, label: string, bit: number, color: Color3 }
 
 local BUTTONS: { ButtonDef } = {
-	{ id = "Light", icon = "👊", label = "Рука", bit = InputBits.Light, color = Color3.fromHex("#3AA8F0") },
-	{ id = "Heavy", icon = "🦶", label = "Нога", bit = InputBits.Heavy, color = Color3.fromHex("#FF7A2E") },
-	{ id = "Special", icon = "✨", label = "Приём", bit = InputBits.Special, color = Color3.fromHex("#B45CF0") },
-	{ id = "Super", icon = "⚡", label = "Супер", bit = InputBits.Super, color = Color3.fromHex("#FFC21A") },
-	{ id = "Dash", icon = "💨", label = "Рывок", bit = InputBits.Dash, color = Color3.fromHex("#2FC46F") },
-	{ id = "Jump", icon = "⬆️", label = "Прыжок", bit = InputBits.Up, color = Color3.fromHex("#27B8A0") },
-	{ id = "Block", icon = "🛡️", label = "Блок", bit = InputBits.Block, color = Color3.fromHex("#7C8BB0") },
+	{ id = "Light", icon = "punch", label = "Рука", bit = InputBits.Light, color = Color3.fromHex("#627A7D") },
+	{ id = "Heavy", icon = "kick", label = "Нога", bit = InputBits.Heavy, color = Color3.fromHex("#9D7754") },
+	{
+		id = "Special",
+		icon = "special",
+		label = "Приём",
+		bit = InputBits.Special,
+		color = Color3.fromHex("#80748F"),
+	},
+	{
+		id = "Super",
+		icon = "lightning",
+		label = "Супер",
+		bit = InputBits.Super,
+		color = Color3.fromHex("#C4A46A"),
+	},
+	{ id = "Dash", icon = "dash", label = "Рывок", bit = InputBits.Dash, color = Color3.fromHex("#7D9571") },
+	{ id = "Jump", icon = "arrow_up", label = "Прыжок", bit = InputBits.Up, color = Color3.fromHex("#6F8C7E") },
+	{ id = "Block", icon = "shield", label = "Блок", bit = InputBits.Block, color = Color3.fromHex("#7B8584") },
 }
 
 local WHITE = Color3.new(1, 1, 1)
@@ -283,7 +296,7 @@ function TouchControls.new(scope: Scope, props: Props): Instance
 		Name = "Joystick",
 		Active = true,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = Color3.fromHex("#1A1433"),
+		BackgroundColor3 = Color3.fromHex("#20231F"),
 		BackgroundTransparency = scope:Computed(function(use)
 			return 1 - use(opacity) * 0.55
 		end),
@@ -515,21 +528,17 @@ function TouchControls.new(scope: Scope, props: Props): Instance
 							return if use(ready) then 0.05 else 0.55
 						end),
 					},
-					scope:New "TextLabel" {
+					IconGlyph(scope, {
 						Name = "Icon",
+						Id = button.icon,
 						AnchorPoint = Vector2.new(0.5, 0.5),
-						BackgroundTransparency = 1,
-						Font = Theme.Fonts.Title,
 						Position = UDim2.fromScale(0.5, 0.42),
 						Size = UDim2.fromScale(0.5, 0.5),
-						Text = button.icon,
-						TextColor3 = WHITE,
-						TextScaled = true,
-						TextTransparency = scope:Computed(function(use)
+						Transparency = scope:Computed(function(use)
 							return if use(ready) then 0 else 0.45
 						end),
 						ZIndex = 6,
-					},
+					}),
 					scope:New "TextLabel" {
 						Name = "Label",
 						AnchorPoint = Vector2.new(0.5, 0),

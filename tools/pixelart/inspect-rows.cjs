@@ -1,0 +1,5 @@
+const fs=require('fs'),path=require('path'),sharp=require('C:/Users/Tanshi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
+const root=path.resolve('art/sprites/rework/new-skins');
+function runs(a,threshold,min){let out=[],start=-1;for(let i=0;i<=a.length;i++){if(i<a.length&&a[i]>threshold){if(start<0)start=i;}else if(start>=0){if(i-start>=min)out.push([start,i]);start=-1;}}return out;}
+async function main(){for(const id of process.argv.slice(2)){const {data,info}=await sharp(path.join(root,id+'-source.png')).ensureAlpha().raw().toBuffer({resolveWithObject:true});const {width:w,height:h}=info;const ys=Array(h).fill(0);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>160)ys[y]++;const rows=runs(ys,10,20);let result=[];for(const [top,bottom]of rows){const xs=Array(w).fill(0);for(let x=0;x<w;x++)for(let y=top;y<bottom;y++)if(data[(y*w+x)*4+3]>160)xs[x]++;result.push({top,bottom,figures:runs(xs,2,15)});}console.log(JSON.stringify({id,rows:result}));}}
+main();

@@ -16,6 +16,7 @@ local ControlsLayout = require(script.Parent.Parent.Config.ControlsLayout)
 local Combos = require(script.Parent.Parent.Config.Combos)
 local Cosmetics = require(script.Parent.Parent.Config.Cosmetics)
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
+local TestMode = require(script.Parent.Parent.Config.TestMode)
 
 export type PlayerData = {
 	version: number,
@@ -270,7 +271,7 @@ end
 function ProfileSchema.toPublic(data: PlayerData, vip: boolean?): PublicProfile
 	local owned: { [string]: boolean } = {}
 	for _, def in CharacterRegistry.list() do
-		if def.unlock == "Free" or data.ownedCharacters[def.id] then
+		if TestMode.UnlockAllCharacters or def.unlock == "Free" or data.ownedCharacters[def.id] then
 			owned[def.id] = true
 		end
 	end

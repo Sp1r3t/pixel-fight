@@ -18,12 +18,15 @@ export type FighterView = {
 	slot: number,
 	def: Types.CharacterDef,
 	anchor: Part,
+	stageWall: number,
 	update: (fighter: Snapshot.FighterSnapshot, dt: number) -> (),
 	flash: (amount: number) -> (),
 	-- Смещение отрисовки (постановка роликов суперов): бой на сервере при этом стоит.
 	setOffset: (dx: number, dy: number) -> (),
 	-- Скрыть бойца (телепорт: исчез — появился).
 	setVisible: (visible: boolean) -> (),
+	setCinematicProgress: (progress: number?) -> (),
+	setReactionProgress: (animation: Types.AnimationName?, progress: number?) -> (),
 	-- Табличка над головой (nil — убрать).
 	setNameplate: (text: string?, color: Color3?) -> (),
 	destroy: () -> (),
@@ -81,11 +84,15 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 	local offsetX, offsetY = 0, 0
 	local nameplate: BillboardGui? = nil
 	local visible = true
+	local cinematicProgress: number? = nil
+	local reactionAnimation: Types.AnimationName? = nil
+	local reactionProgress: number? = nil
 
 	local view = {} :: FighterView
 	view.slot = slot
 	view.def = def
 	view.anchor = anchor
+	view.stageWall = Stage.wall(layout)
 
 	function view.update(fighter: Snapshot.FighterSnapshot, dt: number)
 		-- Атакующий боец чуть ближе к камере, чтобы его удар рисовался поверх противника.
@@ -99,10 +106,16 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 		-- Цилиндр лежит на боку: ось X вверх.
 		shadow.CFrame = CFrame.new(fighter.x, floorY + 0.03, 0) * CFrame.Angles(0, 0, math.rad(90))
 
-		local choice = AnimationSelect.choose(fighter, def.id)
+		local choice = AnimationSelect.choose(fighter, def.id, def.visualStyle)
 		animator.setFacing(fighter.facing)
 		animator.update(dt, fighter.vx, fighter.vy)
-		animator.show(choice.name, choice.time, choice.progress)
+		if reactionAnimation ~= nil then
+			animator.show(reactionAnimation, 0, reactionProgress)
+		elseif cinematicProgress ~= nil then
+			animator.show("Super", 0, cinematicProgress)
+		else
+			animator.show(choice.name, choice.time, choice.progress)
+		end
 
 		if flashAmount > 0 then
 			flashAmount = math.max(0, flashAmount - dt * 6)
@@ -116,6 +129,15 @@ function FighterView.new(parent: Instance, def: Types.CharacterDef, slot: number
 
 	function view.setOffset(dx: number, dy: number)
 		offsetX, offsetY = dx, dy
+	end
+
+	function view.setCinematicProgress(progress: number?)
+		cinematicProgress = progress
+	end
+
+	function view.setReactionProgress(animation: Types.AnimationName?, progress: number?)
+		reactionAnimation = animation
+		reactionProgress = progress
 	end
 
 	function view.setVisible(isVisible: boolean)

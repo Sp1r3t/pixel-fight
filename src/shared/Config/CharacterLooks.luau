@@ -76,7 +76,7 @@ local Looks: { [string]: Look } = {
 		face = { eyes = "Normal" },
 		head = { band = "accent", bandTails = true },
 		top = { style = "Jacket", color = "primary", trim = "secondary" },
-		sleeves = "Short",
+		sleeves = "Full",
 		gloves = "secondary",
 		pants = { style = "Pants", color = "secondary" },
 		boots = "#2B2B2B",
@@ -104,8 +104,8 @@ local Looks: { [string]: Look } = {
 		hair = { style = "Bald", color = "#5A3A1A" },
 		face = { eyes = "Narrow", beard = "#5A3A1A" },
 		head = {},
-		top = { style = "Bare", color = "primary" },
-		sleeves = "None",
+		top = { style = "Armor", color = "#495A76", trim = "accent" },
+		sleeves = "Full",
 		gloves = "secondary",
 		pants = { style = "Pants", color = "secondary" },
 		boots = "#3A2A1A",
@@ -141,6 +141,7 @@ local Looks: { [string]: Look } = {
 		boots = "secondary",
 		belt = "accent",
 		extras = { scarf = "accent" },
+		weapon = { kind = "DualKnives", color = "secondary", accent = "accent" },
 		element = "accent",
 	},
 	dax = {
@@ -311,8 +312,157 @@ local CharacterLooks = {}
 CharacterLooks.LOOKS = deepFreeze(Looks)
 CharacterLooks.SKIN = table.freeze(SKIN)
 
-function CharacterLooks.get(characterId: string): Look
-	return CharacterLooks.LOOKS[characterId] or DEFAULT
+local function copyLook(source: Look): Look
+	local result = table.clone(source) :: any
+	result.hair = table.clone(source.hair)
+	result.face = table.clone(source.face)
+	result.head = table.clone(source.head)
+	result.top = table.clone(source.top)
+	result.pants = table.clone(source.pants)
+	result.extras = table.clone(source.extras)
+	result.weapon = if source.weapon then table.clone(source.weapon) else nil
+	return result :: Look
+end
+
+-- Boss silhouettes are assembled from the same articulated renderer, but replace
+-- anatomy, face, costume and weapon as a set. Their moves stay balanced while the
+-- opponent reads as a creature/boss rather than a recoloured roster fighter.
+local function bossLook(base: Look, style: string): Look
+	local look = copyLook(base)
+	if string.find(style, "_shadow") then
+		look.face = table.clone(look.face)
+		look.face.eyes = "Glow"
+		look.face.glow = "accent"
+		look.face.mask = "secondary"
+		look.head = { hood = "primary" }
+		look.extras = table.clone(look.extras)
+		look.extras.scarf = "accent"
+		if look.weapon then
+			look.weapon = { kind = look.weapon.kind, color = "secondary", accent = "accent" }
+		end
+	elseif string.find(style, "_legend") then
+		look.face = table.clone(look.face)
+		look.face.eyes = "Glow"
+		look.face.glow = "accent"
+		look.head = table.clone(look.head)
+		look.head.crown = "accent"
+		look.extras = table.clone(look.extras)
+		look.extras.stars = "accent"
+		look.extras.cape = look.extras.cape or "primary"
+		if look.weapon then
+			look.weapon = { kind = look.weapon.kind, color = "accent", accent = "secondary" }
+		end
+	elseif string.find(style, "brute") or string.find(style, "titan") then
+		look.build = "Heavy"
+		look.hair = { style = "Bald", color = "#25170F" }
+		look.face = { eyes = "Narrow", beard = "#25170F" }
+		look.top = { style = "Armor", color = "primary", trim = "accent" }
+		look.sleeves = "None"
+		look.bigGloves = true
+		look.extras = { shoulderPads = "accent" }
+	elseif string.find(style, "alien") then
+		look.build = "Slim"
+		look.skin = "#8BC7A3"
+		look.hair = { style = "None", color = "#10151B" }
+		look.face = { eyes = "Glow", glow = "accent" }
+		look.head = { helmet = "secondary" }
+		look.top = { style = "Armor", color = "primary", trim = "accent" }
+		look.sleeves = "Full"
+		look.extras = { drone = "accent" }
+	elseif string.find(style, "kraken") then
+		look.build = "Heavy"
+		look.skin = "#70507F"
+		look.hair = { style = "None", color = "#18101F" }
+		look.face = { eyes = "Glow", glow = "accent", mask = "secondary" }
+		look.head = { crown = "accent" }
+		look.top = { style = "Cloak", color = "primary", trim = "accent" }
+		look.pants = { style = "Robe", color = "secondary", trim = "accent" }
+		look.extras = { cape = "primary", beads = "accent" }
+		look.weapon = { kind = "Scythe", color = "secondary", accent = "accent" }
+	elseif string.find(style, "tree") then
+		look.build = "Heavy"
+		look.skin = "#75502D"
+		look.hair = { style = "Spiky", color = "#386641" }
+		look.face = { eyes = "Glow", glow = "accent" }
+		look.head = { crown = "accent" }
+		look.top = { style = "Armor", color = "#5B3A22", trim = "accent" }
+		look.sleeves = "Full"
+		look.pants = { style = "Wide", color = "#3C5A35" }
+		look.extras = { shoulderPads = "#386641", beads = "accent" }
+		look.weapon = { kind = "Staff", color = "#4B2E18", accent = "accent" }
+	elseif string.find(style, "sahur") then
+		look.build = "Heavy"
+		look.skin = "#8B5A2B"
+		look.hair = { style = "None", color = "#24160C" }
+		look.face = { eyes = "Glow", glow = "#FF2D2D" }
+		look.head = { crown = "accent" }
+		look.top = { style = "Bare", color = "#8B5A2B", trim = "accent" }
+		look.sleeves = "None"
+		look.pants = { style = "Wide", color = "secondary", trim = "accent" }
+		look.bigGloves = true
+		look.extras = { sash = "accent" }
+		look.weapon = { kind = "Staff", color = "#5A3318", accent = "accent" }
+	elseif string.find(style, "robot") or string.find(style, "cyber") then
+		look.build = "Heavy"
+		look.skin = "#98A6B3"
+		look.hair = { style = "None", color = "#111827" }
+		look.face = { eyes = "Visor", glow = "accent", mask = "secondary" }
+		look.head = { helmet = "primary", headphones = "accent" }
+		look.top = { style = "Armor", color = "secondary", trim = "accent" }
+		look.sleeves = "Full"
+		look.extras = { shoulderPads = "primary", drone = "accent", jets = "accent" }
+	elseif string.find(style, "golem") or string.find(style, "mutant") or string.find(style, "beast") then
+		look.build = "Heavy"
+		look.skin = if string.find(style, "golem") then "#A8C2CC" else "#6F8F62"
+		look.hair = { style = "Mohawk", color = "accent" }
+		look.face = { eyes = "Glow", glow = "accent", mask = "secondary" }
+		look.head = { helmet = "primary" }
+		look.top = { style = "Bare", color = look.skin, trim = "accent" }
+		look.sleeves = "None"
+		look.bigGloves = true
+		look.extras = { shoulderPads = "accent" }
+	elseif string.find(style, "warlock") or string.find(style, "oracle") then
+		look.build = "Slim"
+		look.hair = { style = "Long", color = "secondary" }
+		look.face = { eyes = "Glow", glow = "accent" }
+		look.head = { crown = "accent" }
+		look.top = { style = "Robe", color = "primary", trim = "accent" }
+		look.pants = { style = "Robe", color = "secondary", trim = "accent" }
+		look.extras = { cape = "primary", stars = "accent" }
+		look.weapon = { kind = "Staff", color = "secondary", accent = "accent" }
+	elseif string.find(style, "champion") then
+		look.build = "Heavy"
+		look.hair = { style = "Mohawk", color = "accent" }
+		look.face = { eyes = "Narrow", beard = "secondary" }
+		look.head = { crown = "accent" }
+		look.top = { style = "Armor", color = "primary", trim = "accent" }
+		look.sleeves = "None"
+		look.bigGloves = true
+		look.extras = { shoulderPads = "secondary", cape = "primary" }
+	elseif string.find(style, "monk") then
+		look.build = "Heavy"
+		look.hair = { style = "Bald", color = "secondary" }
+		look.face = { eyes = "Glow", glow = "accent", beard = "secondary" }
+		look.head = {}
+		look.top = { style = "Robe", color = "primary", trim = "accent" }
+		look.pants = { style = "Wide", color = "secondary" }
+		look.extras = { beads = "accent", sash = "accent" }
+	elseif string.find(style, "demon") or string.find(style, "wraith") or string.find(style, "null") then
+		look.build = if string.find(style, "null") then "Heavy" else "Slim"
+		look.skin = "#2A2135"
+		look.hair = { style = "None", color = "#08070B" }
+		look.face = { eyes = "Glow", glow = "accent", mask = "secondary" }
+		look.head = { hood = "primary", crown = if string.find(style, "null") then "accent" else nil }
+		look.top = { style = "Cloak", color = "primary", trim = "accent" }
+		look.pants = { style = "Robe", color = "secondary" }
+		look.extras = { cape = "primary", stars = "accent" }
+	end
+	return look
+end
+
+function CharacterLooks.get(characterId: string, visualStyle: string?): Look
+	local base = CharacterLooks.LOOKS[characterId] or DEFAULT
+	return if visualStyle then bossLook(base, visualStyle) else base
 end
 
 return CharacterLooks

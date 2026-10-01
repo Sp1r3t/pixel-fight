@@ -7,6 +7,8 @@
 local Types = require(script.Parent.Parent.Types)
 local Moves = require(script.Parent.Parent.Config.Moves)
 local CharacterRegistry = require(script.Parent.Parent.Characters.CharacterRegistry)
+local CombatProfiles = require(script.Parent.Parent.Config.CombatProfiles)
+local SignatureMoves = require(script.Parent.Parent.Config.SignatureMoves)
 
 local MoveBook = {}
 
@@ -27,19 +29,19 @@ function MoveBook.fromIndex(index: number): string?
 end
 
 -- Фреймдата приёма для персонажа (nil — нет такого приёма).
-function MoveBook.get(characterId: string, moveId: string): Types.MoveData?
+function MoveBook.get(characterId: string, moveId: string, combatProfile: string?): Types.MoveData?
 	local normal = Moves.normals[moveId]
 	if normal then
-		return normal.data
+		return CombatProfiles.normal(combatProfile or characterId, moveId, normal.data)
 	end
 	local def = CharacterRegistry.get(characterId)
 	if def == nil then
 		return nil
 	end
 	if moveId == "Special" then
-		return def.special.move
+		return SignatureMoves.move(combatProfile or characterId, moveId, def.special.move)
 	elseif moveId == "Super" then
-		return def.super.move
+		return SignatureMoves.move(combatProfile or characterId, moveId, def.super.move)
 	end
 	return nil
 end

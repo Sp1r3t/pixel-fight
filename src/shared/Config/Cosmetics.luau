@@ -30,7 +30,7 @@ export type Item = {
 	id: string,
 	kind: ItemKind,
 	name: string,
-	icon: string, -- эмодзи для интерфейса
+	icon: string, -- id пиксельной иконки (Client/UI/PixelIcons) для интерфейса
 	currency: Currency,
 	price: number,
 	description: string,
@@ -38,7 +38,6 @@ export type Item = {
 	palette: Types.Palette?, -- облик: цвета
 	legendary: boolean?, -- облик: искры вокруг бойца в бою
 	effect: Effect?, -- эффект удара / финишер
-	emoji: string?, -- эмоция
 }
 
 local SHADOW_PRICE = 1500 -- монет
@@ -158,7 +157,7 @@ for _, set in SKIN_SETS do
 		id = `{set.character}_shadow`,
 		kind = "Skin",
 		name = "Тень",
-		icon = "🌑",
+		icon = "moon",
 		currency = "Coins",
 		price = SHADOW_PRICE,
 		description = "Тёмный облик со светящимися деталями.",
@@ -169,7 +168,7 @@ for _, set in SKIN_SETS do
 		id = `{set.character}_legend`,
 		kind = "Skin",
 		name = set.legendName,
-		icon = "🌟",
+		icon = "star",
 		currency = "Crystals",
 		price = LEGEND_PRICE,
 		description = "Легендарный облик: свои цвета и искры вокруг бойца в бою.",
@@ -184,7 +183,7 @@ local EFFECTS: { Item } = {
 		id = "hit_stars",
 		kind = "HitEffect",
 		name = "Звёзды",
-		icon = "⭐",
+		icon = "star",
 		currency = "Coins",
 		price = 1000,
 		description = "Твои удары рассыпаются золотыми звёздами.",
@@ -194,7 +193,7 @@ local EFFECTS: { Item } = {
 		id = "hit_confetti",
 		kind = "HitEffect",
 		name = "Конфетти",
-		icon = "🎊",
+		icon = "confetti",
 		currency = "Coins",
 		price = 1000,
 		description = "Каждое попадание — праздник: разноцветное конфетти.",
@@ -204,7 +203,7 @@ local EFFECTS: { Item } = {
 		id = "hit_pixels",
 		kind = "HitEffect",
 		name = "Пиксели",
-		icon = "👾",
+		icon = "pixels_glyph",
 		currency = "Coins",
 		price = 1000,
 		description = "Ретро-искры: крупные зелёные и голубые пиксели.",
@@ -214,7 +213,7 @@ local EFFECTS: { Item } = {
 		id = "hit_hearts",
 		kind = "HitEffect",
 		name = "Сердечки",
-		icon = "💖",
+		icon = "heart",
 		currency = "Crystals",
 		price = 80,
 		description = "Удары разлетаются сердечками.",
@@ -224,7 +223,7 @@ local EFFECTS: { Item } = {
 		id = "hit_lightning",
 		kind = "HitEffect",
 		name = "Молнии",
-		icon = "⚡",
+		icon = "lightning",
 		currency = "Crystals",
 		price = 80,
 		description = "Искры-молнии с синим электрическим отблеском.",
@@ -234,7 +233,7 @@ local EFFECTS: { Item } = {
 		id = "hit_rainbow",
 		kind = "HitEffect",
 		name = "Радуга",
-		icon = "🌈",
+		icon = "rainbow",
 		currency = "Vip",
 		price = 0,
 		description = "Радужные искры — только для VIP.",
@@ -244,7 +243,7 @@ local EFFECTS: { Item } = {
 		id = "ko_starfall",
 		kind = "KoEffect",
 		name = "Звездопад",
-		icon = "🌠",
+		icon = "starfall",
 		currency = "Coins",
 		price = 2000,
 		description = "После твоего нокаута с неба сыплются звёзды.",
@@ -254,7 +253,7 @@ local EFFECTS: { Item } = {
 		id = "ko_confetti",
 		kind = "KoEffect",
 		name = "Конфетти-взрыв",
-		icon = "🎉",
+		icon = "confetti",
 		currency = "Coins",
 		price = 2000,
 		description = "Победный взрыв конфетти.",
@@ -264,7 +263,7 @@ local EFFECTS: { Item } = {
 		id = "ko_fireworks",
 		kind = "KoEffect",
 		name = "Фейерверк",
-		icon = "🎆",
+		icon = "fireworks",
 		currency = "Crystals",
 		price = 120,
 		description = "Три залпа фейерверка над ареной.",
@@ -274,7 +273,7 @@ local EFFECTS: { Item } = {
 		id = "ko_thunder",
 		kind = "KoEffect",
 		name = "Удар молнии",
-		icon = "🌩️",
+		icon = "thunder_strike",
 		currency = "Crystals",
 		price = 120,
 		description = "Молния бьёт в арену, экран вспыхивает.",
@@ -285,28 +284,27 @@ for _, item in EFFECTS do
 	table.insert(ITEMS, item)
 end
 
-local EMOTES: { { id: string, emoji: string, name: string, currency: Currency, price: number } } = {
-	{ id = "emote_thumbs", emoji = "👍", name = "Класс", currency = "Free", price = 0 },
-	{ id = "emote_smile", emoji = "😄", name = "Улыбка", currency = "Free", price = 0 },
-	{ id = "emote_cool", emoji = "😎", name = "Круто", currency = "Coins", price = 500 },
-	{ id = "emote_fire", emoji = "🔥", name = "Огонь", currency = "Coins", price = 500 },
-	{ id = "emote_muscle", emoji = "💪", name = "Сила", currency = "Coins", price = 500 },
-	{ id = "emote_wave", emoji = "👋", name = "Привет", currency = "Coins", price = 500 },
-	{ id = "emote_crown", emoji = "👑", name = "Король", currency = "Crystals", price = 40 },
-	{ id = "emote_party", emoji = "🎉", name = "Праздник", currency = "Crystals", price = 40 },
-	{ id = "emote_lol", emoji = "😂", name = "Смешно", currency = "Crystals", price = 40 },
-	{ id = "emote_robot", emoji = "🤖", name = "Робот", currency = "Crystals", price = 40 },
+local EMOTES: { { id: string, icon: string, name: string, currency: Currency, price: number } } = {
+	{ id = "emote_thumbs", icon = "thumbs", name = "Класс", currency = "Free", price = 0 },
+	{ id = "emote_smile", icon = "face_smile", name = "Улыбка", currency = "Free", price = 0 },
+	{ id = "emote_cool", icon = "face_cool", name = "Круто", currency = "Coins", price = 500 },
+	{ id = "emote_fire", icon = "flame", name = "Огонь", currency = "Coins", price = 500 },
+	{ id = "emote_muscle", icon = "muscle", name = "Сила", currency = "Coins", price = 500 },
+	{ id = "emote_wave", icon = "hand_wave", name = "Привет", currency = "Coins", price = 500 },
+	{ id = "emote_crown", icon = "crown", name = "Король", currency = "Crystals", price = 40 },
+	{ id = "emote_party", icon = "confetti", name = "Праздник", currency = "Crystals", price = 40 },
+	{ id = "emote_lol", icon = "face_lol", name = "Смешно", currency = "Crystals", price = 40 },
+	{ id = "emote_robot", icon = "robot", name = "Робот", currency = "Crystals", price = 40 },
 }
 for _, emote in EMOTES do
 	table.insert(ITEMS, {
 		id = emote.id,
 		kind = "Emote",
 		name = emote.name,
-		icon = emote.emoji,
+		icon = emote.icon,
 		currency = emote.currency,
 		price = emote.price,
 		description = "Смайлик над твоим бойцом по кнопке в бою.",
-		emoji = emote.emoji,
 	})
 end
 

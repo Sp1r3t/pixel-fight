@@ -73,6 +73,7 @@ function Projectiles.spawn(sim: Sim, owner: Fighter.Fighter, options: SpawnOptio
 	local projectile: Projectile = {
 		id = sim.nextProjectileId,
 		owner = owner.slot,
+		attackSequence = owner.attackSequence,
 		kind = options.kind,
 		x = options.x,
 		y = options.y,

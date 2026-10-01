@@ -40,7 +40,7 @@ local function ScreenHeader(scope: Scope, props: Props): Instance
 			right,
 			Pill(scope, {
 				Name = "Coins",
-				Icon = "🪙",
+				Icon = "coin",
 				Text = scope:Computed(function(use)
 					return Format.number(use(coins))
 				end),
@@ -57,7 +57,7 @@ local function ScreenHeader(scope: Scope, props: Props): Instance
 			right,
 			Pill(scope, {
 				Name = "Crystals",
-				Icon = "💎",
+				Icon = "crystal",
 				Text = scope:Computed(function(use)
 					return Format.number(use(crystals))
 				end),

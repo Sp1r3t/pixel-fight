@@ -11,9 +11,10 @@
 	и сколько времени персонаж в этом состоянии (или прогресс удара по фреймдате).
 	Так анимация всегда совпадает с серверной симуляцией.
 
-	Замена плейсхолдеров на арт: загрузить лист в Roblox и заполнить поле sprites персонажа:
-	    sprites = { image = "rbxassetid://…", frameWidth = 64, frameHeight = 64, animations = {} }
-	(animations можно оставить пустым, если лист следует стандартной раскладке Config/Animations).
+	Пиксель-арт уже нарисован процедурно (tools/pixelart/, см. его README) — art/sprites/<id>.png
+	на каждого из 16 бойцов. Включить: загрузить PNG в Roblox Studio и вписать rbxassetid в
+	Config/CharacterSprites.luau — CharacterRegistry сам подставит его в CharacterDef.sprites,
+	никакой код здесь трогать не нужно. Пока запись не заполнена — используется Rig.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,9 +36,9 @@ export type Animator = {
 	destroy: () -> (),
 }
 
-local function noUpdate(_dt: number, _vx: number, _vy: number) end
-
 local SpriteAnimator = {}
+
+local function noUpdate(_dt: number, _vx: number, _vy: number) end
 
 function SpriteAnimator.new(parent: Instance, def: Types.CharacterDef): Animator
 	local sheet = def.sprites
@@ -46,7 +47,9 @@ function SpriteAnimator.new(parent: Instance, def: Types.CharacterDef): Animator
 		return {
 			root = sprite.root,
 			kind = "Sheet",
-			show = sprite.show,
+			show = function(animation, time, progress)
+				sprite.show(animation, time, progress)
+			end,
 			setFacing = sprite.setFacing,
 			setFlash = sprite.setFlash,
 			setTint = sprite.setTint,

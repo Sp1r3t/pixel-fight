@@ -5,13 +5,9 @@
 	Сервер во время ролика держит бойцов на месте и наносит урон сериями (CinematicHit);
 	клиент в это время «режиссирует» картинку, не влияя на бой:
 	  • фон ролика за бойцами (у Deluxe-персонажей — особый, со «звёздами»), наезд камеры;
-	  • движение бойцов по сценарию способа доставки супера:
-	      Rush     — атакующий мечется сквозь противника, в конце подбрасывает его;
-	      Launcher — оба взмывают вверх, серия в воздухе;
-	      Beam     — луч через весь экран, противника отжимает назад;
-	      Barrage  — сверху сыплется обстрел;
-	      Grab     — противника поднимают над головой и впечатывают в пол;
-	      Counter  — неподвижная стойка и серия молниеносных ударов с вспышками.
+	  • отдельная непрерывная траектория каждого бойца из SuperChoreography;
+	  • прогресс собственных кадров ульты синхронизирован с серверным роликом;
+	  • камера учитывает расстояние и высоту обоих бойцов.
 	Цвета — из косметики атакующего (цвет вспышки супера, искры, фон).
 ]]
 
@@ -24,6 +20,7 @@ local CosmeticStyles = require(script.Parent.CosmeticStyles)
 local SparkStyles = require(script.Parent.SparkStyles)
 local EffectsController = require(script.Parent.Parent.Controllers.EffectsController)
 local CameraController = require(script.Parent.Parent.Controllers.CameraController)
+local InteractionTether = require(script.Parent.InteractionTether)
 
 export type Context = {
 	folder: Instance,
@@ -33,21 +30,25 @@ export type Context = {
 	defenderX: number,
 	duration: number, -- секунды
 	hits: number,
+	focusCamera: boolean, -- в 2v2 приближение видят только участники супера
 }
 
 type Active = {
 	context: Context,
 	def: Types.CharacterDef,
 	delivery: string,
+	style: string,
 	dir: number, -- направление от атакующего к противнику
 	elapsed: number,
 	hitsDone: number,
 	backdrop: Part,
 	sparkles: { Frame },
-	beam: Part?,
-	slammed: boolean,
+	tether: InteractionTether.Tether?,
 }
 
+local CombatProfiles = require(ReplicatedStorage.Shared.Config.CombatProfiles)
+local Choreography = require(script.Parent.SuperChoreography)
+local InteractionReactions = require(script.Parent.InteractionReactions)
 local Cinematics = {}
 
 local BACKDROP_Z = -1.5
@@ -127,31 +128,23 @@ function Cinematics.start(context: Context)
 	local def = context.attacker.def
 	local dir = if context.defenderX >= context.attackerX then 1 else -1
 	local centerX = (context.attackerX + context.defenderX) / 2
-	local backdropStyle = CosmeticStyles.backdrop(def.cosmetics.cinematicBackdrop, def.cosmetics.superFlash)
+	local cinematicStyle = def.super.cinematic.style
+	local profile = CombatProfiles.get(def.visualStyle or def.id)
+	local backdropStyle =
+		CosmeticStyles.backdrop(def.cosmetics.cinematicBackdrop, def.cosmetics.superFlash, cinematicStyle)
 	local backdrop, sparkles = buildBackdrop(context.folder, centerX, backdropStyle)
 	local state: Active = {
 		context = context,
 		def = def,
 		delivery = def.super.delivery,
+		style = if profile then profile.id else def.id,
 		dir = dir,
 		elapsed = 0,
 		hitsDone = 0,
 		backdrop = backdrop,
 		sparkles = sparkles,
-		beam = nil,
-		slammed = false,
+		tether = InteractionTether.new(context.folder, if profile then profile.id else def.id),
 	}
-	if state.delivery == "Beam" then
-		local length = 34
-		state.beam = makePart(
-			context.folder,
-			"SuperBeam",
-			Vector3.new(length, 2.2, 0.3),
-			Vector3.new(context.attackerX + dir * (length / 2 + 1), 3.5, 0.6),
-			Color3.fromHex(def.cosmetics.superFlash)
-		);
-		(state.beam :: Part).Material = Enum.Material.Neon
-	end
 	active = state
 	CameraController.shake(0.4, 0.3)
 end
@@ -177,7 +170,60 @@ function Cinematics.hit()
 	local style = SparkStyles.get(def.cosmetics.hitSpark)
 	local position = context.defender.anchor.CFrame.Position
 	context.defender.flash(1)
-	if state.delivery == "Barrage" then
+	local accent = Color3.fromHex(def.cosmetics.superFlash)
+	if state.style == "abbot" then
+		EffectsController.dust(position.X, 0, nil)
+		EffectsController.ring(position, accent, 4.8, 0.45, 8)
+	elseif state.style == "ned" then
+		EffectsController.dust(position.X, 0, nil)
+		EffectsController.burst(position, {
+			count = 14,
+			color = Color3.fromRGB(104, 160, 86),
+			secondary = accent,
+			speed = 17,
+			size = 0.42,
+			life = 0.48,
+			gravity = 12,
+			spread = 110,
+			direction = -90,
+		})
+	elseif state.style == "tidebreaker" then
+		EffectsController.ring(position, accent, 5.2, 0.5, 9)
+		EffectsController.burst(position, {
+			count = 12,
+			color = Color3.fromRGB(30, 150, 165),
+			secondary = accent,
+			speed = 20,
+			size = 0.38,
+			life = 0.42,
+			gravity = 3,
+			spread = 160,
+			direction = -90,
+		})
+	elseif state.style == "grist" or state.style == "cinder" or state.style == "oru" then
+		EffectsController.dust(position.X, math.max(0, position.Y - 2.8), nil)
+		CameraController.shake(0.6, 0.25)
+	elseif state.style == "rime" then
+		EffectsController.ring(position, Color3.fromRGB(210, 248, 255), 4.4, 0.4, 8)
+	elseif state.style == "kessa" or state.style == "hex" then
+		EffectsController.starBurst(position, accent, 4.2, 0.24, 10)
+	elseif state.style == "wraith" or state.style == "nocturne" or state.style == "null" then
+		EffectsController.converge(position, accent, 5.5, 20, 0.36)
+	elseif state.style == "tally" then
+		EffectsController.burst(position, {
+			count = 15,
+			color = Color3.fromRGB(110, 180, 78),
+			secondary = accent,
+			speed = 21,
+			size = 0.45,
+			life = 0.46,
+			gravity = 10,
+			spread = 130,
+			direction = -90,
+		})
+	elseif state.style == "farrow" or state.style == "vane" or state.style == "sovereign" then
+		EffectsController.starBurst(position, accent, 3.4, 0.2, 9)
+	elseif state.delivery == "Barrage" then
 		EffectsController.burst(position + Vector3.new(0, 7, 0), {
 			count = 10,
 			color = style.primary,
@@ -193,6 +239,52 @@ function Cinematics.hit()
 		EffectsController.screenFlash(Color3.new(1, 1, 1), 0.08, 0.35)
 		context.attacker.flash(0.6)
 	end
+	-- Signature effects are keyed by the character's actual cinematic, not only
+	-- by the six delivery families. This gives each fighter a readable motif.
+	if state.style == "juno" then
+		EffectsController.ring(position, accent, 2.8, 0.25, 4)
+	elseif state.style == "pike" then
+		EffectsController.starBurst(position + Vector3.new(state.dir * 0.8, 0, 0), accent, 2.8, 0.22, 5)
+	elseif state.style == "zip" then
+		EffectsController.burst(position, {
+			count = 7,
+			color = accent,
+			secondary = Color3.new(1, 1, 1),
+			speed = 18,
+			size = 0.32,
+			life = 0.24,
+			gravity = 0,
+			spread = 35,
+			direction = if state.dir > 0 then 180 else 0,
+		})
+	elseif state.style == "sable" or state.style == "tempest" then
+		EffectsController.screenFlash(accent, 0.045, 0.28)
+		EffectsController.starBurst(position, accent, 3.2, 0.18, 4)
+	elseif state.style == "ashka" then
+		EffectsController.burst(position, {
+			count = 12,
+			color = accent,
+			secondary = Color3.fromRGB(255, 90, 25),
+			speed = 24,
+			size = 0.42,
+			life = 0.38,
+			gravity = -5,
+			spread = 70,
+			direction = -90,
+		})
+	elseif state.style == "glacia" then
+		EffectsController.ring(position, Color3.fromRGB(215, 250, 255), 3.5, 0.35, 7)
+	elseif state.style == "byte" then
+		EffectsController.starBurst(position, accent, 2.2, 0.18, 8)
+	elseif state.style == "morrow" then
+		EffectsController.ring(position, accent, 4, 0.4, 3)
+	elseif state.style == "astra" then
+		EffectsController.converge(position, accent, 4.5, 14, 0.28)
+	elseif state.style == "brakk" then
+		EffectsController.dust(position.X, math.max(0, position.Y - 2.8), nil)
+	else
+		EffectsController.starBurst(position, accent, 2.2, 0.2, 6)
+	end
 	CameraController.shake(0.25, 0.12)
 end
 
@@ -204,69 +296,46 @@ function Cinematics.update(dt: number)
 	local context = state.context
 	state.elapsed += dt
 	local t = math.clamp(state.elapsed / math.max(context.duration, 0.1), 0, 1)
-	local dir = state.dir
 	local ax, dx = context.attackerX, context.defenderX
-	local attackerOffset = Vector2.zero
-	local defenderOffset = Vector2.zero
-	local delivery = state.delivery
-	local hits = math.max(1, context.hits)
-
-	if delivery == "Rush" then
-		-- Атакующий мечется с одной стороны противника на другую, в конце — подброс.
-		local phase = t * hits
-		local side = if math.floor(phase) % 2 == 0 then -dir else dir
-		local frac = phase % 1
-		local targetX = dx + side * 2.2
-		attackerOffset = Vector2.new(targetX - ax, math.sin(frac * math.pi) * 1.5)
-		defenderOffset = Vector2.new(dir * 0.3 * math.sin(frac * math.pi), 0)
-		if t > 0.85 then
-			defenderOffset = Vector2.new(0, 8 * (t - 0.85) / 0.15)
-		end
-	elseif delivery == "Launcher" then
-		local rise = 9 * math.sin(math.min(t / 0.7, 1) * math.pi / 2)
-		defenderOffset = Vector2.new(0, rise)
-		attackerOffset = Vector2.new((dx - dir * 1.6) - ax, math.max(0, rise - 1))
-	elseif delivery == "Beam" then
-		defenderOffset = Vector2.new(dir * 3 * t + math.sin(state.elapsed * 60) * 0.1, 0)
-		local beam = state.beam
-		if beam then
-			beam.Transparency = 0.15 + 0.25 * math.abs(math.sin(state.elapsed * 25))
-		end
-	elseif delivery == "Grab" then
-		if t < 0.55 then
-			local lift = t / 0.55
-			defenderOffset = Vector2.new((ax - dx) * lift, 6 * lift)
-			attackerOffset = Vector2.new(0, 0)
-		elseif t < 0.8 then
-			local jump = (t - 0.55) / 0.25
-			local height = 6 + 6 * math.sin(jump * math.pi)
-			defenderOffset = Vector2.new(ax - dx, height)
-			attackerOffset = Vector2.new(0, height - 5)
-		else
-			defenderOffset = Vector2.new(ax - dx + dir * 1.5, 0)
-			if not state.slammed then
-				state.slammed = true
-				CameraController.shake(1, 0.5)
-				EffectsController.dust(dx + defenderOffset.X, 0, nil)
-				EffectsController.dust(dx + defenderOffset.X, 0, nil)
-			end
-		end
-	elseif delivery == "Counter" or delivery == "Barrage" then
-		local frac = (t * hits) % 1
-		defenderOffset = Vector2.new(dir * 0.4 * math.sin(frac * math.pi), 0)
+	local victimProfile = CombatProfiles.get(context.defender.def.visualStyle or context.defender.def.id)
+	local advance, height, push, lift = Choreography.offsets(
+		state.style,
+		if victimProfile then victimProfile.role else nil,
+		ax,
+		dx,
+		t,
+		context.attacker.stageWall
+	)
+	local attackerOffset = Vector2.new(advance, height)
+	local defenderOffset = Vector2.new(push, lift)
+	context.attacker.setCinematicProgress(t)
+	local reaction, reactionProgress = InteractionReactions.sample(state.style, t)
+	local victimSprites = context.defender.def.sprites
+	if victimSprites and reaction and victimSprites.animations[reaction] then
+		context.defender.setReactionProgress(reaction, reactionProgress)
 	end
 
 	context.attacker.setOffset(attackerOffset.X, attackerOffset.Y)
 	context.defender.setOffset(defenderOffset.X, defenderOffset.Y)
+	if state.tether then
+		local source = context.attacker.anchor.CFrame.Position + Vector3.new(state.dir * 0.85, 0, 0.3)
+		local target = context.defender.anchor.CFrame.Position + Vector3.new(0, 0.15, 0.3)
+		state.tether.update(source, target, t)
+	end
 
 	for index, dot in state.sparkles do
 		dot.BackgroundTransparency = 0.2 + 0.6 * math.abs(math.sin(state.elapsed * 3 + index))
 	end
 
-	-- Камера наезжает на пару и следует за полётом.
+	-- Камера держит обоих бойцов целиком. В 2v2 остальные игроки видят эффект
+	-- в общей камере и не теряют контроль из-за чужого приближения.
 	local focusX = (ax + attackerOffset.X + dx + defenderOffset.X) / 2
-	local focusY = 4 + math.max(attackerOffset.Y, defenderOffset.Y) * 0.6
-	CameraController.setOverride(focusX, focusY, 16)
+	local focusY = 5.5 + math.max(attackerOffset.Y, defenderOffset.Y) * 0.55
+	if context.focusCamera then
+		local span = math.abs((ax + attackerOffset.X) - (dx + defenderOffset.X))
+		local sceneHeight = math.max(attackerOffset.Y, defenderOffset.Y)
+		CameraController.setOverride(focusX, focusY, math.max(28, span * 1.2 + 16, sceneHeight * 1.4 + 22))
+	end
 end
 
 function Cinematics.stop()
@@ -275,12 +344,13 @@ function Cinematics.stop()
 		return
 	end
 	active = nil
+	state.context.attacker.setCinematicProgress(nil)
+	state.context.defender.setReactionProgress(nil, nil)
 	state.context.attacker.setOffset(0, 0)
 	state.context.defender.setOffset(0, 0)
 	state.backdrop:Destroy()
-	local beam = state.beam
-	if beam then
-		beam:Destroy()
+	if state.tether then
+		state.tether.destroy()
 	end
 	CameraController.setOverride(nil, nil, nil)
 end

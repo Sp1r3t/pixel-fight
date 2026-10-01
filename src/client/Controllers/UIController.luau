@@ -64,6 +64,7 @@ local ERROR_TEXT: { [string]: string } = {
 	NotHost = "Начать бой может только хозяин комнаты",
 	NotInDraft = "Подготовка к бою уже закончилась",
 	TooLate = "Время вышло — выбор уже сделан",
+	ProductNotConfigured = "Товар ещё не настроен: укажите его ID в Config/Monetization",
 	ArenaLocked = "Эту карту можно выбрать, только если она куплена",
 }
 
@@ -75,6 +76,7 @@ local DRAFT_CANCEL_TEXT: { [string]: string } = {
 
 local scope: Fusion.Scope<typeof(Fusion)>? = nil
 local state: AppState.AppState? = nil
+local activeBossPrompt: { token: number, productId: number }? = nil
 
 -- Запрос к серверу в отдельном потоке (InvokeServer ждёт ответа). Ошибки показываются уведомлением.
 local function request(action: string, payload: any?)
@@ -175,6 +177,44 @@ function UIController.Init()
 			game:GetService("MarketplaceService"):PromptProductPurchase(Players.LocalPlayer, productId)
 		end)
 	end
+	appState.actions.bossOffer = function(action: string)
+		local offer = peek(appState.bossOffer)
+		if offer == nil or offer.pending then
+			return
+		end
+		if action == "Dismiss" then
+			appState.bossOffer:set(nil)
+			request("BossOfferAction", { action = "Dismiss", token = offer.token })
+			return
+		end
+		if action ~= "Buy" then
+			return
+		end
+		offer.pending = true
+		appState.bossOffer:set(table.clone(offer))
+		task.spawn(function()
+			local ok, result = Transport.invokeServer("Request", "BossOfferAction", {
+				action = "Buy",
+				token = offer.token,
+			})
+			if not ok or type(result) ~= "table" or type(result.productId) ~= "number" then
+				offer.pending = false
+				if peek(appState.bossOffer) ~= nil then
+					appState.bossOffer:set(table.clone(offer))
+				end
+				AppState.notify(appState, ERROR_TEXT[result] or tostring(result), 4)
+				return
+			end
+			activeBossPrompt = { token = offer.token, productId = result.productId }
+			local prompted = pcall(function()
+				game:GetService("MarketplaceService"):PromptProductPurchase(Players.LocalPlayer, result.productId)
+			end)
+			if not prompted then
+				activeBossPrompt = nil
+				request("BossOfferAction", { action = "PromptCancelled", token = offer.token })
+			end
+		end)
+	end
 	appState.actions.promptVip = function()
 		if Monetization.vipPass == 0 then
 			AppState.notify(appState, NOT_CONFIGURED, 4)
@@ -238,8 +278,14 @@ function UIController.Start()
 	local rootScope = assert(scope, "UIController.Init не был вызван")
 	local appState = assert(state, "UIController.Init не был вызван")
 	appState.platform:set(InputController.getPlatform())
+	appState.inputBindings:set(InputController.getBindingLabels())
+	rootScope:Observer(appState.controlsLayout):onBind(function()
+		InputController.applyKeyboardBindings(peek(appState.controlsLayout).keyboard)
+		appState.inputBindings:set(InputController.getBindingLabels())
+	end)
 	InputController.onPlatformChanged(function(platform)
 		appState.platform:set(platform)
+		appState.inputBindings:set(InputController.getBindingLabels(platform))
 	end)
 	-- Сенсорные кнопки на экране → камера держит бойцов над ними и ближе к центру.
 	local touchVisible = rootScope:Computed(function(use)
@@ -262,6 +308,28 @@ function UIController.Start()
 	end)
 	-- Поиск матча, комнаты и награды мультиплеера.
 	Transport.onClientEvent("MatchEvent", function(kind: any, payload: any)
+		if kind == "BossOffer" and type(payload) == "table" then
+			if
+				type(payload.kind) == "string"
+				and type(payload.token) == "number"
+				and type(payload.duration) == "number"
+				and type(payload.price) == "number"
+				and type(payload.productId) == "number"
+			then
+				appState.bossOffer:set({
+					kind = payload.kind,
+					token = payload.token,
+					duration = payload.duration,
+					price = payload.price,
+					productId = payload.productId,
+					startedAt = os.clock(),
+					pending = false,
+				})
+			end
+		elseif kind == "BossOfferClosed" then
+			appState.bossOffer:set(nil)
+			activeBossPrompt = nil
+		end
 		if kind == "Draft" then
 			AppState.applyDraft(appState, payload)
 		elseif kind == "DraftCancelled" then
@@ -313,9 +381,22 @@ function UIController.Start()
 						else "Все боссы уже пройдены",
 					4
 				)
+			elseif payload.kind == "BossBoost" then
+				AppState.notify(appState, "Усиление активно до конца боя!", 4)
+			elseif payload.kind == "BossRetry" then
+				AppState.notify(appState, "Последний раунд начат заново!", 4)
 			end
 		end
 	end)
+	game:GetService("MarketplaceService").PromptProductPurchaseFinished
+		:Connect(function(_userId: any, productId: any, purchased: any)
+			local prompt = activeBossPrompt
+			if prompt and productId == prompt.productId and purchased == false then
+				activeBossPrompt = nil
+				appState.bossOffer:set(nil)
+				request("BossOfferAction", { action = "PromptCancelled", token = prompt.token })
+			end
+		end)
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	App(rootScope, {

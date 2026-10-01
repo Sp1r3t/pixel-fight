@@ -1,8 +1,7 @@
 --!strict
 --[[
 	Экран «Мультиплеер» — выбор режима.
-	  • Онлайн: быстрый бой 1 на 1 и команды 2 на 2 (два этажа) — поиск соперников в очереди;
-	    если никого нет, через несколько секунд места займут боты;
+          • Онлайн: быстрый бой 1 на 1 и команды 2 на 2 (два этажа) — поиск соперников в очереди;
 	  • С другом: приватная комната 1 на 1 или 2 на 2 с кодом; вход по коду друга; хозяин может
 	    начать сразу — пустые места займут боты;
 	  • Против компьютера: 1 на 1 или 2 на 2 (с ботом-напарником), четыре уровня сложности.
@@ -19,6 +18,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Button = require(script.Parent.Parent.Components.Button)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local PanelBox = require(script.Parent.Parent.Components.Panel)
 local ScreenHeader = require(script.Parent.Parent.Components.ScreenHeader)
 
@@ -38,16 +38,29 @@ local CPU_LEVELS: { { level: number, text: string } } = {
 	{ level = 18, text = "Мастер" },
 }
 
-local function Title(scope: Scope, text: string, position: UDim2): Instance
-	return scope:New "TextLabel" {
+local function Title(scope: Scope, icon: string, text: string, position: UDim2): Instance
+	return scope:New "Frame" {
 		BackgroundTransparency = 1,
-		Font = Theme.Fonts.Body,
 		Position = position,
 		Size = UDim2.fromOffset(400, 26),
-		Text = text,
-		TextColor3 = Theme.Colors.Accent,
-		TextSize = 20,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		[Children] = {
+			IconGlyph(scope, {
+				Id = icon,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.fromScale(0, 0.5),
+				Size = UDim2.fromOffset(24, 24),
+			}),
+			scope:New "TextLabel" {
+				BackgroundTransparency = 1,
+				Font = Theme.Fonts.Body,
+				Position = UDim2.fromOffset(32, 0),
+				Size = UDim2.fromOffset(368, 26),
+				Text = text,
+				TextColor3 = Theme.Colors.Accent,
+				TextSize = 20,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			},
+		},
 	}
 end
 
@@ -100,11 +113,9 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 	local details = scope:Computed(function(use)
 		local queue = use(state.queue)
 		if queue.status == "Searching" then
-			local bots =
-				`Если за {GameConfig.Matchmaking.BotFillSeconds} с никого не найдём — позовём ботов.`
 			return if queue.mode == "Team"
-				then "Нужно 4 игрока. Команды формируются автоматически. " .. bots
-				else "Ищем соперника на этом и других серверах. " .. bots
+				then "Собираем матч 2 на 2. Команды формируются автоматически."
+				else "Ищем соперника на этом и других серверах."
 		elseif queue.status == "Room" then
 			local names: { string } = {}
 			local members: { { name: string, characterId: string } } = queue.members or {}
@@ -117,7 +128,7 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 				then " Команды: 1-й и 3-й против 2-го и 4-го."
 				else ""
 			return `Игроки {#names}/{capacity}: {table.concat(names, ", ")}. Скажите код другу — бой начнётся, `
-				.. `когда все войдут (или нажмите «Начать с ботами»).{teamsHint}`
+				.. `когда все войдут (или нажмите «Начать сейчас»).{teamsHint}`
 		end
 		return ""
 	end)
@@ -182,7 +193,7 @@ local function StatusOverlay(scope: Scope, state: AppState.AppState, now: Fusion
 			},
 			Button(scope, {
 				Name = "RoomStart",
-				Text = "Начать с ботами",
+				Text = "Начать сейчас",
 				Color = Theme.Colors.ButtonPrimary,
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(0.5, -8, 0, 190),
@@ -322,11 +333,11 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				end,
 			}),
 			Panel(scope, "Online", UDim2.fromOffset(24, 76), UDim2.fromOffset(440, 290), {
-				Title(scope, "🌐 Онлайн", UDim2.fromOffset(20, 12)),
+				Title(scope, "swords", "Онлайн", UDim2.fromOffset(20, 12)),
 				Button(scope, {
 					Name = "QueueVersus",
 					Text = "Быстрый бой 1 на 1",
-					Icon = "⚔️",
+					Icon = "swords",
 					Color = Theme.Colors.ButtonPrimary,
 					Position = UDim2.fromOffset(20, 48),
 					Size = UDim2.fromOffset(400, 48),
@@ -337,7 +348,7 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				Button(scope, {
 					Name = "QueueTeam",
 					Text = "Команды 2 на 2",
-					Icon = "👥",
+					Icon = "people",
 					Color = Theme.Colors.Info,
 					Position = UDim2.fromOffset(20, 108),
 					Size = UDim2.fromOffset(400, 48),
@@ -349,17 +360,17 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 					scope,
 					`Бой до {GameConfig.RoundsToWin.Versus} побед. В 2 на 2 арена в два этажа: `
 						.. "прыгай через дыру в центре наверх (двойной прыжок) или вниз! "
-						.. `Победа онлайн: +{GameConfig.Matchmaking.WinReward} монет 🪙`,
+						.. `Победа онлайн: +{GameConfig.Matchmaking.WinReward} монет.`,
 					UDim2.fromOffset(20, 170),
 					100
 				),
 			}),
 			Panel(scope, "Friends", UDim2.fromOffset(496, 76), UDim2.fromOffset(440, 290), {
-				Title(scope, "👫 С другом", UDim2.fromOffset(20, 12)),
+				Title(scope, "people", "С другом", UDim2.fromOffset(20, 12)),
 				Button(scope, {
 					Name = "RoomVersus",
 					Text = "Комната 1 на 1",
-					Icon = "🔑",
+					Icon = "key",
 					Position = UDim2.fromOffset(20, 48),
 					Size = UDim2.fromOffset(194, 48),
 					TextSize = 18,
@@ -370,7 +381,7 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				Button(scope, {
 					Name = "RoomTeam",
 					Text = "Комната 2 на 2",
-					Icon = "🔑",
+					Icon = "key",
 					Position = UDim2.fromOffset(226, 48),
 					Size = UDim2.fromOffset(194, 48),
 					TextSize = 18,
@@ -404,7 +415,7 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				Button(scope, {
 					Name = "JoinRoom",
 					Text = "Войти",
-					Icon = "🚪",
+					Icon = "door",
 					Color = Theme.Colors.ButtonPrimary,
 					Position = UDim2.fromOffset(282, 116),
 					Size = UDim2.fromOffset(138, 48),
@@ -421,7 +432,7 @@ local function ModeSelect(scope: Scope, state: AppState.AppState): Instance
 				),
 			}),
 			Panel(scope, "Cpu", UDim2.fromOffset(24, 380), UDim2.fromOffset(912, 110), {
-				Title(scope, "🤖 Против компьютера", UDim2.fromOffset(20, 10)),
+				Title(scope, "swords", "Быстрый матч", UDim2.fromOffset(20, 10)),
 				cpuButtons,
 			}),
 			StatusOverlay(scope, state, now),

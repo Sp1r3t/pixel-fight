@@ -1,9 +1,6 @@
 --!strict
 --[[
-	Главное меню: логотип, монеты, крупные плитки разделов с иконками и выбранный боец справа.
-
-	Для детей: три главные плитки (башня боссов, онлайн, тренировка) — большие и цветные,
-	под ними — бойцы, магазин и управление. Подпись под названием объясняет, что внутри.
+	Главное меню: строгий список режимов, дополнительные разделы и выбранный боец справа.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,10 +9,13 @@ local RunService = game:GetService("RunService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local CharacterRegistry = require(ReplicatedStorage.Shared.Characters.CharacterRegistry)
 local Combos = require(ReplicatedStorage.Shared.Config.Combos)
+local TestMode = require(ReplicatedStorage.Shared.Config.TestMode)
 local AppState = require(script.Parent.Parent.AppState)
 local Theme = require(script.Parent.Parent.Theme)
 local Format = require(script.Parent.Parent.Format)
 local Button = require(script.Parent.Parent.Components.Button)
+local ModeCard = require(script.Parent.Parent.Components.ModeCard)
+local IconGlyph = require(script.Parent.Parent.Components.IconGlyph)
 local Pill = require(script.Parent.Parent.Components.Pill)
 local Panel = require(script.Parent.Parent.Components.Panel)
 local FighterPortrait = require(script.Parent.Parent.Components.FighterPortrait)
@@ -37,21 +37,21 @@ type MenuEntry = {
 local MAIN: { MenuEntry } = {
 	{
 		text = "Одиночная игра",
-		icon = "🏰",
-		subtitle = "Башня из 20 боссов",
+		icon = "castle",
+		subtitle = "Путь через 20 противников",
 		color = Theme.Colors.ButtonPrimary,
 		screen = "BossMap",
 	},
 	{
 		text = "Мультиплеер",
-		icon = "⚔️",
+		icon = "swords",
 		subtitle = "1 на 1 · 2 на 2",
 		color = Theme.Colors.Info,
 		screen = "ModeSelect",
 	},
 	{
 		text = "Тренировка",
-		icon = "🥋",
+		icon = "belt",
 		subtitle = "Пробуй приёмы",
 		color = Theme.Colors.Success,
 		action = function(state: AppState.AppState)
@@ -62,25 +62,151 @@ local MAIN: { MenuEntry } = {
 
 -- Остальное — кнопки поменьше.
 local MORE: { MenuEntry } = {
-	{ text = "Персонажи", icon = "🦸", color = Theme.Colors.Button, screen = "CharacterSelect" },
-	{ text = "Магазин", icon = "🛒", color = Color3.fromHex("#E08A1E"), screen = "Shop" },
-	{ text = "Управление", icon = "🎮", color = Theme.Colors.Button, screen = "ControlsSettings" },
+	{ text = "Персонажи", icon = "hero", color = Theme.Colors.Button, screen = "CharacterSelect" },
+	{ text = "Магазин", icon = "cart", color = Theme.Colors.Button, screen = "Shop" },
+	{ text = "Управление", icon = "gamepad", color = Theme.Colors.Button, screen = "ControlsSettings" },
 }
 
--- Советы для детей внизу меню (меняются каждые TIP_SECONDS).
-local TIPS: { string } = {
-	"Держи 🛡️ «Блок» — и удары почти не отнимают здоровье.",
-	"Шкала «SUPER» полная? Жми ⚡ — и смотри супер-приём!",
-	"Дважды быстро толкни джойстик в сторону — будет рывок 💨.",
-	"В бою 2 на 2 прыгни ещё раз в воздухе — и перелетишь на другой этаж.",
-	"Проиграл боссу? Попробуй другой приём или другого бойца.",
-	"Платные бойцы не сильнее бесплатных — только красивее.",
-	"Перед онлайн-боем голосуй за карту, на которой хочешь драться.",
-	"Удары подряд — это комбо! Попробуй 👊 👊 🦶.",
+type Tip = { icon: string, text: ({ [string]: string }) -> string }
+
+-- Отдельные советы для клавиатуры, телефона и геймпада. Клавиши берутся из активных биндов.
+local TIPS: { [string]: { Tip } } = {
+	Keyboard = {
+		{
+			icon = "dash",
+			text = function(b)
+				return `Двигайся: {b.Move}. Присесть: {b.Crouch}.`
+			end,
+		},
+		{
+			icon = "shield",
+			text = function(b)
+				return `Удерживай {b.Block} для блока.`
+			end,
+		},
+		{
+			icon = "lightning",
+			text = function(b)
+				return `Шкала SUPER полная? Нажми {b.Super}.`
+			end,
+		},
+		{
+			icon = "dash",
+			text = function(b)
+				return `Нажми {b.Dash}, чтобы сделать рывок.`
+			end,
+		},
+		{
+			icon = "punch",
+			text = function(b)
+				return `Простое комбо: {b.Light}, {b.Light}, {b.Heavy}.`
+			end,
+		},
+		{
+			icon = "arrow_up",
+			text = function(b)
+				return `В 2 на 2 нажми {b.Jump} ещё раз в воздухе.`
+			end,
+		},
+		{
+			icon = "special",
+			text = function(b)
+				return `Особый приём твоего бойца — клавиша {b.Special}.`
+			end,
+		},
+	},
+	Touch = {
+		{
+			icon = "joystick",
+			text = function(_b)
+				return "Двигай джойстик влево и вправо. Потяни вниз, чтобы присесть."
+			end,
+		},
+		{
+			icon = "shield",
+			text = function(_b)
+				return "Удерживай пиксельную кнопку щита для блока."
+			end,
+		},
+		{
+			icon = "lightning",
+			text = function(_b)
+				return "Шкала SUPER полная? Нажми кнопку молнии."
+			end,
+		},
+		{
+			icon = "dash",
+			text = function(_b)
+				return "Дважды быстро толкни джойстик в сторону для рывка."
+			end,
+		},
+		{
+			icon = "punch",
+			text = function(_b)
+				return "Комбо: дважды кнопка руки, затем кнопка ноги."
+			end,
+		},
+		{
+			icon = "arrow_up",
+			text = function(_b)
+				return "В 2 на 2 нажми кнопку прыжка ещё раз в воздухе."
+			end,
+		},
+		{
+			icon = "special",
+			text = function(_b)
+				return "Кнопка звезды запускает особый приём бойца."
+			end,
+		},
+	},
+	Gamepad = {
+		{
+			icon = "gamepad",
+			text = function(b)
+				return `Двигайся: {b.Move}. Присесть: {b.Crouch}.`
+			end,
+		},
+		{
+			icon = "shield",
+			text = function(b)
+				return `Удерживай {b.Block} для блока.`
+			end,
+		},
+		{
+			icon = "lightning",
+			text = function(b)
+				return `Шкала SUPER полная? Нажми {b.Super}.`
+			end,
+		},
+		{
+			icon = "dash",
+			text = function(b)
+				return `Нажми {b.Dash}, чтобы сделать рывок.`
+			end,
+		},
+		{
+			icon = "punch",
+			text = function(b)
+				return `Простое комбо: {b.Light}, {b.Light}, {b.Heavy}.`
+			end,
+		},
+		{
+			icon = "arrow_up",
+			text = function(b)
+				return `В 2 на 2 нажми {b.Jump} ещё раз в воздухе.`
+			end,
+		},
+		{
+			icon = "special",
+			text = function(b)
+				return `Особый приём твоего бойца — кнопка {b.Special}.`
+			end,
+		},
+	},
 }
 local TIP_SECONDS = 7
 
-local TILE_W, TILE_H, GAP = 180, 150, 12
+local TILE_W, GAP = 180, 12
 local LEFT, TOP = 40, 158
 
 -- Ореол из трёх колец: чем ближе к бойцу, тем ярче (пиксельная «радиальная» подсветка).
@@ -119,8 +245,8 @@ local function open(state: AppState.AppState, entry: MenuEntry)
 	end
 end
 
-local function TipBar(scope: Scope): Instance
-	local index = scope:Value(math.random(1, #TIPS))
+local function TipBar(scope: Scope, state: AppState.AppState): Instance
+	local index = scope:Value(math.random(1, #TIPS.Keyboard))
 	local elapsed = 0
 	table.insert(
 		scope,
@@ -128,26 +254,28 @@ local function TipBar(scope: Scope): Instance
 			elapsed += dt
 			if elapsed >= TIP_SECONDS then
 				elapsed = 0
-				index:set(Fusion.peek(index) % #TIPS + 1)
+				local platformTips = TIPS[Fusion.peek(state.platform)] or TIPS.Keyboard
+				index:set(Fusion.peek(index) % #platformTips + 1)
 			end
 		end)
 	)
 	return Panel(scope, {
 		Name = "Tips",
-		Position = UDim2.fromOffset(LEFT, TOP + TILE_H + 90),
+		Position = UDim2.fromOffset(LEFT, 462),
 		Size = UDim2.fromOffset(TILE_W * 2 + GAP, 58),
 		Transparency = 0.15,
 		Content = {
-			scope:New "TextLabel" {
+			IconGlyph(scope, {
+				Id = scope:Computed(function(use)
+					local platformTips = TIPS[use(state.platform)] or TIPS.Keyboard
+					return platformTips[math.min(use(index), #platformTips)].icon
+				end),
 				Name = "Bulb",
+				Color = Theme.Colors.Accent,
 				AnchorPoint = Vector2.new(0, 0.5),
-				BackgroundTransparency = 1,
-				Font = Theme.Fonts.Title,
 				Position = UDim2.new(0, 10, 0.5, 0),
 				Size = UDim2.fromOffset(34, 34),
-				Text = "💡",
-				TextSize = 28,
-			},
+			}),
 			scope:New "TextLabel" {
 				Name = "Tip",
 				AnchorPoint = Vector2.new(0, 0.5),
@@ -156,7 +284,9 @@ local function TipBar(scope: Scope): Instance
 				Position = UDim2.new(0, 52, 0.5, 0),
 				Size = UDim2.new(1, -64, 1, -10),
 				Text = scope:Computed(function(use)
-					return TIPS[use(index)]
+					local platformTips = TIPS[use(state.platform)] or TIPS.Keyboard
+					local tip = platformTips[math.min(use(index), #platformTips)]
+					return tip.text(use(state.inputBindings))
 				end),
 				TextColor3 = Theme.Colors.Text,
 				TextScaled = true,
@@ -173,17 +303,17 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 	for index, entry in MAIN do
 		table.insert(
 			items,
-			Button(scope, {
+			ModeCard(scope, {
 				Name = `Tile{index}`,
 				Text = entry.text,
 				Icon = entry.icon,
-				IconSize = 56,
 				Subtitle = entry.subtitle,
-				Tile = true,
 				Color = entry.color,
-				TextSize = 23,
-				Position = UDim2.fromOffset(LEFT + (index - 1) * (TILE_W + GAP), TOP),
-				Size = UDim2.fromOffset(TILE_W, TILE_H),
+				Campaign = index == 1,
+				Position = if index == 1
+					then UDim2.fromOffset(LEFT, TOP)
+					else UDim2.fromOffset(LEFT + (index - 2) * 288, 292),
+				Size = if index == 1 then UDim2.fromOffset(564, 120) else UDim2.fromOffset(276, 104),
 				OnClick = function()
 					open(state, entry)
 				end,
@@ -199,8 +329,8 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Icon = entry.icon,
 				Color = entry.color,
 				TextSize = 19,
-				Position = UDim2.fromOffset(LEFT + (index - 1) * (TILE_W + GAP), TOP + TILE_H + 16),
-				Size = UDim2.fromOffset(TILE_W, 56),
+				Position = UDim2.fromOffset(LEFT + (index - 1) * (TILE_W + GAP), 410),
+				Size = UDim2.fromOffset(TILE_W, 38),
 				OnClick = function()
 					open(state, entry)
 				end,
@@ -256,7 +386,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					ZIndex = 3,
 					[Children] = innerScope:New "UIStroke" {
 						Color = Theme.Colors.Outline,
-						Thickness = 3,
+						Thickness = 1,
 					},
 				},
 				innerScope:New "TextLabel" {
@@ -277,7 +407,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Button(innerScope, {
 					Name = "ChangeFighter",
 					Text = "Сменить бойца",
-					Icon = "🔄",
+					Icon = "refresh",
 					TextSize = 17,
 					AnchorPoint = Vector2.new(0.5, 0),
 					Position = UDim2.fromOffset(150, 386),
@@ -303,18 +433,18 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Size = UDim2.fromOffset(560, 84),
 				Text = "PIXEL FIGHT",
 				TextColor3 = Theme.Colors.Accent,
-				TextSize = 84,
+				TextSize = 64,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				[Children] = {
 					scope:New "UIStroke" {
 						Color = Theme.Colors.Outline,
-						Thickness = 5,
+						Thickness = 1,
 					},
 					scope:New "UIGradient" {
 						Color = ColorSequence.new({
-							ColorSequenceKeypoint.new(0, Color3.fromHex("#FFF3A6")),
-							ColorSequenceKeypoint.new(0.55, Color3.fromHex("#FFD23F")),
-							ColorSequenceKeypoint.new(1, Color3.fromHex("#FF8A3D")),
+							ColorSequenceKeypoint.new(0, Theme.Colors.Text),
+							ColorSequenceKeypoint.new(0.55, Theme.Colors.Accent),
+							ColorSequenceKeypoint.new(1, Theme.Colors.Paid),
 						}),
 						Rotation = 90,
 					},
@@ -326,7 +456,9 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				Font = Theme.Fonts.Body,
 				Position = UDim2.fromOffset(LEFT, 112),
 				Size = UDim2.fromOffset(560, 26),
-				Text = "16 бойцов · 20 боссов · бои 1 на 1 и 2 на 2",
+				Text = if TestMode.UnlockAllCharacters
+					then "ТЕСТ: все 16 бойцов открыты"
+					else "16 бойцов · 20 боссов · бои 1 на 1 и 2 на 2",
 				TextColor3 = Theme.Colors.Text,
 				TextSize = 20,
 				TextXAlignment = Enum.TextXAlignment.Left,
@@ -353,8 +485,10 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					},
 					Button(scope, {
 						Name = "Daily",
-						Text = "🎁",
-						Color = Color3.fromHex("#E0457B"),
+						Text = "",
+						Icon = "gift",
+						IconOnly = true,
+						Color = Theme.Colors.Button,
 						Badge = scope:Computed(function(use)
 							return if AppState.dailyAvailable(use(state.daily), os.time()) then "!" else ""
 						end),
@@ -370,7 +504,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					}),
 					Pill(scope, {
 						Name = "Crystals",
-						Icon = "💎",
+						Icon = "crystal",
 						Text = scope:Computed(function(use)
 							return Format.number(use(state.crystals))
 						end),
@@ -380,7 +514,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					}),
 					Pill(scope, {
 						Name = "Coins",
-						Icon = "🪙",
+						Icon = "coin",
 						Text = scope:Computed(function(use)
 							return Format.number(use(state.coins))
 						end),
@@ -391,12 +525,12 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 				},
 			},
 			items,
-			TipBar(scope),
+			TipBar(scope, state),
 			Button(scope, {
 				Name = "Combos",
 				Text = "Комбо",
-				Icon = "📜",
-				Color = Color3.fromHex("#C0439A"),
+				Icon = "scroll",
+				Color = Theme.Colors.Button,
 				Badge = scope:Computed(function(use)
 					local count = 0
 					for id in use(state.combosFound) do
@@ -407,7 +541,7 @@ local function MainMenu(scope: Scope, state: AppState.AppState): Instance
 					return `{count}/{#Combos.list}`
 				end),
 				TextSize = 19,
-				Position = UDim2.fromOffset(LEFT + (TILE_W + GAP) * 2, TOP + TILE_H + 90),
+				Position = UDim2.fromOffset(LEFT + (TILE_W + GAP) * 2, 462),
 				Size = UDim2.fromOffset(TILE_W, 58),
 				OnClick = function()
 					AppState.navigate(state, "ComboList")

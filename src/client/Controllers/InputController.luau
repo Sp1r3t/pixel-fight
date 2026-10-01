@@ -20,6 +20,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local InputBits = require(ReplicatedStorage.Shared.Combat.InputBits)
 local Transport = require(ReplicatedStorage.Shared.Net.Transport)
+local KeyboardBindings = require(ReplicatedStorage.Shared.Config.KeyboardBindings)
 
 local SEND_INTERVAL = 1 / 60
 local KEEPALIVE = 0.1
@@ -69,6 +70,20 @@ local InputController = {
 	Name = "InputController",
 }
 
+local BINDING_LABELS: { [string]: { [string]: string } } = {
+	Touch = {
+		Move = "джойстик",
+		Jump = "кнопка прыжка",
+		Crouch = "джойстик вниз",
+		Light = "кнопка руки",
+		Heavy = "кнопка ноги",
+		Special = "кнопка приёма",
+		Super = "кнопка молнии",
+		Dash = "двойной толчок джойстика",
+		Block = "кнопка щита",
+	},
+}
+
 local platform: Platform = "Keyboard"
 local platformListeners: { (Platform) -> () } = {}
 
@@ -110,6 +125,69 @@ end
 -- Текущая платформа ввода: определяет, показывать ли сенсорное управление и какие подсказки.
 function InputController.getPlatform(): Platform
 	return platform
+end
+
+-- Подписи фактических биндов для подсказок интерфейса.
+function InputController.getBindingLabels(forPlatform: Platform?): { [string]: string }
+	local target = forPlatform or platform
+	if target == "Touch" then
+		return table.clone(BINDING_LABELS.Touch)
+	end
+	local names: { [string]: string } = {
+		LeftShift = "Shift",
+		RightShift = "Shift",
+		Left = "←",
+		Right = "→",
+		Up = "↑",
+		Down = "↓",
+		ButtonA = "A",
+		ButtonB = "B",
+		ButtonX = "X",
+		ButtonY = "Y",
+		ButtonL1 = "LB",
+		ButtonL2 = "LT",
+		ButtonR1 = "RB",
+		ButtonR2 = "RT",
+		DPadLeft = "крестовина влево",
+		DPadRight = "крестовина вправо",
+		DPadUp = "крестовина вверх",
+		DPadDown = "крестовина вниз",
+	}
+	local keysByBit: { [number]: { string } } = {}
+	local function collect(mapping: { [Enum.KeyCode]: number })
+		for key, bit in mapping do
+			local gamepad = key.Name:sub(1, 6) == "Button" or key.Name:sub(1, 4) == "DPad"
+			if gamepad == (target == "Gamepad") then
+				local labels = keysByBit[bit] or {}
+				local label = names[key.Name] or key.Name
+				if table.find(labels, label) == nil then
+					table.insert(labels, label)
+				end
+				keysByBit[bit] = labels
+			end
+		end
+	end
+	collect(KEY_DIRECTIONS)
+	collect(GAMEPAD_DIRECTIONS)
+	collect(ACTION_KEYS)
+	local function joined(bit: number): string
+		local labels = keysByBit[bit] or {}
+		table.sort(labels)
+		return if #labels > 0 then table.concat(labels, " / ") else "не назначено"
+	end
+	return {
+		Move = if target == "Gamepad"
+			then "левый стик / крестовина"
+			else `{joined(InputBits.Left)} и {joined(InputBits.Right)}`,
+		Jump = joined(InputBits.Up),
+		Crouch = if target == "Gamepad" then `стик вниз / {joined(InputBits.Down)}` else joined(InputBits.Down),
+		Light = joined(InputBits.Light),
+		Heavy = joined(InputBits.Heavy),
+		Special = joined(InputBits.Special),
+		Super = joined(InputBits.Super),
+		Dash = joined(InputBits.Dash),
+		Block = joined(InputBits.Block),
+	}
 end
 
 function InputController.onPlatformChanged(listener: (Platform) -> ())
@@ -245,6 +323,45 @@ end
 
 function InputController.isActive(): boolean
 	return active
+end
+
+function InputController.applyKeyboardBindings(raw: unknown)
+	local bindings = KeyboardBindings.sanitize(raw)
+	local enabled = active
+	if enabled then
+		InputController.setActive(false)
+	end
+	table.clear(KEY_DIRECTIONS)
+	for key in ACTION_KEYS do
+		if key.Name:sub(1, 6) ~= "Button" then
+			ACTION_KEYS[key] = nil
+		end
+	end
+	local bits: { [string]: number } = {
+		MoveLeft = InputBits.Left,
+		MoveRight = InputBits.Right,
+		Jump = InputBits.Up,
+		Crouch = InputBits.Down,
+		Light = InputBits.Light,
+		Heavy = InputBits.Heavy,
+		Special = InputBits.Special,
+		Super = InputBits.Super,
+		Block = InputBits.Block,
+		Dash = InputBits.Dash,
+	}
+	for action, keys in bindings do
+		local mapping = if actionIndex(bits[action]) then ACTION_KEYS else KEY_DIRECTIONS
+		for _, key in keys do
+			mapping[(Enum.KeyCode :: any)[key]] = bits[action]
+		end
+	end
+	table.clear(actionKeys)
+	for key in ACTION_KEYS do
+		table.insert(actionKeys, key)
+	end
+	if enabled then
+		InputController.setActive(true)
+	end
 end
 
 -- Экранные элементы управления (телефон): удерживаемые направления.

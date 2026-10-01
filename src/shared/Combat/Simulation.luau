@@ -16,6 +16,8 @@
 ]]
 
 local GameConfig = require(script.Parent.Parent.Config.GameConfig)
+local CombatProfiles = require(script.Parent.Parent.Config.CombatProfiles)
+local CinematicStaging = require(script.Parent.Parent.Config.CinematicStaging)
 local CharacterRegistry = require(script.Parent.Parent.Characters.CharacterRegistry)
 local Types = require(script.Parent.Parent.Types)
 local InputBits = require(script.Parent.InputBits)
@@ -90,6 +92,9 @@ end
 local function resetCombatState(fighter: Fighter)
 	fighter.move = nil
 	fighter.moveFrame = 0
+	fighter.attackParity = 0
+	fighter.reaction = nil
+	fighter.attackSequence = 0
 	fighter.moveConnected = false
 	fighter.moveHits = 0
 	table.clear(fighter.targetHits)
@@ -259,18 +264,32 @@ local function moveOf(fighter: Fighter): MoveData?
 	if id == nil then
 		return nil
 	end
-	return MoveBook.get(fighter.characterId, id)
+	return MoveBook.get(fighter.characterId, id, fighter.combatProfile)
 end
 
 local function startMove(sim: Sim, fighter: Fighter, id: string, button: number): boolean
-	local move = MoveBook.get(fighter.characterId, id)
+	local move = MoveBook.get(fighter.characterId, id, fighter.combatProfile)
 	if move == nil then
 		return false
+	end
+	if not Specials.canStart(sim, fighter, id) then
+		return false
+	end
+	-- Resolve facing at the exact attack frame. An opponent who crossed behind the
+	-- fighter is targeted immediately; the player never needs a separate turn input.
+	local opponent = Simulation.opponentOf(sim, fighter)
+	local dx = opponent.x - fighter.x
+	if math.abs(dx) > 0.05 then
+		fighter.facing = if dx > 0 then 1 else -1
 	end
 	fighter.buffer[button] = nil
 	local airborne = Fighter.isAirborne(fighter)
 	Fighter.setState(fighter, "Attack")
 	fighter.move = id
+	fighter.attackSequence += 1
+	if id == "Light1" then
+		fighter.attackParity = 1 - fighter.attackParity
+	end
 	fighter.moveFrame = 0
 	fighter.moveConnected = false
 	fighter.moveHits = 0
@@ -1012,6 +1031,12 @@ local function startCinematic(sim: Sim, attacker: Fighter, defender: Fighter, mo
 	local style = if def then def.super.cinematic.style else "Default"
 	local seconds = if def then def.super.cinematic.duration else 2
 	local hits = if def then def.super.cinematic.hits else 5
+	local signature =
+		require(script.Parent.Parent.Config.SignatureMoves).get(attacker.combatProfile or attacker.characterId)
+	if signature then
+		seconds = signature.duration or seconds
+		hits = signature.hits or hits
+	end
 	local scale = math.max(0.5, comboScale(defender.comboHits)) * modifierScale(attacker, defender, false)
 	local damage = math.max(1, math.floor(move.damage * attacker.stats.damageMultiplier * scale + 0.5))
 	local cinematic: Cinematic = {
@@ -1085,6 +1110,10 @@ function applyHit(sim: Sim, hit: PendingHit)
 		attacker.moveConnected = true
 		attacker.moveHits += 1
 		attacker.targetHits[defender.slot] = (attacker.targetHits[defender.slot] or 0) + 1
+	elseif attacker.state == "Attack" and projectile.attackSequence == attacker.attackSequence then
+		-- A thrown weapon can confirm its own attack, but an older returning disc
+		-- must not unlock cancels for an unrelated move started afterward.
+		attacker.moveConnected = true
 	end
 	defender.lastHitBy = attacker.slot
 
@@ -1192,6 +1221,7 @@ function applyHit(sim: Sim, hit: PendingHit)
 		defender.push = direction * move.knockback * PUSH_SCALE
 	end
 
+	defender.reaction = nil
 	if behaviour then
 		Specials.afterHit(attacker, defender, behaviour, false)
 	end
@@ -1233,6 +1263,18 @@ local function updateCinematic(sim: Sim)
 
 	if cinematic.frame >= cinematic.duration then
 		sim.cinematic = nil
+		local attackerProfile = CombatProfiles.get(attacker.combatProfile or attacker.characterId)
+		local victimProfile = CombatProfiles.get(defender.combatProfile or defender.characterId)
+		local attackerOffset, _, defenderOffset = CinematicStaging.offsets(
+			if attackerProfile then attackerProfile.id else attacker.characterId,
+			if victimProfile then victimProfile.role else nil,
+			attacker.x,
+			defender.x,
+			1,
+			Stage.wall(sim.stage)
+		)
+		attacker.x += attackerOffset
+		defender.x += defenderOffset
 		local direction = if defender.x > attacker.x then 1 elseif defender.x < attacker.x then -1 else attacker.facing
 		Fighter.setState(defender, "Juggle")
 		defender.vy = 26
